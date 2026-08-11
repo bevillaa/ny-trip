@@ -1,5 +1,5 @@
 // ==========================================
-// 🗽 NY TRIP
+// 🗽 NY TRIP — APLICACIÓN COMPLETA (100% GRATIS)
 // ==========================================
 
 const SUPABASE_URL = "https://rtbrnbyosrtxeayqmvwc.supabase.co";
@@ -192,7 +192,7 @@ document.addEventListener("click", e => {
     if (btn) closeModal(btn.dataset.close);
 });
 
-// BUSCADOR DE SITIOS OPTIMIZADO (MEJOR BÚSQUEDA DE PUNTOS TURÍSTICOS)
+// BUSCADOR MEJORADO Y GRATUITO (PHOTON API - POTENCIADO PARA SITIOS TURÍSTICOS)
 function initFreeAutocomplete() {
     const input = document.getElementById("plan-location");
     if (!input) return;
@@ -219,45 +219,42 @@ function initFreeAutocomplete() {
 
         timeout = setTimeout(async () => {
             try {
-                // Priorizar búsqueda en New York agregando el contexto automáticamente
-                const searchQuery = query.toLowerCase().includes("new york") || query.toLowerCase().includes("ny") ? query : `${query}, New York`;
-                
-                const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}&limit=5&addressdetails=1`);
-                let results = await res.json();
-
-                // Si no hay resultados con 'New York', buscar exactamente la consulta del usuario
-                if (!results.length) {
-                    const fallbackRes = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5`);
-                    results = await fallbackRes.json();
-                }
+                // Utiliza la API de Photon orientada geográficamente a Nueva York
+                const res = await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&lat=40.7128&lon=-73.9352&limit=5`);
+                const data = await res.json();
 
                 dropdown.innerHTML = "";
-                results.forEach(place => {
+                if (!data.features || data.features.length === 0) return;
+
+                data.features.forEach(feature => {
+                    const props = feature.properties;
+                    const coords = feature.geometry.coordinates; // [lon, lat]
+
+                    const name = props.name || query;
+                    const city = props.city || props.state || "New York";
+                    const street = props.street ? `${props.street}, ` : "";
+
                     const item = document.createElement("div");
                     item.className = "suggestion-item";
-                    
-                    const name = place.display_name.split(",")[0];
-                    const details = place.display_name.split(",").slice(1, 3).join(",");
-
-                    item.innerHTML = `<strong>📍 ${escapeHTML(name)}</strong><span style="font-size:11px; color:#6b7280; display:block;">${escapeHTML(details)}</span>`;
+                    item.innerHTML = `<strong>📍 ${escapeHTML(name)}</strong><span style="font-size:11px; color:#6b7280; display:block;">${escapeHTML(street + city)}</span>`;
                     
                     item.addEventListener("click", () => {
                         input.value = name;
                         selectedPlanLocation = {
                             name: name,
-                            address: place.display_name,
-                            lat: parseFloat(place.lat),
-                            lon: parseFloat(place.lon),
-                            url: `https://www.google.com/maps/search/?api=1&query=${place.lat},${place.lon}`
+                            address: `${name}, ${street}${city}`,
+                            lat: coords[1],
+                            lon: coords[0],
+                            url: `https://www.google.com/maps/search/?api=1&query=${coords[1]},${coords[0]}`
                         };
                         dropdown.innerHTML = "";
                     });
                     dropdown.appendChild(item);
                 });
             } catch (err) {
-                console.error("Error al buscar ubicación:", err);
+                console.error("Error en la búsqueda:", err);
             }
-        }, 300);
+        }, 250);
     });
 
     document.addEventListener("click", (e) => {
