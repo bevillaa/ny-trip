@@ -8,15 +8,15 @@ const defaultTripData = {
     travelers: [
         {
             id: 1,
-            name: "Ana"
+            name: "Sara"
         },
         {
             id: 2,
-            name: "Juan"
+            name: "Laura"
         },
         {
             id: 3,
-            name: "Pedro"
+            name: "Belen"
         }
     ],
 
