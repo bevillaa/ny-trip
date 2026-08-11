@@ -1,6 +1,6 @@
 // ==========================================
 // 🗽 NY TRIP
-// Datos y almacenamiento local
+// Datos, almacenamiento y actualización
 // ==========================================
 
 
@@ -25,23 +25,12 @@ const defaultTripData = {
         }
     ],
 
-
-    // --------------------------------------
-    // FECHAS DEL VIAJE
-    // --------------------------------------
-
     dates: {
         start: "2026-12-26",
         end: "2027-01-04"
     },
 
-
     destination: "Nueva York, Estados Unidos",
-
-
-    // --------------------------------------
-    // HOTEL
-    // --------------------------------------
 
     hotel: {
         name: "Courtyard by Marriott New York Manhattan Upper East Side",
@@ -58,16 +47,7 @@ const defaultTripData = {
         notes: ""
     },
 
-
-    // --------------------------------------
-    // VUELOS
-    // --------------------------------------
-
     flights: [
-
-        // ==============================
-        // IDA
-        // ==============================
 
         {
             type: "outbound",
@@ -98,7 +78,6 @@ const defaultTripData = {
 
             bookingReference: "3I8MQN"
         },
-
 
         {
             type: "outbound",
@@ -131,11 +110,6 @@ const defaultTripData = {
             bookingReference: "3I8MQN"
         },
 
-
-        // ==============================
-        // ESCALA DE IDA
-        // ==============================
-
         {
             type: "layover",
 
@@ -145,11 +119,6 @@ const defaultTripData = {
 
             duration: "2h"
         },
-
-
-        // ==============================
-        // VUELTA
-        // ==============================
 
         {
             type: "return",
@@ -182,7 +151,6 @@ const defaultTripData = {
             bookingReference: "3I8MQN"
         },
 
-
         {
             type: "layover",
 
@@ -192,7 +160,6 @@ const defaultTripData = {
 
             duration: "2h 50m"
         },
-
 
         {
             type: "return",
@@ -226,11 +193,6 @@ const defaultTripData = {
 
     ],
 
-
-    // --------------------------------------
-    // RESTO DE DATOS
-    // --------------------------------------
-
     itinerary: [],
 
     reservations: [],
@@ -238,7 +200,6 @@ const defaultTripData = {
     expenses: [],
 
     preferences: {}
-
 };
 
 
@@ -264,10 +225,6 @@ function loadTripData() {
     const savedData =
         localStorage.getItem("nyTripData");
 
-
-    // Si no hay datos guardados,
-    // utilizamos los datos iniciales.
-
     if (!savedData) {
 
         saveTripData(defaultTripData);
@@ -275,10 +232,12 @@ function loadTripData() {
         return defaultTripData;
     }
 
-
     try {
 
-        return JSON.parse(savedData);
+        const existingData =
+            JSON.parse(savedData);
+
+        return existingData;
 
     } catch (error) {
 
@@ -302,6 +261,132 @@ let tripData = loadTripData();
 
 
 // ==========================================
+// ACTUALIZAR DATOS DEL VIAJE
+// ==========================================
+
+// Conservamos los datos que ya existan.
+// Solo añadimos la información nueva.
+
+let dataWasUpdated = false;
+
+
+// Viajeros
+
+if (
+    !tripData.travelers ||
+    tripData.travelers.length === 0
+) {
+
+    tripData.travelers =
+        defaultTripData.travelers;
+
+    dataWasUpdated = true;
+}
+
+
+// Hotel
+
+if (
+    !tripData.hotel ||
+    !tripData.hotel.name
+) {
+
+    tripData.hotel =
+        defaultTripData.hotel;
+
+    dataWasUpdated = true;
+}
+
+
+// Vuelos
+
+if (
+    !tripData.flights ||
+    tripData.flights.length === 0
+) {
+
+    tripData.flights =
+        defaultTripData.flights;
+
+    dataWasUpdated = true;
+}
+
+
+// Fechas
+
+if (!tripData.dates) {
+
+    tripData.dates =
+        defaultTripData.dates;
+
+    dataWasUpdated = true;
+}
+
+
+// Destino
+
+if (!tripData.destination) {
+
+    tripData.destination =
+        defaultTripData.destination;
+
+    dataWasUpdated = true;
+}
+
+
+// Itinerario
+
+if (!tripData.itinerary) {
+
+    tripData.itinerary = [];
+
+    dataWasUpdated = true;
+}
+
+
+// Reservas
+
+if (!tripData.reservations) {
+
+    tripData.reservations = [];
+
+    dataWasUpdated = true;
+}
+
+
+// Gastos
+
+if (!tripData.expenses) {
+
+    tripData.expenses = [];
+
+    dataWasUpdated = true;
+}
+
+
+// Preferencias
+
+if (!tripData.preferences) {
+
+    tripData.preferences = {};
+
+    dataWasUpdated = true;
+}
+
+
+// Guardamos solo si hubo cambios.
+
+if (dataWasUpdated) {
+
+    saveTripData(tripData);
+
+    console.log(
+        "🟢 NY TRIP: datos actualizados."
+    );
+}
+
+
+// ==========================================
 // CALCULAR EL DÍA DEL VIAJE
 // ==========================================
 
@@ -318,8 +403,6 @@ function getTripDay(date = new Date()) {
         );
 
 
-    // Antes del viaje
-
     if (date < start) {
 
         return {
@@ -330,8 +413,6 @@ function getTripDay(date = new Date()) {
     }
 
 
-    // Después del viaje
-
     if (date > end) {
 
         return {
@@ -341,8 +422,6 @@ function getTripDay(date = new Date()) {
         };
     }
 
-
-    // Estamos dentro del viaje.
 
     const millisecondsPerDay =
         1000 * 60 * 60 * 24;
@@ -385,7 +464,7 @@ function formatTripDate(date) {
 
 
 // ==========================================
-// AÑADIR ACTIVIDAD AL ITINERARIO
+// AÑADIR ACTIVIDAD
 // ==========================================
 
 function addItineraryItem(item) {
@@ -421,7 +500,7 @@ function addExpense(expense) {
 
 
 // ==========================================
-// INFORMACIÓN DE PRUEBA
+// COMPROBACIÓN
 // ==========================================
 
 const currentTripDay =
@@ -429,56 +508,5 @@ const currentTripDay =
 
 
 console.log(
-    "🗽 NY TRIP iniciado."
-);
-
-
-console.log(
-    "📍 Destino:",
-    tripData.destination
-);
-
-
-console.log(
-    "👥 Viajeros:",
-    tripData.travelers
-);
-
-
-console.log(
-    "🏨 Hotel:",
-    tripData.hotel
-);
-
-
-console.log(
-    "✈️ Vuelos:",
-    tripData.flights
-);
-
-
-console.log(
-    "📅 Inicio:",
-    tripData.dates.start
-);
-
-
-console.log(
-    "📅 Fin:",
-    tripData.dates.end
-);
-
-
-console.log(
-    "🔢 Día del viaje:",
-    currentTripDay
-);
-
-
-console.log(
-    "📆 Fecha actual:",
-    formatTripDate(
-        currentTripDay.date
-    )
-);
+    "🗽 NY
 
