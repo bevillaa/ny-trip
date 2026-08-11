@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="es">
 
@@ -16,9 +15,22 @@
         content="#111827"
     >
 
-    <title>NY TRIP</title>
+    <meta
+        name="apple-mobile-web-app-capable"
+        content="yes"
+    >
 
-    <link rel="stylesheet" href="style.css">
+    <meta
+        name="apple-mobile-web-app-status-bar-style"
+        content="black-translucent"
+    >
+
+    <title>🗽 NY TRIP</title>
+
+    <link
+        rel="stylesheet"
+        href="style.css"
+    >
 
     <link
         rel="manifest"
@@ -50,7 +62,7 @@
 
 
         <!-- ==================================
-             DÍA DEL VIAJE
+             INFORMACIÓN DEL VIAJE
         =================================== -->
 
         <section class="location-card">
@@ -125,7 +137,6 @@
                     10:00
                 </span>
 
-
                 <div>
 
                     <strong>
@@ -146,7 +157,6 @@
                 <span class="activity-time">
                     14:00
                 </span>
-
 
                 <div>
 
@@ -171,7 +181,7 @@
 
         <section class="quick-actions">
 
-            <button>
+            <button type="button">
                 🚇
                 <span>
                     Transporte
@@ -179,7 +189,7 @@
             </button>
 
 
-            <button>
+            <button type="button">
                 🌦️
                 <span>
                     Tiempo
@@ -187,7 +197,7 @@
             </button>
 
 
-            <button>
+            <button type="button">
                 🍽️
                 <span>
                     Comer cerca
@@ -195,7 +205,7 @@
             </button>
 
 
-            <button>
+            <button type="button">
                 📍
                 <span>
                     Cerca de mí
@@ -203,7 +213,7 @@
             </button>
 
 
-            <button>
+            <button type="button">
                 💰
                 <span>
                     Gastos
@@ -211,7 +221,7 @@
             </button>
 
 
-            <button>
+            <button type="button">
                 📋
                 <span>
                     Reservas
@@ -223,13 +233,16 @@
     </main>
 
 
-    <!-- ======================================
+    <!-- ==================================
          NAVEGACIÓN INFERIOR
-    ======================================= -->
+    =================================== -->
 
     <nav class="bottom-nav">
 
-        <button class="active">
+        <button
+            type="button"
+            class="active"
+        >
 
             🏠
 
@@ -240,7 +253,7 @@
         </button>
 
 
-        <button>
+        <button type="button">
 
             🗓️
 
@@ -251,7 +264,7 @@
         </button>
 
 
-        <button>
+        <button type="button">
 
             🗺️
 
@@ -262,7 +275,7 @@
         </button>
 
 
-        <button>
+        <button type="button">
 
             💰
 
@@ -273,7 +286,7 @@
         </button>
 
 
-        <button>
+        <button type="button">
 
             ☰
 
@@ -286,16 +299,16 @@
     </nav>
 
 
-    <!-- ======================================
-         JAVASCRIPT
-    ======================================= -->
+    <!-- ==================================
+         JAVASCRIPT PRINCIPAL
+    ================================== -->
 
-    <script src="app.js"></script>
+    <script src="./app.js"></script>
 
 
-    <!-- ======================================
+    <!-- ==================================
          SERVICE WORKER
-    ======================================= -->
+    ================================== -->
 
     <script>
 
@@ -303,29 +316,29 @@
 
             window.addEventListener(
                 "load",
-                () => {
+                function () {
 
                     navigator.serviceWorker
-                        .register(
-                            "./service-worker.js"
+                        .register("./service-worker.js")
+                        .then(
+                            function () {
+
+                                console.log(
+                                    "🟢 NY TRIP: modo offline preparado."
+                                );
+
+                            }
                         )
+                        .catch(
+                            function (error) {
 
-                        .then(() => {
+                                console.error(
+                                    "🔴 NY TRIP: error en Service Worker.",
+                                    error
+                                );
 
-                            console.log(
-                                "🟢 NY TRIP: modo offline preparado."
-                            );
-
-                        })
-
-                        .catch((error) => {
-
-                            console.error(
-                                "🔴 NY TRIP: error en Service Worker.",
-                                error
-                            );
-
-                        });
+                            }
+                        );
 
                 }
             );
@@ -334,7 +347,7 @@
 
     </script>
 
+
 </body>
 
 </html>
-
