@@ -8,15 +8,15 @@ const defaultTripData = {
     travelers: [
         {
             id: 1,
-            name: "Sara"
-        },
-        {
-            id: 2,
             name: "Laura"
         },
         {
+            id: 2,
+            name: "Sara"
+        },
+        {
             id: 3,
-            name: "Belen"
+            name: "Belén"
         }
     ],
 
@@ -142,3 +142,4 @@ console.log(
     "Fechas:",
     tripData.dates
 );
+
