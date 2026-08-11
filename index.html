@@ -1,170 +1,147 @@
 <!DOCTYPE html>
+
 <html lang="es">
 
 <head>
 
-    <meta charset="UTF-8">
+```
+<meta charset="UTF-8">
 
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0, viewport-fit=cover"
-    >
+<meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+>
 
-    <meta
-        name="theme-color"
-        content="#111827"
-    >
+<meta
+    name="theme-color"
+    content="#111827"
+>
 
-    <meta
-        name="description"
-        content="NY TRIP — El tridente en Nueva York 😈😇🤪"
-    >
+<meta
+    name="description"
+    content="NY TRIP — El tridente en Nueva York 😈😇🤪"
+>
 
-    <!-- ==========================================
-         ANTI-CACHÉ
-    =========================================== -->
+<!-- ==========================================
+     ANTI-CACHÉ
+=========================================== -->
 
-    <meta
-        http-equiv="Cache-Control"
-        content="no-cache, no-store, must-revalidate, max-age=0"
-    >
+<meta
+    http-equiv="Cache-Control"
+    content="no-cache, no-store, must-revalidate, max-age=0"
+>
 
-    <meta
-        http-equiv="Pragma"
-        content="no-cache"
-    >
+<meta
+    http-equiv="Pragma"
+    content="no-cache"
+>
 
-    <meta
-        http-equiv="Expires"
-        content="0"
-    >
+<meta
+    http-equiv="Expires"
+    content="0"
+>
 
-    <title>🗽 NY TRIP</title>
-
-
-    <!-- ==========================================
-         LEAFLET CSS
-    =========================================== -->
-
-    <link
-        rel="stylesheet"
-        href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-    >
+<title>🗽 NY TRIP</title>
 
 
-    <!-- ==========================================
-         STYLE
-         CAMBIAR v= SI HACES CAMBIOS
-    =========================================== -->
+<!-- ==========================================
+     LEAFLET CSS
+=========================================== -->
 
-    <link
-        rel="stylesheet"
-        href="./style.css?v=20260811-001"
-    >
+<link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+>
 
 
-    <!-- ==========================================
-         LIMPIEZA DE CACHÉ / SERVICE WORKERS
-         SE EJECUTA ANTES DE CARGAR LA APP
-    =========================================== -->
+<!-- ==========================================
+     STYLE
+     CAMBIAR v= SI HACES CAMBIOS
+=========================================== -->
 
-    <script>
+<link
+    rel="stylesheet"
+    href="./style.css?v=20260811-002"
+>
 
-        (async function clearOldCache() {
 
-            try {
+<!-- ==========================================
+     LIMPIEZA DE CACHÉ / SERVICE WORKERS
+=========================================== -->
 
-                /*
-                 * Eliminar Service Workers antiguos.
-                 */
+<script>
 
-                if (
-                    "serviceWorker" in navigator
-                ) {
+    (async function clearOldCache() {
 
-                    const registrations =
-                        await navigator
-                            .serviceWorker
-                            .getRegistrations();
+        try {
 
-                    for (
-                        const registration
-                        of registrations
-                    ) {
+            if ("serviceWorker" in navigator) {
 
-                        try {
+                const registrations =
+                    await navigator
+                        .serviceWorker
+                        .getRegistrations();
 
-                            await registration.unregister();
+                for (const registration of registrations) {
 
-                        } catch (error) {
+                    try {
 
-                            console.warn(
-                                "No se pudo eliminar Service Worker:",
-                                error
-                            );
+                        await registration.unregister();
 
-                        }
+                    } catch (error) {
+
+                        console.warn(
+                            "No se pudo eliminar Service Worker:",
+                            error
+                        );
 
                     }
 
                 }
 
-
-                /*
-                 * Eliminar caches creadas
-                 * mediante Cache API.
-                 */
-
-                if (
-                    "caches" in window
-                ) {
-
-                    const cacheNames =
-                        await caches.keys();
-
-                    await Promise.all(
-                        cacheNames.map(
-                            cacheName =>
-                                caches.delete(
-                                    cacheName
-                                )
-                        )
-                    );
-
-                }
+            }
 
 
-                /*
-                 * Marcar que estamos usando
-                 * una versión nueva de la aplicación.
-                 */
+            if ("caches" in window) {
 
-                window.NY_TRIP_VERSION =
-                    "20260811-001";
+                const cacheNames =
+                    await caches.keys();
 
-
-                console.log(
-                    "🧹 NY TRIP: caché limpiada."
-                );
-
-            } catch (error) {
-
-                console.warn(
-                    "⚠️ No se pudo limpiar toda la caché:",
-                    error
+                await Promise.all(
+                    cacheNames.map(
+                        cacheName =>
+                            caches.delete(cacheName)
+                    )
                 );
 
             }
 
-        })();
 
-    </script>
+            window.NY_TRIP_VERSION =
+                "20260811-002";
+
+
+            console.log(
+                "🧹 NY TRIP: caché limpiada."
+            );
+
+        } catch (error) {
+
+            console.warn(
+                "⚠️ No se pudo limpiar toda la caché:",
+                error
+            );
+
+        }
+
+    })();
+
+</script>
+```
 
 </head>
 
-
 <body>
-
 
 <!-- ==========================================
      LOGIN
@@ -175,75 +152,76 @@
     class="login-screen"
 >
 
-    <div class="login-card">
+```
+<div class="login-card">
 
-        <div class="login-logo">
-            🗽
-        </div>
-
-        <h1>
-            NY TRIP
-        </h1>
-
-        <p class="login-subtitle">
-            El tridente en Nueva York 😈😇🤪
-        </p>
-
-
-        <form id="login-form">
-
-            <label>
-
-                Email
-
-                <input
-                    id="login-email"
-                    type="email"
-                    autocomplete="username"
-                    inputmode="email"
-                    placeholder="Tu email"
-                    required
-                >
-
-            </label>
-
-
-            <label>
-
-                Contraseña
-
-                <input
-                    id="login-password"
-                    type="password"
-                    autocomplete="current-password"
-                    placeholder="Tu contraseña"
-                    required
-                >
-
-            </label>
-
-
-            <button
-                id="login-button"
-                class="primary-button full"
-                type="submit"
-            >
-                Entrar
-            </button>
-
-
-            <div
-                id="login-error"
-                class="login-error"
-                hidden
-            ></div>
-
-        </form>
-
+    <div class="login-logo">
+        🗽
     </div>
 
-</div>
+    <h1>
+        NY TRIP
+    </h1>
 
+    <p class="login-subtitle">
+        El tridente en Nueva York 😈😇🤪
+    </p>
+
+
+    <form id="login-form">
+
+        <label>
+
+            Email
+
+            <input
+                id="login-email"
+                type="email"
+                autocomplete="username"
+                inputmode="email"
+                placeholder="Tu email"
+                required
+            >
+
+        </label>
+
+
+        <label>
+
+            Contraseña
+
+            <input
+                id="login-password"
+                type="password"
+                autocomplete="current-password"
+                placeholder="Tu contraseña"
+                required
+            >
+
+        </label>
+
+
+        <button
+            id="login-button"
+            class="primary-button full"
+            type="submit"
+        >
+            Entrar
+        </button>
+
+
+        <div
+            id="login-error"
+            class="login-error"
+            hidden
+        ></div>
+
+    </form>
+
+</div>
+```
+
+</div>
 
 <!-- ==========================================
      APP
@@ -254,166 +232,368 @@
     hidden
 >
 
+```
+<!-- ==========================================
+     CABECERA
+=========================================== -->
 
-    <!-- ==========================================
-         CABECERA
-    =========================================== -->
+<header class="app-header">
 
-    <header class="app-header">
+    <div>
 
-        <div>
+        <h1>
+            🗽 NY TRIP
+        </h1>
 
-            <h1>
-                🗽 NY TRIP
-            </h1>
+        <p>
+            El tridente en Nueva York 😈😇🤪
+        </p>
 
-            <p>
-                El tridente en Nueva York 😈😇🤪
-            </p>
+    </div>
+
+
+    <div
+        id="connection-status"
+        class="connection-status"
+    >
+        ● Conectando
+    </div>
+
+</header>
+
+
+<!-- ==========================================
+     CONTENIDO
+=========================================== -->
+
+<main id="screen-container">
+
+
+    <!-- ======================================
+         INICIO
+    ======================================= -->
+
+    <section
+        id="screen-home"
+        class="screen active"
+    >
+
+        <div class="hero-card">
+
+            <div>
+
+                <span class="small-label">
+                    📅 VIAJE
+                </span>
+
+                <strong id="trip-day">
+                    Cargando...
+                </strong>
+
+                <p>
+                    26 diciembre 2026 → 4 enero 2027
+                </p>
+
+            </div>
+
+
+            <div class="hero-location">
+
+                📍
+
+                <strong>
+                    Nueva York
+                </strong>
+
+            </div>
+
+        </div>
+
+
+        <!-- TIEMPO -->
+
+        <div class="weather-card">
+
+            <div class="weather-main">
+
+                <span id="weather-icon">
+                    🌤️
+                </span>
+
+                <div>
+
+                    <strong id="weather-temperature">
+                        --°C
+                    </strong>
+
+                    <span id="weather-description">
+                        Cargando tiempo...
+                    </span>
+
+                </div>
+
+            </div>
+
+
+            <div class="weather-extra">
+
+                <span id="weather-wind">
+                    Viento --
+                </span>
+
+                <span id="weather-update">
+                    Actualizando
+                </span>
+
+            </div>
+
+        </div>
+
+
+        <!-- DIVISAS -->
+
+        <div class="currency-card">
+
+            <div>
+
+                <span class="small-label">
+                    💱 CAMBIO
+                </span>
+
+                <strong id="currency-rate">
+                    EUR → USD
+                </strong>
+
+            </div>
+
+            <span id="currency-value">
+                Cargando...
+            </span>
+
+            <small id="currency-update">
+                Actualizando
+            </small>
+
+        </div>
+
+
+        <!-- PRÓXIMA ACTIVIDAD -->
+
+        <div class="section-heading">
+
+            <h2>
+                ⭐ ¿QUÉ HACEMOS AHORA?
+            </h2>
 
         </div>
 
 
         <div
-            id="connection-status"
-            class="connection-status"
+            id="next-activity"
+            class="next-card"
         >
-            ● Conectando
+
+            <span>
+                📅
+            </span>
+
+            <div>
+
+                <strong>
+                    Aún no hay actividades
+                </strong>
+
+                <p>
+                    Añade vuestro primer plan.
+                </p>
+
+            </div>
+
         </div>
 
-    </header>
 
+        <!-- ACCESOS RÁPIDOS -->
 
-    <!-- ==========================================
-         CONTENIDO
-    =========================================== -->
+        <div class="quick-grid">
 
-    <main id="screen-container">
+            <button
+                class="quick-button"
+                data-screen="plan"
+                type="button"
+            >
 
-
-        <!-- ======================================
-             INICIO
-        ======================================= -->
-
-        <section
-            id="screen-home"
-            class="screen active"
-        >
-
-            <div class="hero-card">
-
-                <div>
-
-                    <span class="small-label">
-                        📅 VIAJE
-                    </span>
-
-                    <strong id="trip-day">
-                        Cargando...
-                    </strong>
-
-                    <p>
-                        26 diciembre 2026 → 4 enero 2027
-                    </p>
-
-                </div>
-
-
-                <div class="hero-location">
-
-                    📍
-
-                    <strong>
-                        Nueva York
-                    </strong>
-
-                </div>
-
-            </div>
-
-
-            <!-- TIEMPO -->
-
-            <div class="weather-card">
-
-                <div class="weather-main">
-
-                    <span id="weather-icon">
-                        🌤️
-                    </span>
-
-                    <div>
-
-                        <strong id="weather-temperature">
-                            --°C
-                        </strong>
-
-                        <span id="weather-description">
-                            Cargando tiempo...
-                        </span>
-
-                    </div>
-
-                </div>
-
-
-                <div class="weather-extra">
-
-                    <span id="weather-wind">
-                        Viento --
-                    </span>
-
-                    <span id="weather-update">
-                        Actualizando
-                    </span>
-
-                </div>
-
-            </div>
-
-
-            <!-- DIVISAS -->
-
-            <div class="currency-card">
-
-                <div>
-
-                    <span class="small-label">
-                        💱 CAMBIO
-                    </span>
-
-                    <strong id="currency-rate">
-                        EUR → USD
-                    </strong>
-
-                </div>
-
-                <span id="currency-value">
-                    Cargando...
+                <span>
+                    📅
                 </span>
 
-                <small id="currency-update">
-                    Actualizando
-                </small>
+                <strong>
+                    Plan
+                </strong>
 
-            </div>
-
-
-            <!-- PRÓXIMA ACTIVIDAD -->
-
-            <div class="section-heading">
-
-                <h2>
-                    ⭐ ¿QUÉ HACEMOS AHORA?
-                </h2>
-
-            </div>
+            </button>
 
 
-            <div
-                id="next-activity"
-                class="next-card"
+            <button
+                class="quick-button"
+                data-screen="map"
+                type="button"
             >
+
+                <span>
+                    🗺️
+                </span>
+
+                <strong>
+                    Mapa
+                </strong>
+
+            </button>
+
+
+            <button
+                class="quick-button"
+                data-screen="expenses"
+                type="button"
+            >
+
+                <span>
+                    💰
+                </span>
+
+                <strong>
+                    Tricount
+                </strong>
+
+            </button>
+
+
+            <button
+                class="quick-button"
+                data-screen="reservations"
+                type="button"
+            >
+
+                <span>
+                    📋
+                </span>
+
+                <strong>
+                    Reservas
+                </strong>
+
+            </button>
+
+        </div>
+
+
+        <!-- EQUIPO -->
+
+        <div class="section-heading">
+
+            <h2>
+                El Equipo
+            </h2>
+
+        </div>
+
+
+        <div class="travelers-grid">
+
+            <div class="traveler-card">
+
+                <span>
+                    😈
+                </span>
+
+                <strong>
+                    Sara
+                </strong>
+
+            </div>
+
+
+            <div class="traveler-card">
+
+                <span>
+                    😇
+                </span>
+
+                <strong>
+                    Laura
+                </strong>
+
+            </div>
+
+
+            <div class="traveler-card">
+
+                <span>
+                    🤪
+                </span>
+
+                <strong>
+                    Belén
+                </strong>
+
+            </div>
+
+        </div>
+
+
+        <!-- HOTEL -->
+
+        <div class="section-heading">
+
+            <h2>
+                🏨 HOTEL
+            </h2>
+
+        </div>
+
+
+        <div class="info-card">
+
+            <span class="info-icon">
+                🏨
+            </span>
+
+            <div>
+
+                <strong>
+                    Courtyard by Marriott New York Manhattan Upper East Side
+                </strong>
+
+                <p>
+                    Nueva York, Estados Unidos
+                </p>
+
+                <a
+                    href="https://www.booking.com/hotel/us/manhattan-upper-east-side-courtyard-by-marriott.es.html"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                >
+                    Ver reserva
+                </a>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- ======================================
+         PLAN
+    ======================================= -->
+
+    <section
+        id="screen-plan"
+        class="screen"
+    >
+
+        <div class="screen-title">
+
+            <div>
 
                 <span>
                     📅
@@ -421,12 +601,12 @@
 
                 <div>
 
-                    <strong>
-                        Aún no hay actividades
-                    </strong>
+                    <h2>
+                        Plan del viaje
+                    </h2>
 
                     <p>
-                        Añade vuestro primer plan.
+                        Todo vuestro viaje organizado.
                     </p>
 
                 </div>
@@ -434,1077 +614,752 @@
             </div>
 
 
-            <!-- ACCESOS RÁPIDOS -->
+            <button
+                class="primary-button"
+                id="open-plan-form"
+                type="button"
+            >
+                + Añadir
+            </button>
 
-            <div class="quick-grid">
-
-                <button
-                    class="quick-button"
-                    data-screen="plan"
-                    type="button"
-                >
-
-                    <span>
-                        📅
-                    </span>
-
-                    <strong>
-                        Plan
-                    </strong>
-
-                </button>
+        </div>
 
 
-                <button
-                    class="quick-button"
-                    data-screen="map"
-                    type="button"
-                >
+        <!-- ==================================
+             FILTROS DE PLANES
+        =================================== -->
 
-                    <span>
-                        🗺️
-                    </span>
+        <div
+            class="plan-filters"
+            id="plan-filters"
+        >
 
-                    <strong>
+            <button
+                type="button"
+                class="plan-filter active"
+                data-plan-filter="all"
+            >
+                ✨ Todos
+            </button>
+
+
+            <button
+                type="button"
+                class="plan-filter"
+                data-plan-filter="food"
+            >
+                🍽️ Comida
+            </button>
+
+
+            <button
+                type="button"
+                class="plan-filter"
+                data-plan-filter="sightseeing"
+            >
+                📸 Turismo
+            </button>
+
+
+            <button
+                type="button"
+                class="plan-filter"
+                data-plan-filter="activity"
+            >
+                🎟️ Actividades
+            </button>
+
+
+            <button
+                type="button"
+                class="plan-filter"
+                data-plan-filter="shopping"
+            >
+                🛍️ Compras
+            </button>
+
+
+            <button
+                type="button"
+                class="plan-filter"
+                data-plan-filter="nightlife"
+            >
+                🌃 Noche
+            </button>
+
+
+            <button
+                type="button"
+                class="plan-filter"
+                data-plan-filter="other"
+            >
+                📌 Otros
+            </button>
+
+        </div>
+
+
+        <div
+            id="plan-list"
+            class="list"
+        >
+            Cargando...
+        </div>
+
+    </section>
+
+
+    <!-- ======================================
+         MAPA
+    ======================================= -->
+
+    <section
+        id="screen-map"
+        class="screen map-screen"
+    >
+
+        <div class="screen-title map-header">
+
+            <div>
+
+                <span>
+                    🗺️
+                </span>
+
+                <div>
+
+                    <h2>
                         Mapa
-                    </strong>
-
-                </button>
-
-
-                <button
-                    class="quick-button"
-                    data-screen="expenses"
-                    type="button"
-                >
-
-                    <span>
-                        💰
-                    </span>
-
-                    <strong>
-                        Tricount
-                    </strong>
-
-                </button>
-
-
-                <button
-                    class="quick-button"
-                    data-screen="reservations"
-                    type="button"
-                >
-
-                    <span>
-                        📋
-                    </span>
-
-                    <strong>
-                        Reservas
-                    </strong>
-
-                </button>
-
-            </div>
-
-
-            <!-- EQUIPO -->
-
-            <div class="section-heading">
-
-                <h2>
-                    El Equipo
-                </h2>
-
-            </div>
-
-
-            <div class="travelers-grid">
-
-                <div class="traveler-card">
-
-                    <span>
-                        😈
-                    </span>
-
-                    <strong>
-                        Sara
-                    </strong>
-
-                </div>
-
-
-                <div class="traveler-card">
-
-                    <span>
-                        😇
-                    </span>
-
-                    <strong>
-                        Laura
-                    </strong>
-
-                </div>
-
-
-                <div class="traveler-card">
-
-                    <span>
-                        🤪
-                    </span>
-
-                    <strong>
-                        Belén
-                    </strong>
-
-                </div>
-
-            </div>
-
-
-            <!-- HOTEL -->
-
-            <div class="section-heading">
-
-                <h2>
-                    🏨 HOTEL
-                </h2>
-
-            </div>
-
-
-            <div class="info-card">
-
-                <span class="info-icon">
-                    🏨
-                </span>
-
-                <div>
-
-                    <strong>
-                        Courtyard by Marriott New York Manhattan Upper East Side
-                    </strong>
+                    </h2>
 
                     <p>
-                        Nueva York, Estados Unidos
+                        Planes y reservas.
                     </p>
 
-                    <a
-                        href="https://www.booking.com/hotel/us/manhattan-upper-east-side-courtyard-by-marriott.es.html"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                    >
-                        Ver reserva
-                    </a>
-
                 </div>
 
             </div>
 
-        </section>
 
-
-        <!-- ======================================
-             PLAN
-        ======================================= -->
-
-        <section
-            id="screen-plan"
-            class="screen"
-        >
-
-            <div class="screen-title">
-
-                <div>
-
-                    <span>
-                        📅
-                    </span>
-
-                    <div>
-
-                        <h2>
-                            Plan del viaje
-                        </h2>
-
-                        <p>
-                            Todo vuestro viaje organizado.
-                        </p>
-
-                    </div>
-
-                </div>
-
-
-                <button
-                    class="primary-button"
-                    id="open-plan-form"
-                    type="button"
-                >
-                    + Añadir
-                </button>
-
-            </div>
-
-
-            <div
-                id="plan-list"
-                class="list"
+            <button
+                class="primary-button"
+                id="center-map"
+                type="button"
             >
-                Cargando...
-            </div>
+                📍 Mi posición
+            </button>
 
-        </section>
+        </div>
 
 
-        <!-- ======================================
-             MAPA
-        ======================================= -->
+        <div id="map"></div>
 
-        <section
-            id="screen-map"
-            class="screen map-screen"
-        >
 
-            <div class="screen-title map-header">
+        <div
+            id="map-list"
+            class="map-list"
+        ></div>
 
-                <div>
+    </section>
 
-                    <span>
-                        🗺️
-                    </span>
 
-                    <div>
+    <!-- ======================================
+         GASTOS
+    ======================================= -->
 
-                        <h2>
-                            Mapa
-                        </h2>
+    <section
+        id="screen-expenses"
+        class="screen"
+    >
 
-                        <p>
-                            Planes y reservas.
-                        </p>
+        <div class="screen-title">
 
-                    </div>
+            <div>
 
-                </div>
-
-
-                <button
-                    class="primary-button"
-                    id="center-map"
-                    type="button"
-                >
-                    📍 Mi posición
-                </button>
-
-            </div>
-
-
-            <div id="map"></div>
-
-
-            <div
-                id="map-list"
-                class="map-list"
-            ></div>
-
-        </section>
-
-
-        <!-- ======================================
-             GASTOS
-        ======================================= -->
-
-        <section
-            id="screen-expenses"
-            class="screen"
-        >
-
-            <div class="screen-title">
-
-                <div>
-
-                    <span>
-                        💰
-                    </span>
-
-                    <div>
-
-                        <h2>
-                            Tricount
-                        </h2>
-
-                        <p>
-                            Gastos compartidos.
-                        </p>
-
-                    </div>
-
-                </div>
-
-
-                <button
-                    class="primary-button"
-                    id="open-expense-form"
-                    type="button"
-                >
-                    + Gasto
-                </button>
-
-            </div>
-
-
-            <div
-                id="expense-summary"
-                class="expense-summary"
-            ></div>
-
-
-            <div class="section-heading compact">
-
-                <h2>
-                    💸 ¿Quién debe a quién?
-                </h2>
-
-            </div>
-
-
-            <div
-                id="debts"
-                class="debts"
-            ></div>
-
-
-            <div class="section-heading compact">
-
-                <h2>
-                    🧾 Gastos
-                </h2>
-
-            </div>
-
-
-            <div
-                id="expense-list"
-                class="list"
-            >
-                Cargando...
-            </div>
-
-        </section>
-
-
-        <!-- ======================================
-             RESERVAS
-        ======================================= -->
-
-        <section
-            id="screen-reservations"
-            class="screen"
-        >
-
-            <div class="screen-title">
-
-                <div>
-
-                    <span>
-                        📋
-                    </span>
-
-                    <div>
-
-                        <h2>
-                            Reservas
-                        </h2>
-
-                        <p>
-                            Todo reservado en un solo sitio.
-                        </p>
-
-                    </div>
-
-                </div>
-
-
-                <button
-                    class="primary-button"
-                    id="open-reservation-form"
-                    type="button"
-                >
-                    + Añadir
-                </button>
-
-            </div>
-
-
-            <div
-                id="reservation-list"
-                class="list"
-            >
-                Cargando...
-            </div>
-
-        </section>
-
-
-        <!-- ======================================
-             VUELOS
-        ======================================= -->
-
-        <section
-            id="screen-flights"
-            class="screen"
-        >
-
-            <div class="screen-title">
-
-                <div>
-
-                    <span>
-                        ✈️
-                    </span>
-
-                    <div>
-
-                        <h2>
-                            Vuelos
-                        </h2>
-
-                        <p>
-                            Todos los vuelos del viaje.
-                        </p>
-
-                    </div>
-
-                </div>
-
-            </div>
-
-
-            <div
-                id="flight-list"
-                class="list"
-            ></div>
-
-        </section>
-
-
-        <!-- ======================================
-             MÁS
-        ======================================= -->
-
-        <section
-            id="screen-more"
-            class="screen"
-        >
-
-            <div class="screen-title">
-
-                <div>
-
-                    <span>
-                        ☰
-                    </span>
-
-                    <div>
-
-                        <h2>
-                            Más
-                        </h2>
-
-                        <p>
-                            Información del viaje.
-                        </p>
-
-                    </div>
-
-                </div>
-
-            </div>
-
-
-            <div class="more-grid">
-
-                <button
-                    class="more-card"
-                    data-screen="flights"
-                    type="button"
-                >
-
-                    ✈️
-
-                    <strong>
-                        Vuelos
-                    </strong>
-
-                    <span>
-                        Horarios y trayectos
-                    </span>
-
-                </button>
-
-
-                <button
-                    class="more-card"
-                    data-screen="reservations"
-                    type="button"
-                >
-
-                    📋
-
-                    <strong>
-                        Reservas
-                    </strong>
-
-                    <span>
-                        Hotel, restaurantes y entradas
-                    </span>
-
-                </button>
-
-
-                <button
-                    class="more-card"
-                    data-screen="expenses"
-                    type="button"
-                >
-
+                <span>
                     💰
-
-                    <strong>
-                        Tricount
-                    </strong>
-
-                    <span>
-                        Gastos y deudas
-                    </span>
-
-                </button>
-
-
-                <button
-                    class="more-card"
-                    data-screen="plan"
-                    type="button"
-                >
-
-                    📅
-
-                    <strong>
-                        Plan
-                    </strong>
-
-                    <span>
-                        Actividades
-                    </span>
-
-                </button>
-
-            </div>
-
-
-            <!-- ======================================
-                 CUENTA
-            ======================================= -->
-
-            <div class="section-heading">
-
-                <h2>
-                    🔐 Cuenta
-                </h2>
-
-            </div>
-
-
-            <div class="info-card">
-
-                <span class="info-icon">
-                    👤
                 </span>
 
                 <div>
 
-                    <strong id="current-user-email">
-                        Usuario
-                    </strong>
+                    <h2>
+                        Tricount
+                    </h2>
 
                     <p>
-                        Sesión iniciada
+                        Gastos compartidos.
                     </p>
 
-
-                    <button
-                        id="logout-button"
-                        class="secondary-button"
-                        type="button"
-                    >
-                        🚪 Cerrar sesión
-                    </button>
-
                 </div>
 
             </div>
 
-        </section>
 
-    </main>
-
-
-    <!-- ==========================================
-         MODAL PLAN
-    =========================================== -->
-
-    <div
-        id="plan-modal"
-        class="modal hidden"
-    >
-
-        <div class="modal-content">
-
-            <div class="modal-header">
-
-                <h2>
-                    📅 Añadir plan
-                </h2>
-
-                <button
-                    class="close-modal"
-                    data-close="plan-modal"
-                    type="button"
-                >
-                    ×
-                </button>
-
-            </div>
-
-
-            <form id="plan-form">
-
-                <label>
-
-                    Nombre
-
-                    <input
-                        id="plan-title"
-                        required
-                        placeholder="Ej. Central Park"
-                    >
-
-                </label>
-
-
-                <label>
-
-                    Descripción
-
-                    <textarea
-                        id="plan-description"
-                        placeholder="Qué vais a hacer..."
-                    ></textarea>
-
-                </label>
-
-
-                <div class="form-row">
-
-                    <label>
-
-                        Fecha
-
-                        <input
-                            id="plan-date"
-                            type="date"
-                            required
-                        >
-
-                    </label>
-
-
-                    <label>
-
-                        Hora
-
-                        <input
-                            id="plan-time"
-                            type="time"
-                        >
-
-                    </label>
-
-                </div>
-
-
-                <label>
-
-                    Lugar
-
-                    <input
-                        id="plan-location"
-                        placeholder="Ej. Central Park, New York"
-                    >
-
-                </label>
-
-
-                <button
-                    type="button"
-                    class="secondary-button"
-                    id="search-plan-location"
-                >
-                    📍 Buscar lugar
-                </button>
-
-
-                <div
-                    id="plan-location-results"
-                    class="search-results"
-                ></div>
-
-
-                <button
-                    class="primary-button full"
-                    type="submit"
-                >
-                    Guardar plan
-                </button>
-
-            </form>
+            <button
+                class="primary-button"
+                id="open-expense-form"
+                type="button"
+            >
+                + Gasto
+            </button>
 
         </div>
 
-    </div>
+
+        <div
+            id="expense-summary"
+            class="expense-summary"
+        ></div>
 
 
-    <!-- ==========================================
-         MODAL RESERVA
-    =========================================== -->
+        <div class="section-heading compact">
 
-    <div
-        id="reservation-modal"
-        class="modal hidden"
-    >
-
-        <div class="modal-content">
-
-            <div class="modal-header">
-
-                <h2>
-                    📋 Añadir reserva
-                </h2>
-
-                <button
-                    class="close-modal"
-                    data-close="reservation-modal"
-                    type="button"
-                >
-                    ×
-                </button>
-
-            </div>
-
-
-            <form id="reservation-form">
-
-                <label>
-
-                    Tipo
-
-                    <select id="reservation-type">
-
-                        <option value="restaurant">
-                            🍽️ Restaurante
-                        </option>
-
-                        <option value="activity">
-                            🎟️ Actividad
-                        </option>
-
-                        <option value="hotel">
-                            🏨 Hotel
-                        </option>
-
-                        <option value="flight">
-                            ✈️ Vuelo
-                        </option>
-
-                        <option value="other">
-                            📋 Otro
-                        </option>
-
-                    </select>
-
-                </label>
-
-
-                <label>
-
-                    Nombre
-
-                    <input
-                        id="reservation-title"
-                        required
-                        placeholder="Ej. Restaurante"
-                    >
-
-                </label>
-
-
-                <label>
-
-                    Descripción
-
-                    <textarea
-                        id="reservation-description"
-                        placeholder="Detalles de la reserva..."
-                    ></textarea>
-
-                </label>
-
-
-                <div class="form-row">
-
-                    <label>
-
-                        Fecha
-
-                        <input
-                            id="reservation-date"
-                            type="date"
-                        >
-
-                    </label>
-
-
-                    <label>
-
-                        Hora
-
-                        <input
-                            id="reservation-time"
-                            type="time"
-                        >
-
-                    </label>
-
-                </div>
-
-
-                <label>
-
-                    Lugar
-
-                    <input
-                        id="reservation-location"
-                        placeholder="Ej. Times Square"
-                    >
-
-                </label>
-
-
-                <button
-                    type="button"
-                    class="secondary-button"
-                    id="search-reservation-location"
-                >
-                    📍 Buscar lugar
-                </button>
-
-
-                <div
-                    id="reservation-location-results"
-                    class="search-results"
-                ></div>
-
-
-                <label>
-
-                    Enlace de reserva
-
-                    <input
-                        id="reservation-url"
-                        type="url"
-                        placeholder="https://..."
-                    >
-
-                </label>
-
-
-                <button
-                    class="primary-button full"
-                    type="submit"
-                >
-                    Guardar reserva
-                </button>
-
-            </form>
+            <h2>
+                💸 ¿Quién debe a quién?
+            </h2>
 
         </div>
 
-    </div>
+
+        <div
+            id="debts"
+            class="debts"
+        ></div>
 
 
-    <!-- ==========================================
-         MODAL GASTO
-    =========================================== -->
+        <div class="section-heading compact">
 
-    <div
-        id="expense-modal"
-        class="modal hidden"
+            <h2>
+                🧾 Gastos
+            </h2>
+
+        </div>
+
+
+        <div
+            id="expense-list"
+            class="list"
+        >
+            Cargando...
+        </div>
+
+    </section>
+
+
+    <!-- ======================================
+         RESERVAS
+    ======================================= -->
+
+    <section
+        id="screen-reservations"
+        class="screen"
     >
 
-        <div class="modal-content">
+        <div class="screen-title">
 
-            <div class="modal-header">
+            <div>
 
-                <h2>
-                    💰 Añadir gasto
-                </h2>
+                <span>
+                    📋
+                </span>
 
-                <button
-                    class="close-modal"
-                    data-close="expense-modal"
-                    type="button"
-                >
-                    ×
-                </button>
+                <div>
+
+                    <h2>
+                        Reservas
+                    </h2>
+
+                    <p>
+                        Todo reservado en un solo sitio.
+                    </p>
+
+                </div>
 
             </div>
 
 
-            <form id="expense-form">
+            <button
+                class="primary-button"
+                id="open-reservation-form"
+                type="button"
+            >
+                + Añadir
+            </button>
 
-                <label>
-
-                    Concepto
-
-                    <input
-                        id="expense-title"
-                        required
-                        placeholder="Ej. Cena"
-                    >
-
-                </label>
+        </div>
 
 
-                <div class="form-row">
+        <div
+            id="reservation-list"
+            class="list"
+        >
+            Cargando...
+        </div>
 
-                    <label>
-
-                        Importe
-
-                        <input
-                            id="expense-amount"
-                            type="number"
-                            min="0"
-                            step="0.01"
-                            required
-                            placeholder="120"
-                        >
-
-                    </label>
+    </section>
 
 
-                    <label>
+    <!-- ======================================
+         VUELOS
+    ======================================= -->
 
-                        Moneda
+    <section
+        id="screen-flights"
+        class="screen"
+    >
 
-                        <select id="expense-currency">
+        <div class="screen-title">
 
-                            <option value="EUR">
-                                €
-                            </option>
+            <div>
 
-                            <option value="USD">
-                                $
-                            </option>
+                <span>
+                    ✈️
+                </span>
 
-                        </select>
+                <div>
 
-                    </label>
+                    <h2>
+                        Vuelos
+                    </h2>
+
+                    <p>
+                        Todos los vuelos del viaje.
+                    </p>
 
                 </div>
 
+            </div>
 
-                <label>
-
-                    Pagó
-
-                    <select id="expense-paid-by">
-
-                        <option value="Laura">
-                            😈 Laura
-                        </option>
-
-                        <option value="Sara">
-                            😇 Sara
-                        </option>
-
-                        <option value="Belén">
-                            🤪 Belén
-                        </option>
-
-                    </select>
-
-                </label>
+        </div>
 
 
-                <fieldset>
+        <div
+            id="flight-list"
+            class="list"
+        ></div>
 
-                    <legend>
-                        Participan
-                    </legend>
-
-
-                    <label class="check-label">
-
-                        <input
-                            type="checkbox"
-                            name="participant"
-                            value="Laura"
-                            checked
-                        >
-
-                        😈 Laura
-
-                    </label>
+    </section>
 
 
-                    <label class="check-label">
+    <!-- ======================================
+         MÁS
+    ======================================= -->
 
-                        <input
-                            type="checkbox"
-                            name="participant"
-                            value="Sara"
-                            checked
-                        >
+    <section
+        id="screen-more"
+        class="screen"
+    >
 
-                        😇 Sara
+        <div class="screen-title">
 
-                    </label>
+            <div>
+
+                <span>
+                    ☰
+                </span>
+
+                <div>
+
+                    <h2>
+                        Más
+                    </h2>
+
+                    <p>
+                        Información del viaje.
+                    </p>
+
+                </div>
+
+            </div>
+
+        </div>
 
 
-                    <label class="check-label">
+        <div class="more-grid">
 
-                        <input
-                            type="checkbox"
-                            name="participant"
-                            value="Belén"
-                            checked
-                        >
+            <button
+                class="more-card"
+                data-screen="flights"
+                type="button"
+            >
 
-                        🤪 Belén
+                ✈️
 
-                    </label>
+                <strong>
+                    Vuelos
+                </strong>
 
-                </fieldset>
+                <span>
+                    Horarios y trayectos
+                </span>
 
+            </button>
+
+
+            <button
+                class="more-card"
+                data-screen="reservations"
+                type="button"
+            >
+
+                📋
+
+                <strong>
+                    Reservas
+                </strong>
+
+                <span>
+                    Hotel, restaurantes y entradas
+                </span>
+
+            </button>
+
+
+            <button
+                class="more-card"
+                data-screen="expenses"
+                type="button"
+            >
+
+                💰
+
+                <strong>
+                    Tricount
+                </strong>
+
+                <span>
+                    Gastos y deudas
+                </span>
+
+            </button>
+
+
+            <button
+                class="more-card"
+                data-screen="plan"
+                type="button"
+            >
+
+                📅
+
+                <strong>
+                    Plan
+                </strong>
+
+                <span>
+                    Actividades
+                </span>
+
+            </button>
+
+        </div>
+
+
+        <!-- ======================================
+             CUENTA
+        ======================================= -->
+
+        <div class="section-heading">
+
+            <h2>
+                🔐 Cuenta
+            </h2>
+
+        </div>
+
+
+        <div class="info-card">
+
+            <span class="info-icon">
+                👤
+            </span>
+
+            <div>
+
+                <strong id="current-user-email">
+                    Usuario
+                </strong>
+
+                <p>
+                    Sesión iniciada
+                </p>
+
+
+                <button
+                    id="logout-button"
+                    class="secondary-button"
+                    type="button"
+                >
+                    🚪 Cerrar sesión
+                </button>
+
+            </div>
+
+        </div>
+
+    </section>
+
+</main>
+
+
+<!-- ==========================================
+     MODAL PLAN
+=========================================== -->
+
+<div
+    id="plan-modal"
+    class="modal hidden"
+>
+
+    <div class="modal-content">
+
+        <div class="modal-header">
+
+            <h2>
+                📅 Añadir plan
+            </h2>
+
+            <button
+                class="close-modal"
+                data-close="plan-modal"
+                type="button"
+            >
+                ×
+            </button>
+
+        </div>
+
+
+        <form id="plan-form">
+
+            <label>
+
+                Nombre
+
+                <input
+                    id="plan-title"
+                    required
+                    placeholder="Ej. Central Park"
+                >
+
+            </label>
+
+
+            <!-- ==================================
+                 CATEGORÍA DEL PLAN
+            =================================== -->
+
+            <label>
+
+                Categoría
+
+                <select id="plan-category">
+
+                    <option value="food">
+                        🍽️ Comida
+                    </option>
+
+                    <option value="sightseeing">
+                        📸 Turismo
+                    </option>
+
+                    <option value="activity">
+                        🎟️ Actividades
+                    </option>
+
+                    <option value="shopping">
+                        🛍️ Compras
+                    </option>
+
+                    <option value="nightlife">
+                        🌃 Noche
+                    </option>
+
+                    <option value="other">
+                        📌 Otros
+                    </option>
+
+                </select>
+
+            </label>
+
+
+            <label>
+
+                Descripción
+
+                <textarea
+                    id="plan-description"
+                    placeholder="Qué vais a hacer..."
+                ></textarea>
+
+            </label>
+
+
+            <div class="form-row">
 
                 <label>
 
                     Fecha
 
                     <input
-                        id="expense-date"
+                        id="plan-date"
+                        type="date"
+                        required
+                    >
+
+                </label>
+
+
+                <label>
+
+                    Hora
+
+                    <input
+                        id="plan-time"
+                        type="time"
+                    >
+
+                </label>
+
+            </div>
+
+
+            <label>
+
+                Lugar
+
+                <input
+                    id="plan-location"
+                    placeholder="Ej. Central Park, New York"
+                >
+
+            </label>
+
+
+            <button
+                type="button"
+                class="secondary-button"
+                id="search-plan-location"
+            >
+                📍 Buscar lugar
+            </button>
+
+
+            <div
+                id="plan-location-results"
+                class="search-results"
+            ></div>
+
+
+            <button
+                class="primary-button full"
+                type="submit"
+            >
+                Guardar plan
+            </button>
+
+        </form>
+
+    </div>
+
+</div>
+
+
+<!-- ==========================================
+     MODAL RESERVA
+=========================================== -->
+
+<div
+    id="reservation-modal"
+    class="modal hidden"
+>
+
+    <div class="modal-content">
+
+        <div class="modal-header">
+
+            <h2>
+                📋 Añadir reserva
+            </h2>
+
+            <button
+                class="close-modal"
+                data-close="reservation-modal"
+                type="button"
+            >
+                ×
+            </button>
+
+        </div>
+
+
+        <form id="reservation-form">
+
+            <label>
+
+                Tipo
+
+                <select id="reservation-type">
+
+                    <option value="restaurant">
+                        🍽️ Restaurante
+                    </option>
+
+                    <option value="activity">
+                        🎟️ Actividad
+                    </option>
+
+                    <option value="hotel">
+                        🏨 Hotel
+                    </option>
+
+                    <option value="flight">
+                        ✈️ Vuelo
+                    </option>
+
+                    <option value="other">
+                        📋 Otro
+                    </option>
+
+                </select>
+
+            </label>
+
+
+            <label>
+
+                Nombre
+
+                <input
+                    id="reservation-title"
+                    required
+                    placeholder="Ej. Restaurante"
+                >
+
+            </label>
+
+
+            <label>
+
+                Descripción
+
+                <textarea
+                    id="reservation-description"
+                    placeholder="Detalles de la reserva..."
+                ></textarea>
+
+            </label>
+
+
+            <div class="form-row">
+
+                <label>
+
+                    Fecha
+
+                    <input
+                        id="reservation-date"
                         type="date"
                     >
 
@@ -1513,124 +1368,360 @@
 
                 <label>
 
-                    Notas
+                    Hora
 
-                    <textarea
-                        id="expense-notes"
-                        placeholder="Opcional"
-                    ></textarea>
+                    <input
+                        id="reservation-time"
+                        type="time"
+                    >
+
+                </label>
+
+            </div>
+
+
+            <label>
+
+                Lugar
+
+                <input
+                    id="reservation-location"
+                    placeholder="Ej. Times Square"
+                >
+
+            </label>
+
+
+            <button
+                type="button"
+                class="secondary-button"
+                id="search-reservation-location"
+            >
+                📍 Buscar lugar
+            </button>
+
+
+            <div
+                id="reservation-location-results"
+                class="search-results"
+            ></div>
+
+
+            <label>
+
+                Enlace de reserva
+
+                <input
+                    id="reservation-url"
+                    type="url"
+                    placeholder="https://..."
+                >
+
+            </label>
+
+
+            <button
+                class="primary-button full"
+                type="submit"
+            >
+                Guardar reserva
+            </button>
+
+        </form>
+
+    </div>
+
+</div>
+
+
+<!-- ==========================================
+     MODAL GASTO
+=========================================== -->
+
+<div
+    id="expense-modal"
+    class="modal hidden"
+>
+
+    <div class="modal-content">
+
+        <div class="modal-header">
+
+            <h2>
+                💰 Añadir gasto
+            </h2>
+
+            <button
+                class="close-modal"
+                data-close="expense-modal"
+                type="button"
+            >
+                ×
+            </button>
+
+        </div>
+
+
+        <form id="expense-form">
+
+            <label>
+
+                Concepto
+
+                <input
+                    id="expense-title"
+                    required
+                    placeholder="Ej. Cena"
+                >
+
+            </label>
+
+
+            <div class="form-row">
+
+                <label>
+
+                    Importe
+
+                    <input
+                        id="expense-amount"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        required
+                        placeholder="120"
+                    >
 
                 </label>
 
 
-                <button
-                    class="primary-button full"
-                    type="submit"
+                <label>
+
+                    Moneda
+
+                    <select id="expense-currency">
+
+                        <option value="EUR">
+                            €
+                        </option>
+
+                        <option value="USD">
+                            $
+                        </option>
+
+                    </select>
+
+                </label>
+
+            </div>
+
+
+            <label>
+
+                Pagó
+
+                <select id="expense-paid-by">
+
+                    <option value="Laura">
+                        😈 Laura
+                    </option>
+
+                    <option value="Sara">
+                        😇 Sara
+                    </option>
+
+                    <option value="Belén">
+                        🤪 Belén
+                    </option>
+
+                </select>
+
+            </label>
+
+
+            <fieldset>
+
+                <legend>
+                    Participan
+                </legend>
+
+
+                <label class="check-label">
+
+                    <input
+                        type="checkbox"
+                        name="participant"
+                        value="Laura"
+                        checked
+                    >
+
+                    😈 Laura
+
+                </label>
+
+
+                <label class="check-label">
+
+                    <input
+                        type="checkbox"
+                        name="participant"
+                        value="Sara"
+                        checked
+                    >
+
+                    😇 Sara
+
+                </label>
+
+
+                <label class="check-label">
+
+                    <input
+                        type="checkbox"
+                        name="participant"
+                        value="Belén"
+                        checked
+                    >
+
+                    🤪 Belén
+
+                </label>
+
+            </fieldset>
+
+
+            <label>
+
+                Fecha
+
+                <input
+                    id="expense-date"
+                    type="date"
                 >
-                    Guardar gasto
-                </button>
 
-            </form>
+            </label>
 
-        </div>
+
+            <label>
+
+                Notas
+
+                <textarea
+                    id="expense-notes"
+                    placeholder="Opcional"
+                ></textarea>
+
+            </label>
+
+
+            <button
+                class="primary-button full"
+                type="submit"
+            >
+                Guardar gasto
+            </button>
+
+        </form>
 
     </div>
 
-
-    <!-- ==========================================
-         NAVEGACIÓN
-    =========================================== -->
-
-    <nav class="bottom-nav">
-
-        <button
-            class="nav-button active"
-            data-screen="home"
-            type="button"
-        >
-
-            <span>
-                🏠
-            </span>
-
-            <small>
-                Inicio
-            </small>
-
-        </button>
-
-
-        <button
-            class="nav-button"
-            data-screen="plan"
-            type="button"
-        >
-
-            <span>
-                📅
-            </span>
-
-            <small>
-                Plan
-            </small>
-
-        </button>
-
-
-        <button
-            class="nav-button"
-            data-screen="map"
-            type="button"
-        >
-
-            <span>
-                🗺️
-            </span>
-
-            <small>
-                Mapa
-            </small>
-
-        </button>
-
-
-        <button
-            class="nav-button"
-            data-screen="expenses"
-            type="button"
-        >
-
-            <span>
-                💰
-            </span>
-
-            <small>
-                Gastos
-            </small>
-
-        </button>
-
-
-        <button
-            class="nav-button"
-            data-screen="more"
-            type="button"
-        >
-
-            <span>
-                ☰
-            </span>
-
-            <small>
-                Más
-            </small>
-
-        </button>
-
-    </nav>
-
 </div>
 
+
+<!-- ==========================================
+     NAVEGACIÓN
+=========================================== -->
+
+<nav class="bottom-nav">
+
+    <button
+        class="nav-button active"
+        data-screen="home"
+        type="button"
+    >
+
+        <span>
+            🏠
+        </span>
+
+        <small>
+            Inicio
+        </small>
+
+    </button>
+
+
+    <button
+        class="nav-button"
+        data-screen="plan"
+        type="button"
+    >
+
+        <span>
+            📅
+        </span>
+
+        <small>
+            Plan
+        </small>
+
+    </button>
+
+
+    <button
+        class="nav-button"
+        data-screen="map"
+        type="button"
+    >
+
+        <span>
+            🗺️
+        </span>
+
+        <small>
+            Mapa
+        </small>
+
+    </button>
+
+
+    <button
+        class="nav-button"
+        data-screen="expenses"
+        type="button"
+    >
+
+        <span>
+            💰
+        </span>
+
+        <small>
+            Gastos
+        </small>
+
+    </button>
+
+
+    <button
+        class="nav-button"
+        data-screen="more"
+        type="button"
+    >
+
+        <span>
+            ☰
+        </span>
+
+        <small>
+            Más
+        </small>
+
+    </button>
+
+</nav>
+```
+
+</div>
 
 <!-- ==========================================
      LEAFLET JS
@@ -1640,7 +1731,6 @@
     src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
 ></script>
 
-
 <!-- ==========================================
      SUPABASE JS
 =========================================== -->
@@ -1649,38 +1739,112 @@
     src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"
 ></script>
 
-
 <!-- ==========================================
      APP JS
      VERSIONAR PARA EVITAR CACHÉ
 =========================================== -->
 
 <script
-    src="./app.js?v=20260811-001"
+    src="./app.js?v=20260811-002"
 ></script>
 
-
 <!-- ==========================================
-     ÚLTIMA LIMPIEZA AL CARGAR
+     FILTROS DE PLANES
 =========================================== -->
 
 <script>
 
-    /*
-     * Aviso visual en consola para comprobar
-     * que realmente se está cargando esta versión.
-     */
+    document.addEventListener(
+        "DOMContentLoaded",
+        function () {
+
+            const filterButtons =
+                document.querySelectorAll(
+                    "[data-plan-filter]"
+                );
+
+            filterButtons.forEach(
+                function (button) {
+
+                    button.addEventListener(
+                        "click",
+                        function () {
+
+                            const selectedCategory =
+                                this.dataset.planFilter;
+
+                            filterButtons.forEach(
+                                function (item) {
+
+                                    item.classList.remove(
+                                        "active"
+                                    );
+
+                                }
+                            );
+
+                            this.classList.add("active");
+
+
+                            const planItems =
+                                document.querySelectorAll(
+                                    "#plan-list [data-plan-category]"
+                                );
+
+
+                            planItems.forEach(
+                                function (plan) {
+
+                                    const planCategory =
+                                        plan.dataset.planCategory;
+
+
+                                    if (
+                                        selectedCategory === "all" ||
+                                        planCategory === selectedCategory
+                                    ) {
+
+                                        plan.style.display = "";
+
+                                    } else {
+
+                                        plan.style.display = "none";
+
+                                    }
+
+                                }
+                            );
+
+                        }
+                    );
+
+                }
+            );
+
+        }
+    );
+
+</script>
+
+<!-- ==========================================
+     AVISO DE VERSIÓN
+=========================================== -->
+
+<script>
 
     console.log(
-        "🗽 NY TRIP — versión 20260811-001"
+        "🗽 NY TRIP — versión 20260811-002"
     );
 
     console.log(
         "🧹 Sistema anti-caché activo"
     );
 
-</script>
+    console.log(
+        "🏷️ Sistema de categorías y filtros de planes activo"
+    );
 
+</script>
 
 </body>
 
