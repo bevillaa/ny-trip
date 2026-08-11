@@ -1,8 +1,8 @@
+```javascript
 // ==========================================
 // 🗽 NY TRIP
 // APLICACIÓN COMPLETA
 // ==========================================
-
 
 // ==========================================
 // SUPABASE
@@ -14,13 +14,11 @@ const SUPABASE_URL =
 const SUPABASE_KEY =
     "sb_publishable_xvstsFi5T_bbgYb-9qiJ6A_y8OrALEA";
 
-
 const db =
     window.supabase.createClient(
         SUPABASE_URL,
         SUPABASE_KEY
     );
-
 
 // ==========================================
 // DATOS FIJOS DEL VIAJE
@@ -32,24 +30,19 @@ const TRAVELERS = [
     "Belén"
 ];
 
-
 const TRAVELER_EMOJIS = {
     Laura: "😈",
     Sara: "😇",
     Belén: "🤪"
 };
 
-
 const TRIP_START =
     new Date("2026-12-26T00:00:00");
-
 
 const TRIP_END =
     new Date("2027-01-04T23:59:59");
 
-
 const flights = [
-
     {
         flightNumber: "EI583",
         airline: "Aer Lingus",
@@ -93,12 +86,9 @@ const flights = [
         arrival: "11:20",
         duration: "3h 10m"
     }
-
 ];
 
-
 const HOTEL = {
-
     name:
         "Courtyard by Marriott New York Manhattan Upper East Side",
 
@@ -113,9 +103,7 @@ const HOTEL = {
 
     bookingUrl:
         "https://www.booking.com/hotel/us/manhattan-upper-east-side-courtyard-by-marriott.es.html"
-
 };
-
 
 // ==========================================
 // ESTADO
@@ -128,7 +116,6 @@ let places = [];
 
 let map = null;
 let mapMarkers = [];
-
 
 // ==========================================
 // UTILIDADES
@@ -148,7 +135,6 @@ function escapeHTML(value) {
         .replaceAll("'", "&#039;");
 }
 
-
 function formatMoney(amount, currency) {
 
     return new Intl.NumberFormat(
@@ -158,9 +144,7 @@ function formatMoney(amount, currency) {
             currency: currency || "EUR"
         }
     ).format(Number(amount) || 0);
-
 }
-
 
 function formatDate(date) {
 
@@ -178,9 +162,7 @@ function formatDate(date) {
     ).format(
         new Date(`${date}T00:00:00`)
     );
-
 }
-
 
 function getDateTimestamp(date, time) {
 
@@ -191,9 +173,7 @@ function getDateTimestamp(date, time) {
     return new Date(
         `${date}T${time || "00:00"}:00`
     ).getTime();
-
 }
-
 
 // ==========================================
 // CONEXIÓN
@@ -217,9 +197,7 @@ function setConnectionStatus(
 
     element.className =
         "connection-status " + state;
-
 }
-
 
 // ==========================================
 // NAVEGACIÓN
@@ -237,12 +215,10 @@ function showScreen(name) {
 
         });
 
-
     const target =
         document.getElementById(
             `screen-${name}`
         );
-
 
     if (target) {
 
@@ -251,7 +227,6 @@ function showScreen(name) {
         );
 
     }
-
 
     document
         .querySelectorAll(".nav-button")
@@ -263,7 +238,6 @@ function showScreen(name) {
             );
 
         });
-
 
     if (name === "map") {
 
@@ -280,14 +254,11 @@ function showScreen(name) {
 
     }
 
-
     window.scrollTo({
         top: 0,
         behavior: "smooth"
     });
-
 }
-
 
 document.addEventListener(
     "click",
@@ -298,11 +269,9 @@ document.addEventListener(
                 "[data-screen]"
             );
 
-
         if (!button) {
             return;
         }
-
 
         showScreen(
             button.dataset.screen
@@ -310,7 +279,6 @@ document.addEventListener(
 
     }
 );
-
 
 // ==========================================
 // MODALES
@@ -324,9 +292,7 @@ function openModal(id) {
     if (modal) {
         modal.classList.remove("hidden");
     }
-
 }
-
 
 function closeModal(id) {
 
@@ -336,9 +302,7 @@ function closeModal(id) {
     if (modal) {
         modal.classList.add("hidden");
     }
-
 }
-
 
 document.addEventListener(
     "click",
@@ -349,11 +313,9 @@ document.addEventListener(
                 "[data-close]"
             );
 
-
         if (!button) {
             return;
         }
-
 
         closeModal(
             button.dataset.close
@@ -361,7 +323,6 @@ document.addEventListener(
 
     }
 );
-
 
 document
     .getElementById("open-plan-form")
@@ -383,7 +344,6 @@ document
 
         }
     );
-
 
 document
     .getElementById("open-reservation-form")
@@ -407,7 +367,6 @@ document
 
         }
     );
-
 
 document
     .getElementById("open-expense-form")
@@ -434,7 +393,6 @@ document
         }
     );
 
-
 // ==========================================
 // CUENTA ATRÁS
 // ==========================================
@@ -446,7 +404,6 @@ function updateTripDay() {
             "trip-day"
         );
 
-
     const today =
         new Date();
 
@@ -457,13 +414,11 @@ function updateTripDay() {
         0
     );
 
-
     if (today < TRIP_START) {
 
         const difference =
             TRIP_START.getTime() -
             today.getTime();
-
 
         const days =
             Math.ceil(
@@ -471,14 +426,11 @@ function updateTripDay() {
                 (1000 * 60 * 60 * 24)
             );
 
-
         element.textContent =
             `FALTAN ${days} DÍAS`;
 
         return;
-
     }
-
 
     if (today <= TRIP_END) {
 
@@ -486,13 +438,11 @@ function updateTripDay() {
             today.getTime() -
             TRIP_START.getTime();
 
-
         const day =
             Math.floor(
                 difference /
                 (1000 * 60 * 60 * 24)
             ) + 1;
-
 
         const date =
             new Intl.DateTimeFormat(
@@ -503,20 +453,15 @@ function updateTripDay() {
                 }
             ).format(today);
 
-
         element.textContent =
             `DÍA ${day} · ${date}`;
 
         return;
-
     }
-
 
     element.textContent =
         "VIAJE FINALIZADO";
-
 }
-
 
 // ==========================================
 // TIEMPO — OPEN-METEO
@@ -533,10 +478,10 @@ async function loadWeather() {
             "&current=temperature_2m,weather_code,wind_speed_10m" +
             "&timezone=America%2FNew_York";
 
-
         const response =
-            await fetch(url);
-
+            await fetch(url, {
+                cache: "no-store"
+            });
 
         if (!response.ok) {
             throw new Error(
@@ -544,14 +489,11 @@ async function loadWeather() {
             );
         }
 
-
         const data =
             await response.json();
 
-
         const current =
             data.current;
-
 
         document
             .getElementById(
@@ -562,7 +504,6 @@ async function loadWeather() {
                 current.temperature_2m
             )}°C`;
 
-
         document
             .getElementById(
                 "weather-wind"
@@ -571,7 +512,6 @@ async function loadWeather() {
             `Viento ${Math.round(
                 current.wind_speed_10m
             )} km/h`;
-
 
         document
             .getElementById(
@@ -582,7 +522,6 @@ async function loadWeather() {
                 current.weather_code
             );
 
-
         document
             .getElementById(
                 "weather-icon"
@@ -591,7 +530,6 @@ async function loadWeather() {
             weatherIcon(
                 current.weather_code
             );
-
 
         document
             .getElementById(
@@ -607,18 +545,14 @@ async function loadWeather() {
             error
         );
 
-
         document
             .getElementById(
                 "weather-description"
             )
             .textContent =
             "No disponible";
-
     }
-
 }
-
 
 function weatherDescription(code) {
 
@@ -669,9 +603,7 @@ function weatherDescription(code) {
     }
 
     return "Tiempo variable";
-
 }
-
 
 function weatherIcon(code) {
 
@@ -722,55 +654,170 @@ function weatherIcon(code) {
     }
 
     return "🌤️";
-
 }
 
-
 // ==========================================
-// DIVISAS — FRANKFURTER
+// DIVISAS — API GRATUITA
 // ==========================================
 
 async function loadCurrency() {
 
+    const rateElement =
+        document.getElementById(
+            "currency-value"
+        );
+
+    const labelElement =
+        document.getElementById(
+            "currency-rate"
+        );
+
+    if (!rateElement) {
+        return;
+    }
+
     try {
 
-        const response =
-            await fetch(
-                "https://api.frankfurter.app/latest?from=EUR&to=USD"
-            );
+        rateElement.textContent =
+            "Actualizando...";
 
-
-        if (!response.ok) {
-            throw new Error(
-                "Error de divisas"
-            );
+        if (labelElement) {
+            labelElement.textContent =
+                "1 EUR → USD";
         }
 
+        /*
+         * Primera opción:
+         * Frankfurter / BCE
+         */
 
-        const data =
-            await response.json();
+        let rate = null;
 
+        try {
 
-        const rate =
-            data.rates.USD;
+            const response =
+                await fetch(
+                    "https://api.frankfurter.app/latest?from=EUR&to=USD",
+                    {
+                        cache: "no-store"
+                    }
+                );
 
+            if (response.ok) {
 
-        document
-            .getElementById(
-                "currency-rate"
-            )
-            .textContent =
-            "1 EUR → USD";
+                const data =
+                    await response.json();
 
+                const value =
+                    Number(
+                        data?.rates?.USD
+                    );
 
-        document
-            .getElementById(
-                "currency-value"
-            )
-            .textContent =
-            `${
-                Number(rate).toFixed(4)
-            } $`;
+                if (
+                    Number.isFinite(value) &&
+                    value > 0
+                ) {
+
+                    rate = value;
+
+                }
+
+            }
+
+        } catch (error) {
+
+            console.warn(
+                "Frankfurter no disponible:",
+                error
+            );
+
+        }
+
+        /*
+         * Segunda opción:
+         * exchangerate-api.com
+         * endpoint público sin API key.
+         */
+
+        if (rate === null) {
+
+            try {
+
+                const response =
+                    await fetch(
+                        "https://open.er-api.com/v6/latest/EUR",
+                        {
+                            cache: "no-store"
+                        }
+                    );
+
+                if (response.ok) {
+
+                    const data =
+                        await response.json();
+
+                    const value =
+                        Number(
+                            data?.rates?.USD
+                        );
+
+                    if (
+                        Number.isFinite(value) &&
+                        value > 0
+                    ) {
+
+                        rate = value;
+
+                    }
+
+                }
+
+            } catch (error) {
+
+                console.warn(
+                    "ExchangeRate API no disponible:",
+                    error
+                );
+
+            }
+
+        }
+
+        /*
+         * Si alguna API devuelve el cambio,
+         * lo mostramos.
+         */
+
+        if (rate !== null) {
+
+            rateElement.textContent =
+                `${rate.toFixed(4)} $`;
+
+            if (labelElement) {
+
+                labelElement.textContent =
+                    "1 EUR → USD";
+
+            }
+
+            const updateElement =
+                document.getElementById(
+                    "currency-update"
+                );
+
+            if (updateElement) {
+
+                updateElement.textContent =
+                    "Actualizado ahora";
+
+            }
+
+            return;
+        }
+
+        throw new Error(
+            "Ninguna API de divisas respondió correctamente."
+        );
 
     } catch (error) {
 
@@ -779,18 +826,17 @@ async function loadCurrency() {
             error
         );
 
-
-        document
-            .getElementById(
-                "currency-value"
-            )
-            .textContent =
+        rateElement.textContent =
             "No disponible";
 
+        if (labelElement) {
+
+            labelElement.textContent =
+                "EUR → USD";
+
+        }
     }
-
 }
-
 
 // ==========================================
 // SUPABASE — CARGAR TODO
@@ -801,7 +847,6 @@ async function loadData() {
     setConnectionStatus(
         "● Sincronizando..."
     );
-
 
     try {
 
@@ -845,7 +890,6 @@ async function loadData() {
 
         ]);
 
-
         if (plansResponse.error) {
             throw plansResponse.error;
         }
@@ -862,28 +906,22 @@ async function loadData() {
             throw placesResponse.error;
         }
 
-
         plans =
             plansResponse.data || [];
-
 
         reservations =
             reservationsResponse.data || [];
 
-
         expenses =
             expensesResponse.data || [];
 
-
         places =
             placesResponse.data || [];
-
 
         setConnectionStatus(
             "● Conectada",
             "ok"
         );
-
 
         renderAll();
 
@@ -894,19 +932,14 @@ async function loadData() {
             error
         );
 
-
         setConnectionStatus(
             "● Error de conexión",
             "error"
         );
 
-
         renderAll();
-
     }
-
 }
-
 
 // ==========================================
 // RENDER GENERAL
@@ -925,9 +958,7 @@ function renderAll() {
     renderFlights();
 
     renderMap();
-
 }
-
 
 // ==========================================
 // PRÓXIMA ACTIVIDAD
@@ -939,7 +970,6 @@ function renderNextActivity() {
         document.getElementById(
             "next-activity"
         );
-
 
     const allItems = [
 
@@ -973,7 +1003,6 @@ function renderNextActivity() {
             )
     );
 
-
     if (!allItems.length) {
 
         element.innerHTML = `
@@ -993,16 +1022,13 @@ function renderNextActivity() {
         return;
     }
 
-
     const item =
         allItems[0];
-
 
     const icon =
         item.itemType === "plan"
             ? "📅"
             : "📋";
-
 
     element.innerHTML = `
 
@@ -1032,9 +1058,7 @@ function renderNextActivity() {
         </div>
 
     `;
-
 }
-
 
 // ==========================================
 // PLANES
@@ -1046,7 +1070,6 @@ function renderPlans() {
         document.getElementById(
             "plan-list"
         );
-
 
     if (!plans.length) {
 
@@ -1060,7 +1083,6 @@ function renderPlans() {
 
         return;
     }
-
 
     container.innerHTML =
         plans
@@ -1091,7 +1113,6 @@ function renderPlans() {
                         </span>
 
                     </div>
-
 
                     <div class="card-main">
 
@@ -1140,7 +1161,6 @@ function renderPlans() {
 
                     </div>
 
-
                     <div class="card-actions">
 
                         <button
@@ -1157,9 +1177,7 @@ function renderPlans() {
             `
             )
             .join("");
-
 }
-
 
 async function deletePlan(id) {
 
@@ -1171,13 +1189,11 @@ async function deletePlan(id) {
         return;
     }
 
-
     const { error } =
         await db
             .from("plans")
             .delete()
             .eq("id", id);
-
 
     if (error) {
 
@@ -1188,21 +1204,16 @@ async function deletePlan(id) {
         console.error(error);
 
         return;
-
     }
 
-
     await loadData();
-
 }
-
 
 // ==========================================
 // CREAR PLAN
 // ==========================================
 
 let selectedPlanLocation = null;
-
 
 document
     .getElementById(
@@ -1220,7 +1231,6 @@ document
                     .value
                     .trim();
 
-
             searchLocation(
                 query,
                 "plan-location-results",
@@ -1235,7 +1245,6 @@ document
         }
     );
 
-
 document
     .getElementById("plan-form")
     .addEventListener(
@@ -1243,7 +1252,6 @@ document
         async (event) => {
 
             event.preventDefault();
-
 
             const title =
                 document
@@ -1253,7 +1261,6 @@ document
                     .value
                     .trim();
 
-
             const description =
                 document
                     .getElementById(
@@ -1262,14 +1269,12 @@ document
                     .value
                     .trim();
 
-
             const date =
                 document
                     .getElementById(
                         "plan-date"
                     )
                     .value;
-
 
             const time =
                 document
@@ -1278,7 +1283,6 @@ document
                     )
                     .value;
 
-
             const locationName =
                 document
                     .getElementById(
@@ -1286,7 +1290,6 @@ document
                     )
                     .value
                     .trim();
-
 
             const data = {
 
@@ -1315,12 +1318,10 @@ document
 
             };
 
-
             const { error } =
                 await db
                     .from("plans")
                     .insert(data);
-
 
             if (error) {
 
@@ -1331,27 +1332,21 @@ document
                 console.error(error);
 
                 return;
-
             }
-
 
             closeModal(
                 "plan-modal"
             );
 
-
             selectedPlanLocation =
                 null;
 
-
             await loadData();
-
 
             showScreen("plan");
 
         }
     );
-
 
 // ==========================================
 // RESERVAS
@@ -1373,11 +1368,8 @@ function reservationIcon(type) {
 
     };
 
-
     return icons[type] || "📋";
-
 }
-
 
 function reservationTypeName(type) {
 
@@ -1395,11 +1387,8 @@ function reservationTypeName(type) {
 
     };
 
-
     return names[type] || "Reserva";
-
 }
-
 
 function renderReservations() {
 
@@ -1407,7 +1396,6 @@ function renderReservations() {
         document.getElementById(
             "reservation-list"
         );
-
 
     if (!reservations.length) {
 
@@ -1420,9 +1408,7 @@ function renderReservations() {
         `;
 
         return;
-
     }
-
 
     container.innerHTML =
         reservations
@@ -1446,13 +1432,11 @@ function renderReservations() {
                             }
                         </span>
 
-
                         <strong>
                             ${escapeHTML(
                                 reservation.title
                             )}
                         </strong>
-
 
                         <p>
                             ${
@@ -1472,7 +1456,6 @@ function renderReservations() {
                             }
                         </p>
 
-
                         ${
                             reservation.location_name
                                 ? `
@@ -1487,7 +1470,6 @@ function renderReservations() {
                                 : ""
                         }
 
-
                         ${
                             reservation.description
                                 ? `
@@ -1501,7 +1483,6 @@ function renderReservations() {
                                 `
                                 : ""
                         }
-
 
                         ${
                             reservation.booking_url
@@ -1525,7 +1506,6 @@ function renderReservations() {
 
                     </div>
 
-
                     <div class="card-actions">
 
                         <button
@@ -1542,9 +1522,7 @@ function renderReservations() {
             `
             )
             .join("");
-
 }
-
 
 async function deleteReservation(id) {
 
@@ -1556,13 +1534,11 @@ async function deleteReservation(id) {
         return;
     }
 
-
     const { error } =
         await db
             .from("reservations")
             .delete()
             .eq("id", id);
-
 
     if (error) {
 
@@ -1573,17 +1549,12 @@ async function deleteReservation(id) {
         console.error(error);
 
         return;
-
     }
 
-
     await loadData();
-
 }
 
-
 let selectedReservationLocation = null;
-
 
 document
     .getElementById(
@@ -1601,7 +1572,6 @@ document
                     .value
                     .trim();
 
-
             searchLocation(
                 query,
                 "reservation-location-results",
@@ -1616,7 +1586,6 @@ document
         }
     );
 
-
 document
     .getElementById(
         "reservation-form"
@@ -1626,7 +1595,6 @@ document
         async (event) => {
 
             event.preventDefault();
-
 
             const data = {
 
@@ -1696,12 +1664,10 @@ document
 
             };
 
-
             const { error } =
                 await db
                     .from("reservations")
                     .insert(data);
-
 
             if (error) {
 
@@ -1712,21 +1678,16 @@ document
                 console.error(error);
 
                 return;
-
             }
-
 
             closeModal(
                 "reservation-modal"
             );
 
-
             selectedReservationLocation =
                 null;
 
-
             await loadData();
-
 
             showScreen(
                 "reservations"
@@ -1734,7 +1695,6 @@ document
 
         }
     );
-
 
 // ==========================================
 // TRICOUNT
@@ -1752,7 +1712,6 @@ function calculateBalances() {
 
     };
 
-
     expenses.forEach(
         expense => {
 
@@ -1761,10 +1720,8 @@ function calculateBalances() {
                     expense.amount
                 );
 
-
             const payer =
                 expense.paid_by;
-
 
             const participants =
                 Array.isArray(
@@ -1773,16 +1730,13 @@ function calculateBalances() {
                     ? expense.participants
                     : [];
 
-
             if (!participants.length) {
                 return;
             }
 
-
             const share =
                 amount /
                 participants.length;
-
 
             if (
                 balances[payer] !== undefined
@@ -1791,7 +1745,6 @@ function calculateBalances() {
                 balances[payer] += amount;
 
             }
-
 
             participants.forEach(
                 person => {
@@ -1810,22 +1763,17 @@ function calculateBalances() {
         }
     );
 
-
     return balances;
-
 }
-
 
 function calculateDebts() {
 
     const balances =
         calculateBalances();
 
-
     const creditors = [];
 
     const debtors = [];
-
 
     Object.entries(
         balances
@@ -1843,7 +1791,6 @@ function calculateDebts() {
 
             }
 
-
             if (
                 balance < -0.01
             ) {
@@ -1858,13 +1805,10 @@ function calculateDebts() {
         }
     );
 
-
     const debts = [];
-
 
     let i = 0;
     let j = 0;
-
 
     while (
         i < debtors.length &&
@@ -1874,17 +1818,14 @@ function calculateDebts() {
         const debtor =
             debtors[i];
 
-
         const creditor =
             creditors[j];
-
 
         const amount =
             Math.min(
                 debtor.amount,
                 creditor.amount
             );
-
 
         debts.push({
 
@@ -1898,18 +1839,15 @@ function calculateDebts() {
 
         });
 
-
         debtor.amount -= amount;
 
         creditor.amount -= amount;
-
 
         if (
             debtor.amount < 0.01
         ) {
             i++;
         }
-
 
         if (
             creditor.amount < 0.01
@@ -1919,17 +1857,13 @@ function calculateDebts() {
 
     }
 
-
     return debts;
-
 }
-
 
 function renderExpenses() {
 
     const balances =
         calculateBalances();
-
 
     const total =
         expenses.reduce(
@@ -1941,12 +1875,10 @@ function renderExpenses() {
             0
         );
 
-
     const summary =
         document.getElementById(
             "expense-summary"
         );
-
 
     summary.innerHTML =
         TRAVELERS
@@ -1955,7 +1887,6 @@ function renderExpenses() {
 
                     const balance =
                         balances[person];
-
 
                     return `
 
@@ -2000,16 +1931,13 @@ function renderExpenses() {
             )
             .join("");
 
-
     const totalCard =
         document.createElement(
             "div"
         );
 
-
     totalCard.className =
         "balance-card";
-
 
     totalCard.innerHTML = `
 
@@ -2023,20 +1951,16 @@ function renderExpenses() {
 
     `;
 
-
     summary.appendChild(
         totalCard
     );
 
-
     renderDebts();
-
 
     const container =
         document.getElementById(
             "expense-list"
         );
-
 
     if (!expenses.length) {
 
@@ -2047,9 +1971,7 @@ function renderExpenses() {
         `;
 
         return;
-
     }
-
 
     container.innerHTML =
         expenses
@@ -2062,7 +1984,6 @@ function renderExpenses() {
                         )
                             ? expense.participants
                             : [];
-
 
                     return `
 
@@ -2122,7 +2043,6 @@ function renderExpenses() {
 
                             </div>
 
-
                             <div class="card-actions">
 
                                 <strong>
@@ -2150,9 +2070,7 @@ function renderExpenses() {
                 }
             )
             .join("");
-
 }
-
 
 function renderDebts() {
 
@@ -2161,10 +2079,8 @@ function renderDebts() {
             "debts"
         );
 
-
     const debts =
         calculateDebts();
-
 
     if (!debts.length) {
 
@@ -2183,9 +2099,7 @@ function renderDebts() {
         `;
 
         return;
-
     }
-
 
     container.innerHTML =
         debts
@@ -2230,9 +2144,7 @@ function renderDebts() {
                 `
             )
             .join("");
-
 }
-
 
 async function deleteExpense(id) {
 
@@ -2244,13 +2156,11 @@ async function deleteExpense(id) {
         return;
     }
 
-
     const { error } =
         await db
             .from("expenses")
             .delete()
             .eq("id", id);
-
 
     if (error) {
 
@@ -2261,14 +2171,10 @@ async function deleteExpense(id) {
         console.error(error);
 
         return;
-
     }
 
-
     await loadData();
-
 }
-
 
 document
     .getElementById(
@@ -2279,7 +2185,6 @@ document
         async (event) => {
 
             event.preventDefault();
-
 
             const participants =
                 Array.from(
@@ -2292,7 +2197,6 @@ document
                         input.value
                 );
 
-
             if (
                 participants.length === 0
             ) {
@@ -2302,9 +2206,7 @@ document
                 );
 
                 return;
-
             }
-
 
             const data = {
 
@@ -2361,12 +2263,10 @@ document
 
             };
 
-
             const { error } =
                 await db
                     .from("expenses")
                     .insert(data);
-
 
             if (error) {
 
@@ -2377,17 +2277,13 @@ document
                 console.error(error);
 
                 return;
-
             }
-
 
             closeModal(
                 "expense-modal"
             );
 
-
             await loadData();
-
 
             showScreen(
                 "expenses"
@@ -2395,7 +2291,6 @@ document
 
         }
     );
-
 
 // ==========================================
 // MAPA
@@ -2407,17 +2302,14 @@ function initializeMap() {
         return;
     }
 
-
     const mapElement =
         document.getElementById(
             "map"
         );
 
-
     if (!mapElement) {
         return;
     }
-
 
     map =
         L.map(
@@ -2430,7 +2322,6 @@ function initializeMap() {
             12
         );
 
-
     L.tileLayer(
         "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
         {
@@ -2439,9 +2330,7 @@ function initializeMap() {
                 '&copy; OpenStreetMap contributors'
         }
     ).addTo(map);
-
 }
-
 
 function clearMapMarkers() {
 
@@ -2455,11 +2344,8 @@ function clearMapMarkers() {
         }
     );
 
-
     mapMarkers = [];
-
 }
-
 
 function addMarker(
     latitude,
@@ -2477,7 +2363,6 @@ function addMarker(
         return;
     }
 
-
     const marker =
         L.marker(
             [
@@ -2486,7 +2371,6 @@ function addMarker(
             ]
         )
         .addTo(map);
-
 
     marker.bindPopup(`
 
@@ -2506,13 +2390,10 @@ function addMarker(
 
     `);
 
-
     mapMarkers.push(
         marker
     );
-
 }
-
 
 function renderMap() {
 
@@ -2520,9 +2401,7 @@ function renderMap() {
         return;
     }
 
-
     clearMapMarkers();
-
 
     addMarker(
         HOTEL.latitude,
@@ -2530,7 +2409,6 @@ function renderMap() {
         "🏨 Hotel",
         HOTEL.name
     );
-
 
     plans.forEach(
         plan => {
@@ -2544,7 +2422,6 @@ function renderMap() {
 
         }
     );
-
 
     reservations.forEach(
         reservation => {
@@ -2565,7 +2442,6 @@ function renderMap() {
         }
     );
 
-
     places.forEach(
         place => {
 
@@ -2579,11 +2455,8 @@ function renderMap() {
         }
     );
 
-
     renderMapList();
-
 }
-
 
 function renderMapList() {
 
@@ -2592,9 +2465,7 @@ function renderMapList() {
             "map-list"
         );
 
-
     const items = [];
-
 
     items.push({
 
@@ -2605,7 +2476,6 @@ function renderMapList() {
             HOTEL.address
 
     });
-
 
     plans
         .filter(
@@ -2629,7 +2499,6 @@ function renderMapList() {
 
             }
         );
-
 
     reservations
         .filter(
@@ -2657,7 +2526,6 @@ function renderMapList() {
             }
         );
 
-
     if (!items.length) {
 
         container.innerHTML =
@@ -2666,9 +2534,7 @@ function renderMapList() {
             </div>`;
 
         return;
-
     }
-
 
     container.innerHTML =
         items
@@ -2697,9 +2563,7 @@ function renderMapList() {
                 `
             )
             .join("");
-
 }
-
 
 document
     .getElementById(
@@ -2718,9 +2582,7 @@ document
                 );
 
                 return;
-
             }
-
 
             navigator.geolocation.getCurrentPosition(
 
@@ -2728,20 +2590,16 @@ document
 
                     initializeMap();
 
-
                     const lat =
                         position.coords.latitude;
 
-
                     const lon =
                         position.coords.longitude;
-
 
                     map.setView(
                         [lat, lon],
                         15
                     );
-
 
                     L.circleMarker(
                         [lat, lon],
@@ -2770,7 +2628,6 @@ document
         }
     );
 
-
 // ==========================================
 // BÚSQUEDA DE LUGARES — NOMINATIM
 // ==========================================
@@ -2786,7 +2643,6 @@ async function searchLocation(
             resultContainerId
         );
 
-
     if (!query) {
 
         container.innerHTML =
@@ -2795,15 +2651,12 @@ async function searchLocation(
             </div>`;
 
         return;
-
     }
-
 
     container.innerHTML =
         `<div class="loading">
             🔎 Buscando...
         </div>`;
-
 
     try {
 
@@ -2816,10 +2669,10 @@ async function searchLocation(
                 query + ", New York"
             );
 
-
         const response =
-            await fetch(url);
-
+            await fetch(url, {
+                cache: "no-store"
+            });
 
         if (!response.ok) {
             throw new Error(
@@ -2827,10 +2680,8 @@ async function searchLocation(
             );
         }
 
-
         const results =
             await response.json();
-
 
         if (!results.length) {
 
@@ -2840,9 +2691,7 @@ async function searchLocation(
                 </div>`;
 
             return;
-
         }
-
 
         container.innerHTML =
             results
@@ -2873,7 +2722,6 @@ async function searchLocation(
                 )
                 .join("");
 
-
         container
             .querySelectorAll(
                 "[data-location-index]"
@@ -2893,7 +2741,6 @@ async function searchLocation(
                                     )
                                 ];
 
-
                             const location = {
 
                                 lat:
@@ -2911,11 +2758,9 @@ async function searchLocation(
 
                             };
 
-
                             onSelect(
                                 location
                             );
-
 
                             if (
                                 resultContainerId ===
@@ -2931,7 +2776,6 @@ async function searchLocation(
 
                             }
 
-
                             if (
                                 resultContainerId ===
                                 "reservation-location-results"
@@ -2945,7 +2789,6 @@ async function searchLocation(
                                     result.display_name;
 
                             }
-
 
                             container.innerHTML =
                                 `
@@ -2966,16 +2809,13 @@ async function searchLocation(
             error
         );
 
-
         container.innerHTML =
             `<div class="empty">
                 Error al buscar el lugar.
             </div>`;
 
     }
-
 }
-
 
 // ==========================================
 // VUELOS
@@ -2987,7 +2827,6 @@ function renderFlights() {
         document.getElementById(
             "flight-list"
         );
-
 
     container.innerHTML =
         flights
@@ -3004,13 +2843,11 @@ function renderFlights() {
                                 }
                             </span>
 
-
                             <strong>
                                 ${
                                     flight.flightNumber
                                 }
                             </strong>
-
 
                             <div class="flight-route">
 
@@ -3032,7 +2869,6 @@ function renderFlights() {
 
                             </div>
 
-
                             <p>
                                 📅 ${
                                     formatDate(
@@ -3040,7 +2876,6 @@ function renderFlights() {
                                     )
                                 }
                             </p>
-
 
                             <p>
                                 🕐 ${
@@ -3051,7 +2886,6 @@ function renderFlights() {
                                     flight.arrival
                                 }
                             </p>
-
 
                             <p>
                                 ⏱️ ${
@@ -3066,9 +2900,7 @@ function renderFlights() {
                 `
             )
             .join("");
-
 }
-
 
 // ==========================================
 // REALTIME
@@ -3147,9 +2979,7 @@ function subscribeRealtime() {
 
             }
         );
-
 }
-
 
 // ==========================================
 // ELIMINAR SERVICE WORKERS ANTIGUOS
@@ -3163,14 +2993,12 @@ async function removeOldServiceWorkers() {
         return;
     }
 
-
     try {
 
         const registrations =
             await navigator
                 .serviceWorker
                 .getRegistrations();
-
 
         for (
             const registration
@@ -3181,14 +3009,12 @@ async function removeOldServiceWorkers() {
 
         }
 
-
         if (
             window.caches
         ) {
 
             const cacheNames =
                 await caches.keys();
-
 
             await Promise.all(
                 cacheNames.map(
@@ -3200,7 +3026,6 @@ async function removeOldServiceWorkers() {
             );
 
         }
-
 
         console.log(
             "🧹 NY TRIP: caché eliminada."
@@ -3214,9 +3039,7 @@ async function removeOldServiceWorkers() {
         );
 
     }
-
 }
-
 
 // ==========================================
 // INICIAR
@@ -3227,7 +3050,6 @@ async function startNYTrip() {
     console.log(
         "🗽 NY TRIP iniciando..."
     );
-
 
     updateTripDay();
 
@@ -3243,13 +3065,10 @@ async function startNYTrip() {
 
     subscribeRealtime();
 
-
     console.log(
         "🟢 NY TRIP funcionando."
     );
-
 }
-
 
 if (
     document.readyState ===
@@ -3266,3 +3085,4 @@ if (
     startNYTrip();
 
 }
+```
