@@ -68,6 +68,7 @@ const tripData = {
             duration: "3h 10m"
         }
     ]
+
 };
 
 
@@ -76,6 +77,7 @@ const tripData = {
 // ==========================================
 
 try {
+
     localStorage.setItem(
         "nyTripData",
         JSON.stringify(tripData)
@@ -89,6 +91,7 @@ try {
         "🔴 NY TRIP: no se pudieron guardar los datos.",
         error
     );
+
 }
 
 
@@ -98,7 +101,9 @@ try {
 
 function updateTripDay() {
 
-    const element = document.getElementById("trip-day");
+    const element =
+        document.getElementById("trip-day");
+
 
     if (!element) {
 
@@ -107,18 +112,25 @@ function updateTripDay() {
         );
 
         return;
+
     }
 
 
-    const start = new Date(
-        "2026-12-26T00:00:00"
-    );
+    const start =
+        new Date(
+            tripData.dates.start + "T00:00:00"
+        );
 
-    const end = new Date(
-        "2027-01-04T23:59:59"
-    );
 
-    const today = new Date();
+    const end =
+        new Date(
+            tripData.dates.end + "T23:59:59"
+        );
+
+
+    const today =
+        new Date();
+
 
     today.setHours(
         0,
@@ -136,20 +148,29 @@ function updateTripDay() {
             start.getTime() -
             today.getTime();
 
+
         const days =
             Math.ceil(
                 difference /
                 (1000 * 60 * 60 * 24)
             );
 
+
         element.textContent =
-            "FALTAN " + days + " DÍAS";
+            "FALTAN " +
+            days +
+            " DÍAS";
+
 
         console.log(
-            "🟢 NY TRIP: faltan " + days + " días."
+            "🟢 NY TRIP: faltan " +
+            days +
+            " días."
         );
 
+
         return;
+
     }
 
 
@@ -161,11 +182,13 @@ function updateTripDay() {
             today.getTime() -
             start.getTime();
 
+
         const day =
             Math.floor(
                 difference /
                 (1000 * 60 * 60 * 24)
             ) + 1;
+
 
         const formattedDate =
             new Intl.DateTimeFormat(
@@ -176,13 +199,16 @@ function updateTripDay() {
                 }
             ).format(today);
 
+
         element.textContent =
             "DÍA " +
             day +
             " · " +
             formattedDate;
 
+
         return;
+
     }
 
 
@@ -190,6 +216,7 @@ function updateTripDay() {
 
     element.textContent =
         "VIAJE FINALIZADO";
+
 }
 
 
@@ -203,7 +230,9 @@ function startNYTrip() {
         "🗽 NY TRIP funcionando correctamente."
     );
 
+
     updateTripDay();
+
 }
 
 
@@ -223,4 +252,6 @@ if (
 } else {
 
     startNYTrip();
+
 }
+
