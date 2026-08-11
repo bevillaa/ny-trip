@@ -1,71 +1,51 @@
 // ==========================================
 // 🗽 NY TRIP
-// Service Worker
+// SERVICE WORKER
 // SIN CACHÉ
 // ==========================================
 
+self.addEventListener(
+    "install",
+    () => {
 
-// ==========================================
-// INSTALAR
-// ==========================================
+        self.skipWaiting();
 
-self.addEventListener("install", (event) => {
-
-    // Activar inmediatamente la nueva versión
-    self.skipWaiting();
-
-});
+    }
+);
 
 
-// ==========================================
-// ACTIVAR
-// ==========================================
+self.addEventListener(
+    "activate",
+    async () => {
 
-self.addEventListener("activate", (event) => {
-
-    event.waitUntil(
-
-        caches.keys()
-            .then((cacheNames) => {
-
-                // Borrar TODAS las cachés antiguas
-                return Promise.all(
-
-                    cacheNames.map((cacheName) => {
-
-                        return caches.delete(cacheName);
-
-                    })
-
-                );
-
-            })
-            .then(() => {
-
-                // Tomar el control inmediatamente
-                return self.clients.claim();
-
-            })
-
-    );
-
-});
+        await self.clients.claim();
 
 
-// ==========================================
-// PETICIONES
-// ==========================================
+        const cacheNames =
+            await caches.keys();
 
-self.addEventListener("fetch", (event) => {
 
-    // NO usamos caché.
-    // Todas las peticiones van directamente
-    // a GitHub Pages.
+        await Promise.all(
+            cacheNames.map(
+                cacheName =>
+                    caches.delete(
+                        cacheName
+                    )
+            )
+        );
 
-    event.respondWith(
+    }
+);
 
-        fetch(event.request)
 
-    );
+// No interceptamos las peticiones.
+// Todo se obtiene directamente de Internet.
 
-});
+self.addEventListener(
+    "fetch",
+    () => {
+
+        // Sin caché.
+
+    }
+);
