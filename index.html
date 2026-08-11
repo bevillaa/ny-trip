@@ -1,677 +1,1234 @@
 <!DOCTYPE html>
-
 <html lang="es">
 
 <head>
 
-<meta charset="UTF-8">
+    <meta charset="UTF-8">
 
-<meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0, viewport-fit=cover"
->
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    >
 
-<meta
-    name="theme-color"
-    content="#111827"
->
+    <meta
+        name="theme-color"
+        content="#111827"
+    >
 
-<meta
-    name="description"
-    content="NY TRIP — El tridente en Nueva York 😈😇🤪"
->
+    <meta
+        name="description"
+        content="NY TRIP — El tridente en Nueva York 😈😇🤪"
+    >
 
-<title>🗽 NY TRIP</title>
+    <title>🗽 NY TRIP</title>
 
-<link rel="stylesheet" href="./style.css">
+    <link
+        rel="stylesheet"
+        href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    >
 
-<link
-    rel="manifest"
-    href="./manifest.json"
->
+    <link
+        rel="stylesheet"
+        href="./style.css"
+    >
 
 </head>
 
+
 <body>
 
-<main>
+<div id="app">
 
-    <!-- CABECERA -->
+
+    <!-- ==========================================
+         CABECERA
+    =========================================== -->
 
     <header class="app-header">
 
-        <h1>🗽 NY TRIP</h1>
+        <div>
 
-        <p>
-            El tridente en Nueva York 😈😇🤪
-        </p>
+            <h1>🗽 NY TRIP</h1>
+
+            <p>
+                El tridente en Nueva York 😈😇🤪
+            </p>
+
+        </div>
+
+        <div
+            id="connection-status"
+            class="connection-status"
+        >
+            ● Conectando
+        </div>
 
     </header>
 
 
-    <!-- VIAJE -->
+    <!-- ==========================================
+         CONTENIDO
+    =========================================== -->
 
-    <section class="location-card">
-
-        <div>
-
-            <span class="label">
-                📅 VIAJE
-            </span>
-
-            <strong id="trip-day">
-                CARGANDO...
-            </strong>
-
-        </div>
+    <main id="screen-container">
 
 
-        <div class="weather">
+        <!-- ======================================
+             INICIO
+        ======================================= -->
 
-            <span>📍</span>
+        <section
+            id="screen-home"
+            class="screen active"
+        >
 
-            <strong>
-                Nueva York
-            </strong>
+            <div class="hero-card">
 
-        </div>
+                <div>
 
-    </section>
+                    <span class="small-label">
+                        📅 VIAJE
+                    </span>
 
+                    <strong id="trip-day">
+                        Cargando...
+                    </strong>
 
-    <!-- TIEMPO -->
+                    <p>
+                        26 diciembre 2026 → 4 enero 2027
+                    </p>
 
-    <section class="now-card">
+                </div>
 
-        <p class="section-label">
-            🌦️ TIEMPO EN NUEVA YORK
-        </p>
-
-        <h2 id="weather-temperature">
-            Cargando...
-        </h2>
-
-        <p id="weather-description">
-            Consultando el tiempo...
-        </p>
-
-    </section>
-
-
-    <!-- PLAN -->
-
-    <section class="day-plan">
-
-        <div class="section-title">
-
-            <h2>
-                📅 PLAN DEL VIAJE
-            </h2>
-
-        </div>
-
-
-        <div class="activity">
-
-            <span class="activity-time">
-                26 DIC
-            </span>
-
-            <div>
-
-                <strong>
-                    ✈️ Viaje a Nueva York
-                </strong>
-
-                <p>
-                    Málaga → Dublín → JFK
-                </p>
+                <div class="hero-location">
+                    📍
+                    <strong>
+                        Nueva York
+                    </strong>
+                </div>
 
             </div>
 
-        </div>
 
+            <div class="weather-card">
 
-        <div class="activity">
+                <div class="weather-main">
 
-            <span class="activity-time">
-                26 DIC
-            </span>
+                    <span id="weather-icon">
+                        🌤️
+                    </span>
 
-            <div>
+                    <div>
 
-                <strong>
-                    🏨 Llegada al hotel
-                </strong>
+                        <strong id="weather-temperature">
+                            --°C
+                        </strong>
 
-                <p>
-                    Courtyard by Marriott New York Manhattan Upper East Side
-                </p>
+                        <span id="weather-description">
+                            Cargando tiempo...
+                        </span>
 
-            </div>
+                    </div>
 
-        </div>
+                </div>
 
+                <div class="weather-extra">
 
-        <div class="activity">
+                    <span id="weather-wind">
+                        Viento --
+                    </span>
 
-            <span class="activity-time">
-                4 ENE
-            </span>
+                    <span id="weather-update">
+                        Actualizando
+                    </span>
 
-            <div>
-
-                <strong>
-                    ✈️ Regreso a Málaga
-                </strong>
-
-                <p>
-                    JFK → Dublín → Málaga
-                </p>
+                </div>
 
             </div>
 
-        </div>
 
-    </section>
+            <div class="currency-card">
+
+                <div>
+
+                    <span class="small-label">
+                        💱 CAMBIO
+                    </span>
+
+                    <strong id="currency-rate">
+                        EUR → USD
+                    </strong>
+
+                </div>
+
+                <span id="currency-value">
+                    Cargando...
+                </span>
+
+            </div>
 
 
-    <!-- ACCIONES -->
+            <div class="section-heading">
 
-    <section class="quick-actions">
+                <h2>
+                    ⭐ ¿QUÉ HACEMOS AHORA?
+                </h2>
 
-        <button
-            type="button"
-            id="btn-weather"
+            </div>
+
+
+            <div
+                id="next-activity"
+                class="next-card"
+            >
+
+                <span>
+                    📅
+                </span>
+
+                <div>
+
+                    <strong>
+                        Aún no hay actividades
+                    </strong>
+
+                    <p>
+                        Añade vuestro primer plan.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <div class="quick-grid">
+
+                <button
+                    class="quick-button"
+                    data-screen="plan"
+                >
+                    <span>📅</span>
+                    <strong>Plan</strong>
+                </button>
+
+
+                <button
+                    class="quick-button"
+                    data-screen="map"
+                >
+                    <span>🗺️</span>
+                    <strong>Mapa</strong>
+                </button>
+
+
+                <button
+                    class="quick-button"
+                    data-screen="expenses"
+                >
+                    <span>💰</span>
+                    <strong>Tricount</strong>
+                </button>
+
+
+                <button
+                    class="quick-button"
+                    data-screen="reservations"
+                >
+                    <span>📋</span>
+                    <strong>Reservas</strong>
+                </button>
+
+            </div>
+
+
+            <div class="section-heading">
+
+                <h2>
+                    El Equipo
+                </h2>
+
+            </div>
+
+
+            <div class="travelers-grid">
+
+                <div class="traveler-card">
+                    <span>😈</span>
+                    <strong>Laura</strong>
+                </div>
+
+                <div class="traveler-card">
+                    <span>😇</span>
+                    <strong>Sara</strong>
+                </div>
+
+                <div class="traveler-card">
+                    <span>🤪</span>
+                    <strong>Belén</strong>
+                </div>
+
+            </div>
+
+
+            <div class="section-heading">
+
+                <h2>
+                    🏨 HOTEL
+                </h2>
+
+            </div>
+
+
+            <div class="info-card">
+
+                <span class="info-icon">
+                    🏨
+                </span>
+
+                <div>
+
+                    <strong>
+                        Courtyard by Marriott New York Manhattan Upper East Side
+                    </strong>
+
+                    <p>
+                        Nueva York, Estados Unidos
+                    </p>
+
+                    <a
+                        href="https://www.booking.com/hotel/us/manhattan-upper-east-side-courtyard-by-marriott.es.html"
+                        target="_blank"
+                        rel="noopener"
+                    >
+                        Ver reserva
+                    </a>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- ======================================
+             PLAN
+        ======================================= -->
+
+        <section
+            id="screen-plan"
+            class="screen"
         >
-            🌦️
-            <span>
-                Tiempo
-            </span>
-        </button>
+
+            <div class="screen-title">
+
+                <div>
+
+                    <span>
+                        📅
+                    </span>
+
+                    <div>
+
+                        <h2>
+                            Plan del viaje
+                        </h2>
+
+                        <p>
+                            Todo vuestro viaje organizado.
+                        </p>
+
+                    </div>
+
+                </div>
+
+                <button
+                    class="primary-button"
+                    id="open-plan-form"
+                >
+                    + Añadir
+                </button>
+
+            </div>
 
 
-        <button
-            type="button"
-            id="btn-nearby"
+            <div
+                id="plan-list"
+                class="list"
+            >
+                Cargando...
+            </div>
+
+        </section>
+
+
+        <!-- ======================================
+             MAPA
+        ======================================= -->
+
+        <section
+            id="screen-map"
+            class="screen map-screen"
         >
-            📍
-            <span>
-                Cerca de mí
-            </span>
-        </button>
+
+            <div class="screen-title map-header">
+
+                <div>
+
+                    <span>
+                        🗺️
+                    </span>
+
+                    <div>
+
+                        <h2>
+                            Mapa
+                        </h2>
+
+                        <p>
+                            Planes y reservas.
+                        </p>
+
+                    </div>
+
+                </div>
+
+                <button
+                    class="primary-button"
+                    id="center-map"
+                >
+                    📍 Mi posición
+                </button>
+
+            </div>
 
 
-        <button
-            type="button"
-            id="btn-food"
+            <div id="map"></div>
+
+
+            <div
+                id="map-list"
+                class="map-list"
+            ></div>
+
+        </section>
+
+
+        <!-- ======================================
+             GASTOS
+        ======================================= -->
+
+        <section
+            id="screen-expenses"
+            class="screen"
         >
-            🍽️
-            <span>
-                Comer cerca
-            </span>
-        </button>
+
+            <div class="screen-title">
+
+                <div>
+
+                    <span>
+                        💰
+                    </span>
+
+                    <div>
+
+                        <h2>
+                            Tricount
+                        </h2>
+
+                        <p>
+                            Gastos compartidos.
+                        </p>
+
+                    </div>
+
+                </div>
+
+                <button
+                    class="primary-button"
+                    id="open-expense-form"
+                >
+                    + Gasto
+                </button>
+
+            </div>
 
 
-        <button
-            type="button"
-            id="btn-map"
+            <div
+                id="expense-summary"
+                class="expense-summary"
+            ></div>
+
+
+            <div class="section-heading compact">
+
+                <h2>
+                    💸 ¿Quién debe a quién?
+                </h2>
+
+            </div>
+
+
+            <div
+                id="debts"
+                class="debts"
+            ></div>
+
+
+            <div class="section-heading compact">
+
+                <h2>
+                    🧾 Gastos
+                </h2>
+
+            </div>
+
+
+            <div
+                id="expense-list"
+                class="list"
+            >
+                Cargando...
+            </div>
+
+        </section>
+
+
+        <!-- ======================================
+             RESERVAS
+        ======================================= -->
+
+        <section
+            id="screen-reservations"
+            class="screen"
         >
-            🗺️
-            <span>
-                Mapa
-            </span>
-        </button>
+
+            <div class="screen-title">
+
+                <div>
+
+                    <span>
+                        📋
+                    </span>
+
+                    <div>
+
+                        <h2>
+                            Reservas
+                        </h2>
+
+                        <p>
+                            Todo reservado en un solo sitio.
+                        </p>
+
+                    </div>
+
+                </div>
+
+                <button
+                    class="primary-button"
+                    id="open-reservation-form"
+                >
+                    + Añadir
+                </button>
+
+            </div>
 
 
-        <button
-            type="button"
-            id="btn-expenses"
+            <div
+                id="reservation-list"
+                class="list"
+            >
+                Cargando...
+            </div>
+
+        </section>
+
+
+        <!-- ======================================
+             VUELOS
+        ======================================= -->
+
+        <section
+            id="screen-flights"
+            class="screen"
         >
-            💰
-            <span>
-                Gastos
-            </span>
-        </button>
+
+            <div class="screen-title">
+
+                <div>
+
+                    <span>
+                        ✈️
+                    </span>
+
+                    <div>
+
+                        <h2>
+                            Vuelos
+                        </h2>
+
+                        <p>
+                            Todos los vuelos del viaje.
+                        </p>
+
+                    </div>
+
+                </div>
+
+            </div>
 
 
-        <button
-            type="button"
-            id="btn-reservations"
+            <div
+                id="flight-list"
+                class="list"
+            ></div>
+
+        </section>
+
+
+        <!-- ======================================
+             MÁS
+        ======================================= -->
+
+        <section
+            id="screen-more"
+            class="screen"
         >
-            📋
-            <span>
-                Reservas
-            </span>
-        </button>
 
-    </section>
+            <div class="screen-title">
+
+                <div>
+
+                    <span>
+                        ☰
+                    </span>
+
+                    <div>
+
+                        <h2>
+                            Más
+                        </h2>
+
+                        <p>
+                            Información del viaje.
+                        </p>
+
+                    </div>
+
+                </div>
+
+            </div>
 
 
-    <!-- GASTOS -->
+            <div class="more-grid">
 
-    <section
-        class="day-plan"
-        id="expenses-section"
+                <button
+                    class="more-card"
+                    data-screen="flights"
+                >
+                    ✈️
+                    <strong>Vuelos</strong>
+                    <span>Horarios y trayectos</span>
+                </button>
+
+
+                <button
+                    class="more-card"
+                    data-screen="reservations"
+                >
+                    📋
+                    <strong>Reservas</strong>
+                    <span>Hotel, restaurantes y entradas</span>
+                </button>
+
+
+                <button
+                    class="more-card"
+                    data-screen="expenses"
+                >
+                    💰
+                    <strong>Tricount</strong>
+                    <span>Gastos y deudas</span>
+                </button>
+
+
+                <button
+                    class="more-card"
+                    data-screen="plan"
+                >
+                    📅
+                    <strong>Plan</strong>
+                    <span>Actividades</span>
+                </button>
+
+            </div>
+
+        </section>
+
+    </main>
+
+
+    <!-- ==========================================
+         MODAL PLAN
+    =========================================== -->
+
+    <div
+        id="plan-modal"
+        class="modal hidden"
     >
 
-        <div class="section-title">
+        <div class="modal-content">
 
-            <h2>
-                💰 GASTOS
-            </h2>
+            <div class="modal-header">
 
-        </div>
+                <h2>
+                    📅 Añadir plan
+                </h2>
 
-
-        <div class="expense-summary">
-
-            <p>
-                Total gastado
-            </p>
-
-            <strong id="total-expenses">
-                0,00 €
-            </strong>
-
-        </div>
-
-
-        <div
-            id="balances-container"
-            class="balances-container"
-        >
-
-            <p>
-                Todavía no hay gastos.
-            </p>
-
-        </div>
-
-
-        <button
-            type="button"
-            class="primary-button"
-            id="show-expense-form"
-        >
-            ➕ Añadir gasto
-        </button>
-
-
-        <form
-            id="expense-form"
-            class="expense-form hidden"
-        >
-
-            <label>
-                Concepto
-
-                <input
-                    type="text"
-                    id="expense-description"
-                    placeholder="Ej. Cena"
-                    required
+                <button
+                    class="close-modal"
+                    data-close="plan-modal"
                 >
+                    ×
+                </button>
 
-            </label>
+            </div>
 
 
-            <label>
-                Importe
+            <form id="plan-form">
 
-                <input
-                    type="number"
-                    id="expense-amount"
-                    placeholder="0.00"
-                    min="0.01"
-                    step="0.01"
-                    required
+                <label>
+                    Nombre
+
+                    <input
+                        id="plan-title"
+                        required
+                        placeholder="Ej. Central Park"
+                    >
+                </label>
+
+
+                <label>
+                    Descripción
+
+                    <textarea
+                        id="plan-description"
+                        placeholder="Qué vais a hacer..."
+                    ></textarea>
+                </label>
+
+
+                <div class="form-row">
+
+                    <label>
+                        Fecha
+
+                        <input
+                            id="plan-date"
+                            type="date"
+                            required
+                        >
+                    </label>
+
+                    <label>
+                        Hora
+
+                        <input
+                            id="plan-time"
+                            type="time"
+                        >
+                    </label>
+
+                </div>
+
+
+                <label>
+                    Lugar
+
+                    <input
+                        id="plan-location"
+                        placeholder="Ej. Central Park, New York"
+                    >
+                </label>
+
+
+                <button
+                    type="button"
+                    class="secondary-button"
+                    id="search-plan-location"
                 >
-
-            </label>
-
-
-            <label>
-                Moneda
-
-                <select id="expense-currency">
-
-                    <option value="EUR">
-                        €
-                    </option>
-
-                    <option value="USD">
-                        $
-                    </option>
-
-                </select>
-
-            </label>
+                    📍 Buscar lugar
+                </button>
 
 
-            <label>
-                ¿Quién pagó?
+                <div
+                    id="plan-location-results"
+                    class="search-results"
+                ></div>
 
-                <select id="expense-payer">
 
-                    <option value="Laura">
+                <button
+                    class="primary-button full"
+                    type="submit"
+                >
+                    Guardar plan
+                </button>
+
+            </form>
+
+        </div>
+
+    </div>
+
+
+    <!-- ==========================================
+         MODAL RESERVA
+    =========================================== -->
+
+    <div
+        id="reservation-modal"
+        class="modal hidden"
+    >
+
+        <div class="modal-content">
+
+            <div class="modal-header">
+
+                <h2>
+                    📋 Añadir reserva
+                </h2>
+
+                <button
+                    class="close-modal"
+                    data-close="reservation-modal"
+                >
+                    ×
+                </button>
+
+            </div>
+
+
+            <form id="reservation-form">
+
+                <label>
+                    Tipo
+
+                    <select id="reservation-type">
+
+                        <option value="restaurant">
+                            🍽️ Restaurante
+                        </option>
+
+                        <option value="activity">
+                            🎟️ Actividad
+                        </option>
+
+                        <option value="hotel">
+                            🏨 Hotel
+                        </option>
+
+                        <option value="flight">
+                            ✈️ Vuelo
+                        </option>
+
+                        <option value="other">
+                            📋 Otro
+                        </option>
+
+                    </select>
+
+                </label>
+
+
+                <label>
+                    Nombre
+
+                    <input
+                        id="reservation-title"
+                        required
+                        placeholder="Ej. Restaurante"
+                    >
+
+                </label>
+
+
+                <label>
+                    Descripción
+
+                    <textarea
+                        id="reservation-description"
+                        placeholder="Detalles de la reserva..."
+                    ></textarea>
+
+                </label>
+
+
+                <div class="form-row">
+
+                    <label>
+                        Fecha
+
+                        <input
+                            id="reservation-date"
+                            type="date"
+                        >
+                    </label>
+
+                    <label>
+                        Hora
+
+                        <input
+                            id="reservation-time"
+                            type="time"
+                        >
+                    </label>
+
+                </div>
+
+
+                <label>
+                    Lugar
+
+                    <input
+                        id="reservation-location"
+                        placeholder="Ej. Times Square"
+                    >
+                </label>
+
+
+                <button
+                    type="button"
+                    class="secondary-button"
+                    id="search-reservation-location"
+                >
+                    📍 Buscar lugar
+                </button>
+
+
+                <div
+                    id="reservation-location-results"
+                    class="search-results"
+                ></div>
+
+
+                <label>
+                    Enlace de reserva
+
+                    <input
+                        id="reservation-url"
+                        type="url"
+                        placeholder="https://..."
+                    >
+
+                </label>
+
+
+                <button
+                    class="primary-button full"
+                    type="submit"
+                >
+                    Guardar reserva
+                </button>
+
+            </form>
+
+        </div>
+
+    </div>
+
+
+    <!-- ==========================================
+         MODAL GASTO
+    =========================================== -->
+
+    <div
+        id="expense-modal"
+        class="modal hidden"
+    >
+
+        <div class="modal-content">
+
+            <div class="modal-header">
+
+                <h2>
+                    💰 Añadir gasto
+                </h2>
+
+                <button
+                    class="close-modal"
+                    data-close="expense-modal"
+                >
+                    ×
+                </button>
+
+            </div>
+
+
+            <form id="expense-form">
+
+                <label>
+                    Concepto
+
+                    <input
+                        id="expense-title"
+                        required
+                        placeholder="Ej. Cena"
+                    >
+
+                </label>
+
+
+                <div class="form-row">
+
+                    <label>
+                        Importe
+
+                        <input
+                            id="expense-amount"
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            required
+                            placeholder="120"
+                        >
+
+                    </label>
+
+
+                    <label>
+                        Moneda
+
+                        <select id="expense-currency">
+
+                            <option value="EUR">
+                                €
+                            </option>
+
+                            <option value="USD">
+                                $
+                            </option>
+
+                        </select>
+
+                    </label>
+
+                </div>
+
+
+                <label>
+                    Pagó
+
+                    <select id="expense-paid-by">
+
+                        <option value="Laura">
+                            😈 Laura
+                        </option>
+
+                        <option value="Sara">
+                            😇 Sara
+                        </option>
+
+                        <option value="Belén">
+                            🤪 Belén
+                        </option>
+
+                    </select>
+
+                </label>
+
+
+                <fieldset>
+
+                    <legend>
+                        Participan
+                    </legend>
+
+
+                    <label class="check-label">
+
+                        <input
+                            type="checkbox"
+                            name="participant"
+                            value="Laura"
+                            checked
+                        >
+
                         😈 Laura
-                    </option>
 
-                    <option value="Sara">
+                    </label>
+
+
+                    <label class="check-label">
+
+                        <input
+                            type="checkbox"
+                            name="participant"
+                            value="Sara"
+                            checked
+                        >
+
                         😇 Sara
-                    </option>
 
-                    <option value="Belén">
+                    </label>
+
+
+                    <label class="check-label">
+
+                        <input
+                            type="checkbox"
+                            name="participant"
+                            value="Belén"
+                            checked
+                        >
+
                         🤪 Belén
-                    </option>
 
-                </select>
+                    </label>
 
-            </label>
-
-
-            <div class="expense-participants">
-
-                <p>
-                    Se reparte entre:
-                </p>
+                </fieldset>
 
 
-                <label class="checkbox-row">
+                <label>
+                    Fecha
 
                     <input
-                        type="checkbox"
-                        name="participant"
-                        value="Laura"
-                        checked
+                        id="expense-date"
+                        type="date"
                     >
-
-                    Laura
 
                 </label>
 
 
-                <label class="checkbox-row">
+                <label>
+                    Notas
 
-                    <input
-                        type="checkbox"
-                        name="participant"
-                        value="Sara"
-                        checked
-                    >
-
-                    Sara
+                    <textarea
+                        id="expense-notes"
+                        placeholder="Opcional"
+                    ></textarea>
 
                 </label>
 
 
-                <label class="checkbox-row">
+                <button
+                    class="primary-button full"
+                    type="submit"
+                >
+                    Guardar gasto
+                </button>
 
-                    <input
-                        type="checkbox"
-                        name="participant"
-                        value="Belén"
-                        checked
-                    >
+            </form>
 
-                    Belén
+        </div>
 
-                </label>
-
-            </div>
+    </div>
 
 
-            <button
-                type="submit"
-                class="primary-button"
-            >
-                💾 Guardar gasto
-            </button>
+    <!-- ==========================================
+         NAVEGACIÓN
+    =========================================== -->
 
+    <nav class="bottom-nav">
 
-            <button
-                type="button"
-                class="secondary-button"
-                id="cancel-expense"
-            >
-                Cancelar
-            </button>
-
-        </form>
-
-
-        <div
-            id="expenses-list"
-            class="expenses-list"
+        <button
+            class="nav-button active"
+            data-screen="home"
         >
-        </div>
+
+            <span>🏠</span>
+
+            <small>
+                Inicio
+            </small>
+
+        </button>
 
 
-        <div
-            id="debts-container"
-            class="debts-container"
+        <button
+            class="nav-button"
+            data-screen="plan"
         >
-        </div>
 
-    </section>
+            <span>📅</span>
 
+            <small>
+                Plan
+            </small>
 
-    <!-- VIAJERAS -->
+        </button>
 
-    <section class="day-plan">
 
-        <div class="section-title">
+        <button
+            class="nav-button"
+            data-screen="map"
+        >
 
-            <h2>
-                El Equipo
-            </h2>
+            <span>🗺️</span>
 
-        </div>
+            <small>
+                Mapa
+            </small>
 
+        </button>
 
-        <div class="activity">
 
-            <span class="activity-time">
-                😈
-            </span>
+        <button
+            class="nav-button"
+            data-screen="expenses"
+        >
 
-            <div>
+            <span>💰</span>
 
-                <strong>
-                    Laura
-                </strong>
+            <small>
+                Gastos
+            </small>
 
-                <p>
-                    Viajera
-                </p>
+        </button>
 
-            </div>
 
-        </div>
+        <button
+            class="nav-button"
+            data-screen="more"
+        >
 
+            <span>☰</span>
 
-        <div class="activity">
+            <small>
+                Más
+            </small>
 
-            <span class="activity-time">
-                😇
-            </span>
+        </button>
 
-            <div>
+    </nav>
 
-                <strong>
-                    Sara
-                </strong>
+</div>
 
-                <p>
-                    Viajera
-                </p>
 
-            </div>
+<!-- ==========================================
+     LEAFLET
+=========================================== -->
 
-        </div>
+<script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+></script>
 
 
-        <div class="activity">
+<!-- ==========================================
+     SUPABASE
+=========================================== -->
 
-            <span class="activity-time">
-                🤪
-            </span>
+<script
+    src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"
+></script>
 
-            <div>
 
-                <strong>
-                    Belén
-                </strong>
-
-                <p>
-                    Viajera
-                </p>
-
-            </div>
-
-        </div>
-
-    </section>
-
-
-    <!-- HOTEL -->
-
-    <section class="day-plan">
-
-        <div class="section-title">
-
-            <h2>
-                🏨 HOTEL
-            </h2>
-
-        </div>
-
-
-        <div class="activity">
-
-            <div>
-
-                <strong>
-                    Courtyard by Marriott New York Manhattan Upper East Side
-                </strong>
-
-                <p>
-                    Nueva York, Estados Unidos
-                </p>
-
-            </div>
-
-        </div>
-
-    </section>
-
-
-</main>
-
-
-<!-- NAVEGACIÓN -->
-
-<nav class="bottom-nav">
-
-    <button
-        type="button"
-        class="active"
-        id="nav-home"
-    >
-
-        🏠
-
-        <span>
-            Inicio
-        </span>
-
-    </button>
-
-
-    <button
-        type="button"
-        id="nav-plan"
-    >
-
-        🗓️
-
-        <span>
-            Plan
-        </span>
-
-    </button>
-
-
-    <button
-        type="button"
-        id="nav-map"
-    >
-
-        🗺️
-
-        <span>
-            Mapa
-        </span>
-
-    </button>
-
-
-    <button
-        type="button"
-        id="nav-expenses"
-    >
-
-        💰
-
-        <span>
-            Gastos
-        </span>
-
-    </button>
-
-
-    <button
-        type="button"
-        id="nav-more"
-    >
-
-        ☰
-
-        <span>
-            Más
-        </span>
-
-    </button>
-
-</nav>
-
-
-<!-- JAVASCRIPT -->
+<!-- ==========================================
+     APP
+=========================================== -->
 
 <script src="./app.js"></script>
 
-
-<!-- SERVICE WORKER -->
-
-<script>
-
-    if ("serviceWorker" in navigator) {
-
-        window.addEventListener(
-            "load",
-            function () {
-
-                navigator.serviceWorker.register(
-                    "./service-worker.js"
-                );
-
-            }
-        );
-
-    }
-
-</script>
 
 </body>
 
