@@ -2,12 +2,9 @@
 // 🗽 NY TRIP
 // ==========================================
 
-// ------------------------------------------
 // DATOS DEL VIAJE
-// ------------------------------------------
 
 const tripData = {
-
     travelers: [
         "Laura",
         "Sara",
@@ -23,13 +20,10 @@ const tripData = {
 
     hotel: {
         name: "Courtyard by Marriott New York Manhattan Upper East Side",
-
-        bookingUrl:
-            "https://www.booking.com/hotel/us/manhattan-upper-east-side-courtyard-by-marriott.es.html"
+        bookingUrl: "https://www.booking.com/hotel/us/manhattan-upper-east-side-courtyard-by-marriott.es.html"
     },
 
     flights: [
-
         {
             flightNumber: "EI583",
             airline: "Aer Lingus",
@@ -73,68 +67,58 @@ const tripData = {
             arrival: "11:20",
             duration: "3h 10m"
         }
-
     ]
-
 };
 
 
-// ------------------------------------------
-// GUARDAR DATOS
-// ------------------------------------------
+// ==========================================
+// GUARDAR DATOS DEL VIAJE
+// ==========================================
 
 try {
-
     localStorage.setItem(
         "nyTripData",
         JSON.stringify(tripData)
     );
 
+    console.log("🟢 NY TRIP: datos guardados.");
+
 } catch (error) {
 
     console.error(
-        "No se pudieron guardar los datos.",
+        "🔴 NY TRIP: no se pudieron guardar los datos.",
         error
     );
-
 }
 
 
-// ------------------------------------------
-// CALCULAR DÍA DEL VIAJE
-// ------------------------------------------
+// ==========================================
+// CALCULAR LOS DÍAS QUE FALTAN
+// ==========================================
 
 function updateTripDay() {
 
-    const element =
-        document.getElementById("trip-day");
-
+    const element = document.getElementById("trip-day");
 
     if (!element) {
 
         console.error(
-            "❌ NY TRIP: no encuentro #trip-day"
+            "🔴 NY TRIP: no encuentro el elemento trip-day."
         );
 
         return;
     }
 
 
-    // Fecha de inicio del viaje
+    const start = new Date(
+        "2026-12-26T00:00:00"
+    );
 
-    const start =
-        new Date(
-            "2026-12-26T00:00:00"
-        );
+    const end = new Date(
+        "2027-01-04T23:59:59"
+    );
 
-
-    // Fecha actual
-
-    const today =
-        new Date();
-
-
-    // Quitar horas para calcular días completos
+    const today = new Date();
 
     today.setHours(
         0,
@@ -144,7 +128,7 @@ function updateTripDay() {
     );
 
 
-    // Si todavía no ha empezado el viaje
+    // ANTES DEL VIAJE
 
     if (today < start) {
 
@@ -152,38 +136,24 @@ function updateTripDay() {
             start.getTime() -
             today.getTime();
 
-
         const days =
             Math.ceil(
                 difference /
                 (1000 * 60 * 60 * 24)
             );
 
-
         element.textContent =
             "FALTAN " + days + " DÍAS";
 
-
         console.log(
-            "🟢 NY TRIP: faltan",
-            days,
-            "días."
+            "🟢 NY TRIP: faltan " + days + " días."
         );
-
 
         return;
     }
 
 
-    // --------------------------------------
     // DURANTE EL VIAJE
-    // --------------------------------------
-
-    const end =
-        new Date(
-            "2027-01-04T23:59:59"
-        );
-
 
     if (today <= end) {
 
@@ -191,13 +161,11 @@ function updateTripDay() {
             today.getTime() -
             start.getTime();
 
-
         const day =
             Math.floor(
                 difference /
                 (1000 * 60 * 60 * 24)
             ) + 1;
-
 
         const formattedDate =
             new Intl.DateTimeFormat(
@@ -208,30 +176,26 @@ function updateTripDay() {
                 }
             ).format(today);
 
-
         element.textContent =
             "DÍA " +
             day +
             " · " +
             formattedDate;
 
-
         return;
     }
 
 
-    // --------------------------------------
     // DESPUÉS DEL VIAJE
-    // --------------------------------------
 
     element.textContent =
         "VIAJE FINALIZADO";
 }
 
 
-// ------------------------------------------
-// INICIAR
-// ------------------------------------------
+// ==========================================
+// INICIAR APLICACIÓN
+// ==========================================
 
 function startNYTrip() {
 
@@ -243,9 +207,9 @@ function startNYTrip() {
 }
 
 
-// ------------------------------------------
-// ESPERAR A QUE CARGUE HTML
-// ------------------------------------------
+// ==========================================
+// ESPERAR A QUE HTML ESTÉ CARGADO
+// ==========================================
 
 if (
     document.readyState === "loading"
@@ -259,6 +223,4 @@ if (
 } else {
 
     startNYTrip();
-
 }
-
