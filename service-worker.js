@@ -1,16 +1,9 @@
-```javascript
 // ==========================================
 // 🗽 NY TRIP
-// SERVICE WORKER
+// Service Worker
 // ==========================================
 
-// Cambiamos el número de versión.
-// Esto obliga al navegador a crear una caché nueva.
-
 const CACHE_NAME = "ny-trip-v2";
-
-
-// Archivos básicos de la aplicación.
 
 const FILES_TO_CACHE = [
     "./",
@@ -22,125 +15,129 @@ const FILES_TO_CACHE = [
 
 
 // ==========================================
-// INSTALACIÓN
+// INSTALAR
 // ==========================================
 
-self.addEventListener(
-    "install",
-    function (event) {
+self.addEventListener("install", (event) => {
 
-        event.waitUntil(
+    event.waitUntil(
 
-            caches
-                .open(CACHE_NAME)
-                .then(
-                    function (cache) {
+        caches.open(CACHE_NAME)
+            .then((cache) => {
 
-                        return cache.addAll(
-                            FILES_TO_CACHE
-                        );
+                return cache.addAll(FILES_TO_CACHE);
 
-                    }
-                )
+            })
 
-        );
+    );
 
-        // Activar inmediatamente
-        // la nueva versión.
+    self.skipWaiting();
 
-        self.skipWaiting();
-    }
-);
+});
 
 
 // ==========================================
-// ACTIVACIÓN
+// ACTIVAR
 // ==========================================
 
-self.addEventListener(
-    "activate",
-    function (event) {
+self.addEventListener("activate", (event) => {
 
-        event.waitUntil(
+    event.waitUntil(
 
-            caches
-                .keys()
-                .then(
-                    function (cacheNames) {
+        caches.keys()
+            .then((cacheNames) => {
 
-                        return Promise.all(
+                return Promise.all(
 
-                            cacheNames
-                                .filter(
-                                    function (cacheName) {
+                    cacheNames
+                        .filter((cacheName) => {
 
-                                        return (
-                                            cacheName !==
-                                            CACHE_NAME
-                                        );
+                            return cacheName !== CACHE_NAME;
 
-                                    }
-                                )
-                                .map(
-                                    function (cacheName) {
+                        })
+                        .map((cacheName) => {
 
-                                        return caches.delete(
-                                            cacheName
-                                        );
+                            return caches.delete(cacheName);
 
-                                    }
-                                )
+                        })
 
-                        );
+                );
 
-                    }
-                )
+            })
 
-        );
+    );
 
-        // Tomar control inmediatamente.
+    self.clients.claim();
 
-        self.clients.claim();
-    }
-);
+});
 
 
 // ==========================================
 // PETICIONES
 // ==========================================
 
-self.addEventListener(
-    "fetch",
-    function (event) {
+self.addEventListener("fetch", (event) => {
+
+    // Para páginas HTML intentamos primero Internet.
+    // Así las actualizaciones de NY TRIP aparecen
+    // sin tener que cambiar la URL.
+
+    if (event.request.mode === "navigate") {
 
         event.respondWith(
 
             fetch(event.request)
-                .then(
-                    function (response) {
+                .then((response) => {
 
-                        // Si tenemos conexión,
-                        // usamos la versión nueva.
+                    const responseClone =
+                        response.clone();
 
-                        return response;
+                    caches.open(CACHE_NAME)
+                        .then((cache) => {
 
-                    }
-                )
-                .catch(
-                    function () {
+                            cache.put(
+                                event.request,
+                                responseClone
+                            );
 
-                        // Si no hay Internet,
-                        // usamos la copia guardada.
+                        });
 
-                        return caches.match(
-                            event.request
-                        );
+                    return response;
 
-                    }
-                )
+                })
+                .catch(() => {
+
+                    return caches.match(
+                        event.request
+                    );
+
+                })
 
         );
 
+        return;
+
     }
-);
-```
+
+
+    // Para archivos como CSS, JavaScript e imágenes:
+    // usamos caché y, si no existe, Internet.
+
+    event.respondWith(
+
+        caches.match(event.request)
+            .then((cachedResponse) => {
+
+                if (cachedResponse) {
+
+                    return cachedResponse;
+
+                }
+
+                return fetch(event.request);
+
+            })
+
+    );
+
+});
