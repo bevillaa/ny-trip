@@ -1,28 +1,55 @@
 // ==========================================
 // 🗽 NY TRIP
+// APLICACIÓN COMPLETA
 // ==========================================
 
-const tripData = {
 
-travelers: [
+// ==========================================
+// SUPABASE
+// ==========================================
+
+const SUPABASE_URL =
+    "https://rtbrnbyosrtxeayqmvwc.supabase.co";
+
+const SUPABASE_KEY =
+    "sb_publishable_xvstsFi5T_bbgYb-9qiJ6A_y8OrALEA";
+
+
+const db =
+    window.supabase.createClient(
+        SUPABASE_URL,
+        SUPABASE_KEY
+    );
+
+
+// ==========================================
+// DATOS FIJOS DEL VIAJE
+// ==========================================
+
+const TRAVELERS = [
     "Laura",
     "Sara",
     "Belén"
-],
+];
 
-dates: {
-    start: "2026-12-26",
-    end: "2027-01-04"
-},
 
-destination: "Nueva York, Estados Unidos",
+const TRAVELER_EMOJIS = {
+    Laura: "😈",
+    Sara: "😇",
+    Belén: "🤪"
+};
 
-hotel: {
-    name: "Courtyard by Marriott New York Manhattan Upper East Side",
-    bookingUrl: "https://www.booking.com/hotel/us/manhattan-upper-east-side-courtyard-by-marriott.es.html"
-},
 
-flights: [
+const TRIP_START =
+    new Date("2026-12-26T00:00:00");
+
+
+const TRIP_END =
+    new Date("2027-01-04T23:59:59");
+
+
+const flights = [
+
     {
         flightNumber: "EI583",
         airline: "Aer Lingus",
@@ -66,29 +93,347 @@ flights: [
         arrival: "11:20",
         duration: "3h 10m"
     }
-]
+
+];
+
+
+const HOTEL = {
+
+    name:
+        "Courtyard by Marriott New York Manhattan Upper East Side",
+
+    address:
+        "Nueva York, Estados Unidos",
+
+    latitude:
+        40.7744,
+
+    longitude:
+        -73.9500,
+
+    bookingUrl:
+        "https://www.booking.com/hotel/us/manhattan-upper-east-side-courtyard-by-marriott.es.html"
 
 };
 
+
 // ==========================================
-// GUARDAR DATOS DEL VIAJE
+// ESTADO
 // ==========================================
 
-try {
+let plans = [];
+let reservations = [];
+let expenses = [];
+let places = [];
 
-localStorage.setItem(
-    "nyTripData",
-    JSON.stringify(tripData)
-);
+let map = null;
+let mapMarkers = [];
 
-} catch (error) {
 
-console.error(
-    "NY TRIP: error guardando datos.",
-    error
-);
+// ==========================================
+// UTILIDADES
+// ==========================================
+
+function escapeHTML(value) {
+
+    if (value === null || value === undefined) {
+        return "";
+    }
+
+    return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+}
+
+
+function formatMoney(amount, currency) {
+
+    return new Intl.NumberFormat(
+        "es-ES",
+        {
+            style: "currency",
+            currency: currency || "EUR"
+        }
+    ).format(Number(amount) || 0);
 
 }
+
+
+function formatDate(date) {
+
+    if (!date) {
+        return "";
+    }
+
+    return new Intl.DateTimeFormat(
+        "es-ES",
+        {
+            day: "2-digit",
+            month: "short",
+            year: "numeric"
+        }
+    ).format(
+        new Date(`${date}T00:00:00`)
+    );
+
+}
+
+
+function getDateTimestamp(date, time) {
+
+    if (!date) {
+        return Number.MAX_SAFE_INTEGER;
+    }
+
+    return new Date(
+        `${date}T${time || "00:00"}:00`
+    ).getTime();
+
+}
+
+
+// ==========================================
+// CONEXIÓN
+// ==========================================
+
+function setConnectionStatus(
+    text,
+    state = ""
+) {
+
+    const element =
+        document.getElementById(
+            "connection-status"
+        );
+
+    if (!element) {
+        return;
+    }
+
+    element.textContent = text;
+
+    element.className =
+        "connection-status " + state;
+
+}
+
+
+// ==========================================
+// NAVEGACIÓN
+// ==========================================
+
+function showScreen(name) {
+
+    document
+        .querySelectorAll(".screen")
+        .forEach((screen) => {
+
+            screen.classList.remove(
+                "active"
+            );
+
+        });
+
+
+    const target =
+        document.getElementById(
+            `screen-${name}`
+        );
+
+
+    if (target) {
+
+        target.classList.add(
+            "active"
+        );
+
+    }
+
+
+    document
+        .querySelectorAll(".nav-button")
+        .forEach((button) => {
+
+            button.classList.toggle(
+                "active",
+                button.dataset.screen === name
+            );
+
+        });
+
+
+    if (name === "map") {
+
+        setTimeout(() => {
+
+            initializeMap();
+
+            if (map) {
+                map.invalidateSize();
+                renderMap();
+            }
+
+        }, 100);
+
+    }
+
+
+    window.scrollTo({
+        top: 0,
+        behavior: "smooth"
+    });
+
+}
+
+
+document.addEventListener(
+    "click",
+    (event) => {
+
+        const button =
+            event.target.closest(
+                "[data-screen]"
+            );
+
+
+        if (!button) {
+            return;
+        }
+
+
+        showScreen(
+            button.dataset.screen
+        );
+
+    }
+);
+
+
+// ==========================================
+// MODALES
+// ==========================================
+
+function openModal(id) {
+
+    const modal =
+        document.getElementById(id);
+
+    if (modal) {
+        modal.classList.remove("hidden");
+    }
+
+}
+
+
+function closeModal(id) {
+
+    const modal =
+        document.getElementById(id);
+
+    if (modal) {
+        modal.classList.add("hidden");
+    }
+
+}
+
+
+document.addEventListener(
+    "click",
+    (event) => {
+
+        const button =
+            event.target.closest(
+                "[data-close]"
+            );
+
+
+        if (!button) {
+            return;
+        }
+
+
+        closeModal(
+            button.dataset.close
+        );
+
+    }
+);
+
+
+document
+    .getElementById("open-plan-form")
+    .addEventListener(
+        "click",
+        () => {
+
+            document
+                .getElementById("plan-form")
+                .reset();
+
+            document
+                .getElementById(
+                    "plan-location-results"
+                )
+                .innerHTML = "";
+
+            openModal("plan-modal");
+
+        }
+    );
+
+
+document
+    .getElementById("open-reservation-form")
+    .addEventListener(
+        "click",
+        () => {
+
+            document
+                .getElementById("reservation-form")
+                .reset();
+
+            document
+                .getElementById(
+                    "reservation-location-results"
+                )
+                .innerHTML = "";
+
+            openModal(
+                "reservation-modal"
+            );
+
+        }
+    );
+
+
+document
+    .getElementById("open-expense-form")
+    .addEventListener(
+        "click",
+        () => {
+
+            document
+                .getElementById("expense-form")
+                .reset();
+
+            document
+                .querySelectorAll(
+                    'input[name="participant"]'
+                )
+                .forEach(
+                    (input) => {
+                        input.checked = true;
+                    }
+                );
+
+            openModal("expense-modal");
+
+        }
+    );
+
 
 // ==========================================
 // CUENTA ATRÁS
@@ -96,886 +441,1709 @@ console.error(
 
 function updateTripDay() {
 
-const element =
-    document.getElementById("trip-day");
-
-if (!element) {
-    return;
-}
-
-const start =
-    new Date("2026-12-26T00:00:00");
-
-const end =
-    new Date("2027-01-04T23:59:59");
-
-const today =
-    new Date();
-
-today.setHours(
-    0,
-    0,
-    0,
-    0
-);
-
-
-if (today < start) {
-
-    const difference =
-        start.getTime() -
-        today.getTime();
-
-    const days =
-        Math.ceil(
-            difference /
-            (1000 * 60 * 60 * 24)
-        );
-
-    element.textContent =
-        "FALTAN " + days + " DÍAS";
-
-    return;
-}
-
-
-if (today <= end) {
-
-    const difference =
-        today.getTime() -
-        start.getTime();
-
-    const day =
-        Math.floor(
-            difference /
-            (1000 * 60 * 60 * 24)
-        ) + 1;
-
-    const formattedDate =
-        new Intl.DateTimeFormat(
-            "es-ES",
-            {
-                day: "numeric",
-                month: "long"
-            }
-        ).format(today);
-
-    element.textContent =
-        "DÍA " +
-        day +
-        " · " +
-        formattedDate;
-
-    return;
-}
-
-
-element.textContent =
-    "VIAJE FINALIZADO";
-
-}
-
-// ==========================================
-// TIEMPO — NUEVA YORK
-// ==========================================
-
-async function loadWeather() {
-
-const temperature =
-    document.getElementById(
-        "weather-temperature"
-    );
-
-const description =
-    document.getElementById(
-        "weather-description"
-    );
-
-if (!temperature || !description) {
-    return;
-}
-
-
-try {
-
-    const url =
-        "https://api.open-meteo.com/v1/forecast" +
-        "?latitude=40.7128" +
-        "&longitude=-74.0060" +
-        "&current=temperature_2m,weather_code,wind_speed_10m" +
-        "&timezone=America%2FNew_York";
-
-    const response =
-        await fetch(url);
-
-    if (!response.ok) {
-        throw new Error(
-            "Error consultando Open-Meteo"
-        );
-    }
-
-    const data =
-        await response.json();
-
-
-    const current =
-        data.current;
-
-
-    temperature.textContent =
-        Math.round(
-            current.temperature_2m
-        ) +
-        " °C";
-
-
-    description.textContent =
-        getWeatherDescription(
-            current.weather_code
-        ) +
-        " · Viento " +
-        Math.round(
-            current.wind_speed_10m
-        ) +
-        " km/h";
-
-
-} catch (error) {
-
-    console.error(
-        "NY TRIP: no se pudo cargar el tiempo.",
-        error
-    );
-
-    temperature.textContent =
-        "No disponible";
-
-    description.textContent =
-        "Comprueba tu conexión a Internet.";
-
-}
-
-}
-
-// ==========================================
-// DESCRIPCIÓN DEL TIEMPO
-// ==========================================
-
-function getWeatherDescription(code) {
-
-const descriptions = {
-
-    0: "☀️ Despejado",
-
-    1: "🌤️ Mayormente despejado",
-
-    2: "⛅ Parcialmente nublado",
-
-    3: "☁️ Nublado",
-
-    45: "🌫️ Niebla",
-
-    48: "🌫️ Niebla",
-
-    51: "🌦️ Llovizna",
-
-    53: "🌦️ Llovizna",
-
-    55: "🌧️ Llovizna intensa",
-
-    61: "🌧️ Lluvia ligera",
-
-    63: "🌧️ Lluvia",
-
-    65: "🌧️ Lluvia intensa",
-
-    71: "🌨️ Nieve ligera",
-
-    73: "🌨️ Nieve",
-
-    75: "❄️ Nieve intensa",
-
-    80: "🌦️ Chubascos",
-
-    81: "🌦️ Chubascos",
-
-    82: "🌧️ Chubascos intensos",
-
-    95: "⛈️ Tormenta",
-
-    96: "⛈️ Tormenta con granizo",
-
-    99: "⛈️ Tormenta intensa"
-
-};
-
-return (
-    descriptions[code] ||
-    "🌡️ Condiciones variables"
-);
-
-}
-
-// ==========================================
-// GASTOS
-// ==========================================
-
-const EXPENSES_KEY =
-"nyTripExpenses";
-
-const PEOPLE = [
-"Laura",
-"Sara",
-"Belén"
-];
-
-let expenses = [];
-
-// ==========================================
-// CARGAR GASTOS
-// ==========================================
-
-function loadExpenses() {
-
-try {
-
-    const saved =
-        localStorage.getItem(
-            EXPENSES_KEY
-        );
-
-    if (saved) {
-
-        expenses =
-            JSON.parse(saved);
-
-    }
-
-} catch (error) {
-
-    console.error(
-        "NY TRIP: error cargando gastos.",
-        error
-    );
-
-    expenses = [];
-
-}
-
-}
-
-// ==========================================
-// GUARDAR GASTOS
-// ==========================================
-
-function saveExpenses() {
-
-localStorage.setItem(
-    EXPENSES_KEY,
-    JSON.stringify(expenses)
-);
-
-}
-
-// ==========================================
-// OBTENER TIPO DE CAMBIO
-// ==========================================
-
-async function getEURtoUSD() {
-
-try {
-
-    const response =
-        await fetch(
-            "https://api.frankfurter.dev/v2/rate/EUR/USD"
-        );
-
-    if (!response.ok) {
-
-        throw new Error(
-            "No se pudo obtener EUR/USD"
-        );
-
-    }
-
-    const data =
-        await response.json();
-
-    return Number(
-        data.rate
-    );
-
-} catch (error) {
-
-    console.error(
-        "NY TRIP: error obteniendo EUR/USD.",
-        error
-    );
-
-    return null;
-
-}
-
-}
-
-// ==========================================
-// CONVERTIR A EUROS
-// ==========================================
-
-async function convertToEUR(
-amount,
-currency
-) {
-
-if (currency === "EUR") {
-
-    return Number(amount);
-
-}
-
-
-const rate =
-    await getEURtoUSD();
-
-
-if (!rate) {
-
-    throw new Error(
-        "No se pudo obtener el cambio EUR/USD."
-    );
-
-}
-
-
-return Number(amount) / rate;
-
-}
-
-// ==========================================
-// AÑADIR GASTO
-// ==========================================
-
-async function addExpense(event) {
-
-event.preventDefault();
-
-
-const description =
-    document.getElementById(
-        "expense-description"
-    ).value.trim();
-
-
-const amount =
-    Number(
+    const element =
         document.getElementById(
-            "expense-amount"
-        ).value
-    );
-
-
-const currency =
-    document.getElementById(
-        "expense-currency"
-    ).value;
-
-
-const payer =
-    document.getElementById(
-        "expense-payer"
-    ).value;
-
-
-const participants =
-    Array.from(
-        document.querySelectorAll(
-            'input[name="participant"]:checked'
-        )
-    ).map(
-        input => input.value
-    );
-
-
-if (!description) {
-
-    alert(
-        "Escribe el concepto del gasto."
-    );
-
-    return;
-
-}
-
-
-if (!amount || amount <= 0) {
-
-    alert(
-        "Introduce un importe válido."
-    );
-
-    return;
-
-}
-
-
-if (participants.length === 0) {
-
-    alert(
-        "Selecciona al menos una viajera."
-    );
-
-    return;
-
-}
-
-
-const button =
-    event.target.querySelector(
-        'button[type="submit"]'
-    );
-
-
-if (button) {
-
-    button.disabled = true;
-
-    button.textContent =
-        "Guardando...";
-
-}
-
-
-try {
-
-    const amountEUR =
-        await convertToEUR(
-            amount,
-            currency
+            "trip-day"
         );
 
 
-    const expense = {
-
-        id:
-            Date.now(),
-
-        description:
-            description,
-
-        originalAmount:
-            amount,
-
-        currency:
-            currency,
-
-        amountEUR:
-            Number(
-                amountEUR.toFixed(2)
-            ),
-
-        payer:
-            payer,
-
-        participants:
-            participants,
-
-        date:
-            new Date().toISOString()
-
-    };
-
-
-    expenses.push(
-        expense
-    );
-
-
-    saveExpenses();
-
-    renderExpenses();
-
-    event.target.reset();
-
-
-    document
-        .querySelectorAll(
-            'input[name="participant"]'
-        )
-        .forEach(
-            input => {
-                input.checked = true;
-            }
-        );
-
-
-    event.target.classList.add(
-        "hidden"
-    );
-
-
-} catch (error) {
-
-    console.error(error);
-
-    alert(
-        "No se pudo guardar el gasto. Comprueba tu conexión."
-    );
-
-} finally {
-
-    if (button) {
-
-        button.disabled = false;
-
-        button.textContent =
-            "💾 Guardar gasto";
-
-    }
-
-}
-
-}
-
-// ==========================================
-// BORRAR GASTO
-// ==========================================
-
-function deleteExpense(id) {
-
-const confirmed =
-    confirm(
-        "¿Quieres borrar este gasto?"
-    );
-
-
-if (!confirmed) {
-    return;
-}
-
-
-expenses =
-    expenses.filter(
-        expense =>
-            expense.id !== id
-    );
-
-
-saveExpenses();
-
-renderExpenses();
-
-}
-
-// ==========================================
-// CALCULAR SALDOS
-// ==========================================
-
-function calculateBalances() {
-
-const balances = {
-
-    Laura: 0,
-
-    Sara: 0,
-
-    Belén: 0
-
-};
-
-
-expenses.forEach(
-    expense => {
-
-        const participants =
-            expense.participants;
-
-
-        const share =
-            expense.amountEUR /
-            participants.length;
-
-
-        participants.forEach(
-            person => {
-
-                balances[person] -=
-                    share;
-
-            }
-        );
-
-
-        balances[expense.payer] +=
-            expense.amountEUR;
-
-    }
-);
-
-
-return balances;
-
-}
-
-// ==========================================
-// CALCULAR QUIÉN DEBE A QUIÉN
-// ==========================================
-
-function calculateDebts() {
-
-const balances =
-    calculateBalances();
-
-
-const creditors = [];
-
-const debtors = [];
-
-
-PEOPLE.forEach(
-    person => {
-
-        const balance =
-            balances[person];
-
-
-        if (balance > 0.01) {
-
-            creditors.push({
-
-                person:
-                    person,
-
-                amount:
-                    balance
-
-            });
-
-        }
-
-
-        if (balance < -0.01) {
-
-            debtors.push({
-
-                person:
-                    person,
-
-                amount:
-                    Math.abs(balance)
-
-            });
-
-        }
-
-    }
-);
-
-
-const debts = [];
-
-
-let creditorIndex = 0;
-
-let debtorIndex = 0;
-
-
-while (
-    creditorIndex <
-        creditors.length &&
-    debtorIndex <
-        debtors.length
-) {
-
-    const creditor =
-        creditors[creditorIndex];
-
-    const debtor =
-        debtors[debtorIndex];
-
-
-    const amount =
-        Math.min(
-            creditor.amount,
-            debtor.amount
-        );
-
-
-    debts.push({
-
-        from:
-            debtor.person,
-
-        to:
-            creditor.person,
-
-        amount:
-            Number(
-                amount.toFixed(2)
-            )
-
-    });
-
-
-    creditor.amount -=
-        amount;
-
-    debtor.amount -=
-        amount;
-
-
-    if (
-        creditor.amount <
-        0.01
-    ) {
-
-        creditorIndex++;
-
-    }
-
-
-    if (
-        debtor.amount <
-        0.01
-    ) {
-
-        debtorIndex++;
-
-    }
-
-}
-
-
-return debts;
-
-}
-
-// ==========================================
-// MOSTRAR GASTOS
-// ==========================================
-
-function renderExpenses() {
-
-const totalElement =
-    document.getElementById(
-        "total-expenses"
-    );
-
-
-const listElement =
-    document.getElementById(
-        "expenses-list"
-    );
-
-
-const balancesElement =
-    document.getElementById(
-        "balances-container"
-    );
-
-
-const debtsElement =
-    document.getElementById(
-        "debts-container"
-    );
-
-
-if (
-    !totalElement ||
-    !listElement ||
-    !balancesElement ||
-    !debtsElement
-) {
-
-    return;
-
-}
-
-
-const total =
-    expenses.reduce(
-        (
-            sum,
-            expense
-        ) =>
-            sum +
-            expense.amountEUR,
+    const today =
+        new Date();
+
+    today.setHours(
+        0,
+        0,
+        0,
         0
     );
 
 
-totalElement.textContent =
-    formatEUR(total);
+    if (today < TRIP_START) {
+
+        const difference =
+            TRIP_START.getTime() -
+            today.getTime();
 
 
-// -----------------------------
-// LISTA DE GASTOS
-// -----------------------------
+        const days =
+            Math.ceil(
+                difference /
+                (1000 * 60 * 60 * 24)
+            );
 
-if (expenses.length === 0) {
 
-    listElement.innerHTML =
-        "<p>No hay gastos todavía.</p>";
+        element.textContent =
+            `FALTAN ${days} DÍAS`;
 
-} else {
+        return;
 
-    listElement.innerHTML =
-        expenses
-            .slice()
-            .reverse()
+    }
+
+
+    if (today <= TRIP_END) {
+
+        const difference =
+            today.getTime() -
+            TRIP_START.getTime();
+
+
+        const day =
+            Math.floor(
+                difference /
+                (1000 * 60 * 60 * 24)
+            ) + 1;
+
+
+        const date =
+            new Intl.DateTimeFormat(
+                "es-ES",
+                {
+                    day: "numeric",
+                    month: "long"
+                }
+            ).format(today);
+
+
+        element.textContent =
+            `DÍA ${day} · ${date}`;
+
+        return;
+
+    }
+
+
+    element.textContent =
+        "VIAJE FINALIZADO";
+
+}
+
+
+// ==========================================
+// TIEMPO — OPEN-METEO
+// ==========================================
+
+async function loadWeather() {
+
+    try {
+
+        const url =
+            "https://api.open-meteo.com/v1/forecast" +
+            "?latitude=40.7128" +
+            "&longitude=-74.0060" +
+            "&current=temperature_2m,weather_code,wind_speed_10m" +
+            "&timezone=America%2FNew_York";
+
+
+        const response =
+            await fetch(url);
+
+
+        if (!response.ok) {
+            throw new Error(
+                "Error de meteorología"
+            );
+        }
+
+
+        const data =
+            await response.json();
+
+
+        const current =
+            data.current;
+
+
+        document
+            .getElementById(
+                "weather-temperature"
+            )
+            .textContent =
+            `${Math.round(
+                current.temperature_2m
+            )}°C`;
+
+
+        document
+            .getElementById(
+                "weather-wind"
+            )
+            .textContent =
+            `Viento ${Math.round(
+                current.wind_speed_10m
+            )} km/h`;
+
+
+        document
+            .getElementById(
+                "weather-description"
+            )
+            .textContent =
+            weatherDescription(
+                current.weather_code
+            );
+
+
+        document
+            .getElementById(
+                "weather-icon"
+            )
+            .textContent =
+            weatherIcon(
+                current.weather_code
+            );
+
+
+        document
+            .getElementById(
+                "weather-update"
+            )
+            .textContent =
+            "Actualizado ahora";
+
+    } catch (error) {
+
+        console.error(
+            "Tiempo:",
+            error
+        );
+
+
+        document
+            .getElementById(
+                "weather-description"
+            )
+            .textContent =
+            "No disponible";
+
+    }
+
+}
+
+
+function weatherDescription(code) {
+
+    if (code === 0) {
+        return "Despejado";
+    }
+
+    if (
+        [1, 2, 3].includes(code)
+    ) {
+        return "Parcialmente nublado";
+    }
+
+    if (
+        [45, 48].includes(code)
+    ) {
+        return "Niebla";
+    }
+
+    if (
+        [51, 53, 55, 56, 57].includes(code)
+    ) {
+        return "Llovizna";
+    }
+
+    if (
+        [61, 63, 65, 66, 67].includes(code)
+    ) {
+        return "Lluvia";
+    }
+
+    if (
+        [71, 73, 75, 77].includes(code)
+    ) {
+        return "Nieve";
+    }
+
+    if (
+        [80, 81, 82].includes(code)
+    ) {
+        return "Chubascos";
+    }
+
+    if (
+        [95, 96, 99].includes(code)
+    ) {
+        return "Tormenta";
+    }
+
+    return "Tiempo variable";
+
+}
+
+
+function weatherIcon(code) {
+
+    if (code === 0) {
+        return "☀️";
+    }
+
+    if (
+        [1, 2, 3].includes(code)
+    ) {
+        return "🌤️";
+    }
+
+    if (
+        [45, 48].includes(code)
+    ) {
+        return "🌫️";
+    }
+
+    if (
+        [51, 53, 55, 56, 57].includes(code)
+    ) {
+        return "🌦️";
+    }
+
+    if (
+        [61, 63, 65, 66, 67].includes(code)
+    ) {
+        return "🌧️";
+    }
+
+    if (
+        [71, 73, 75, 77].includes(code)
+    ) {
+        return "❄️";
+    }
+
+    if (
+        [80, 81, 82].includes(code)
+    ) {
+        return "🌦️";
+    }
+
+    if (
+        [95, 96, 99].includes(code)
+    ) {
+        return "⛈️";
+    }
+
+    return "🌤️";
+
+}
+
+
+// ==========================================
+// DIVISAS — FRANKFURTER
+// ==========================================
+
+async function loadCurrency() {
+
+    try {
+
+        const response =
+            await fetch(
+                "https://api.frankfurter.app/latest?from=EUR&to=USD"
+            );
+
+
+        if (!response.ok) {
+            throw new Error(
+                "Error de divisas"
+            );
+        }
+
+
+        const data =
+            await response.json();
+
+
+        const rate =
+            data.rates.USD;
+
+
+        document
+            .getElementById(
+                "currency-rate"
+            )
+            .textContent =
+            "1 EUR → USD";
+
+
+        document
+            .getElementById(
+                "currency-value"
+            )
+            .textContent =
+            `${
+                Number(rate).toFixed(4)
+            } $`;
+
+    } catch (error) {
+
+        console.error(
+            "Divisas:",
+            error
+        );
+
+
+        document
+            .getElementById(
+                "currency-value"
+            )
+            .textContent =
+            "No disponible";
+
+    }
+
+}
+
+
+// ==========================================
+// SUPABASE — CARGAR TODO
+// ==========================================
+
+async function loadData() {
+
+    setConnectionStatus(
+        "● Sincronizando..."
+    );
+
+
+    try {
+
+        const [
+            plansResponse,
+            reservationsResponse,
+            expensesResponse,
+            placesResponse
+        ] = await Promise.all([
+
+            db
+                .from("plans")
+                .select("*")
+                .order("date", {
+                    ascending: true
+                })
+                .order("time", {
+                    ascending: true
+                }),
+
+            db
+                .from("reservations")
+                .select("*")
+                .order("date", {
+                    ascending: true
+                }),
+
+            db
+                .from("expenses")
+                .select("*")
+                .order("date", {
+                    ascending: false
+                }),
+
+            db
+                .from("places")
+                .select("*")
+                .order("created_at", {
+                    ascending: false
+                })
+
+        ]);
+
+
+        if (plansResponse.error) {
+            throw plansResponse.error;
+        }
+
+        if (reservationsResponse.error) {
+            throw reservationsResponse.error;
+        }
+
+        if (expensesResponse.error) {
+            throw expensesResponse.error;
+        }
+
+        if (placesResponse.error) {
+            throw placesResponse.error;
+        }
+
+
+        plans =
+            plansResponse.data || [];
+
+
+        reservations =
+            reservationsResponse.data || [];
+
+
+        expenses =
+            expensesResponse.data || [];
+
+
+        places =
+            placesResponse.data || [];
+
+
+        setConnectionStatus(
+            "● Conectada",
+            "ok"
+        );
+
+
+        renderAll();
+
+    } catch (error) {
+
+        console.error(
+            "Supabase:",
+            error
+        );
+
+
+        setConnectionStatus(
+            "● Error de conexión",
+            "error"
+        );
+
+
+        renderAll();
+
+    }
+
+}
+
+
+// ==========================================
+// RENDER GENERAL
+// ==========================================
+
+function renderAll() {
+
+    renderNextActivity();
+
+    renderPlans();
+
+    renderReservations();
+
+    renderExpenses();
+
+    renderFlights();
+
+    renderMap();
+
+}
+
+
+// ==========================================
+// PRÓXIMA ACTIVIDAD
+// ==========================================
+
+function renderNextActivity() {
+
+    const element =
+        document.getElementById(
+            "next-activity"
+        );
+
+
+    const allItems = [
+
+        ...plans.map(
+            item => ({
+                ...item,
+                itemType: "plan"
+            })
+        ),
+
+        ...reservations.map(
+            item => ({
+                ...item,
+                itemType: "reservation"
+            })
+        )
+
+    ]
+    .filter(
+        item => item.date
+    )
+    .sort(
+        (a, b) =>
+            getDateTimestamp(
+                a.date,
+                a.time
+            ) -
+            getDateTimestamp(
+                b.date,
+                b.time
+            )
+    );
+
+
+    if (!allItems.length) {
+
+        element.innerHTML = `
+            <span>📅</span>
+
+            <div>
+                <strong>
+                    Aún no hay actividades
+                </strong>
+
+                <p>
+                    Añade vuestro primer plan.
+                </p>
+            </div>
+        `;
+
+        return;
+    }
+
+
+    const item =
+        allItems[0];
+
+
+    const icon =
+        item.itemType === "plan"
+            ? "📅"
+            : "📋";
+
+
+    element.innerHTML = `
+
+        <span>
+            ${icon}
+        </span>
+
+        <div>
+
+            <strong>
+                ${escapeHTML(item.title)}
+            </strong>
+
+            <p>
+                ${formatDate(item.date)}
+                ${item.time ? " · " + item.time : ""}
+                ${
+                    item.location_name
+                        ? " · " +
+                          escapeHTML(
+                              item.location_name
+                          )
+                        : ""
+                }
+            </p>
+
+        </div>
+
+    `;
+
+}
+
+
+// ==========================================
+// PLANES
+// ==========================================
+
+function renderPlans() {
+
+    const container =
+        document.getElementById(
+            "plan-list"
+        );
+
+
+    if (!plans.length) {
+
+        container.innerHTML = `
+            <div class="empty">
+                📅 Todavía no hay planes.
+                <br><br>
+                Pulsa <strong>+ Añadir</strong>.
+            </div>
+        `;
+
+        return;
+    }
+
+
+    container.innerHTML =
+        plans
             .map(
-                expense => {
+                plan => `
 
-                    const share =
-                        expense.amountEUR /
-                        expense.participants.length;
+                <article class="activity-card">
+
+                    <div class="date-badge">
+
+                        <strong>
+                            ${new Date(
+                                `${plan.date}T00:00:00`
+                            ).getDate()}
+                        </strong>
+
+                        <span>
+                            ${new Intl.DateTimeFormat(
+                                "es-ES",
+                                {
+                                    month: "short"
+                                }
+                            ).format(
+                                new Date(
+                                    `${plan.date}T00:00:00`
+                                )
+                            )}
+                        </span>
+
+                    </div>
+
+
+                    <div class="card-main">
+
+                        <strong>
+                            ${escapeHTML(
+                                plan.title
+                            )}
+                        </strong>
+
+                        <p>
+                            ${
+                                plan.time
+                                    ? "🕐 " +
+                                      plan.time
+                                    : ""
+                            }
+                        </p>
+
+                        ${
+                            plan.location_name
+                                ? `
+                                <p>
+                                    📍 ${
+                                        escapeHTML(
+                                            plan.location_name
+                                        )
+                                    }
+                                </p>
+                                `
+                                : ""
+                        }
+
+                        ${
+                            plan.description
+                                ? `
+                                <p>
+                                    ${
+                                        escapeHTML(
+                                            plan.description
+                                        )
+                                    }
+                                </p>
+                                `
+                                : ""
+                        }
+
+                    </div>
+
+
+                    <div class="card-actions">
+
+                        <button
+                            class="danger-button"
+                            onclick="deletePlan('${plan.id}')"
+                        >
+                            🗑️
+                        </button>
+
+                    </div>
+
+                </article>
+
+            `
+            )
+            .join("");
+
+}
+
+
+async function deletePlan(id) {
+
+    if (
+        !confirm(
+            "¿Eliminar este plan?"
+        )
+    ) {
+        return;
+    }
+
+
+    const { error } =
+        await db
+            .from("plans")
+            .delete()
+            .eq("id", id);
+
+
+    if (error) {
+
+        alert(
+            "No se pudo eliminar."
+        );
+
+        console.error(error);
+
+        return;
+
+    }
+
+
+    await loadData();
+
+}
+
+
+// ==========================================
+// CREAR PLAN
+// ==========================================
+
+let selectedPlanLocation = null;
+
+
+document
+    .getElementById(
+        "search-plan-location"
+    )
+    .addEventListener(
+        "click",
+        () => {
+
+            const query =
+                document
+                    .getElementById(
+                        "plan-location"
+                    )
+                    .value
+                    .trim();
+
+
+            searchLocation(
+                query,
+                "plan-location-results",
+                (result) => {
+
+                    selectedPlanLocation =
+                        result;
+
+                }
+            );
+
+        }
+    );
+
+
+document
+    .getElementById("plan-form")
+    .addEventListener(
+        "submit",
+        async (event) => {
+
+            event.preventDefault();
+
+
+            const title =
+                document
+                    .getElementById(
+                        "plan-title"
+                    )
+                    .value
+                    .trim();
+
+
+            const description =
+                document
+                    .getElementById(
+                        "plan-description"
+                    )
+                    .value
+                    .trim();
+
+
+            const date =
+                document
+                    .getElementById(
+                        "plan-date"
+                    )
+                    .value;
+
+
+            const time =
+                document
+                    .getElementById(
+                        "plan-time"
+                    )
+                    .value;
+
+
+            const locationName =
+                document
+                    .getElementById(
+                        "plan-location"
+                    )
+                    .value
+                    .trim();
+
+
+            const data = {
+
+                title,
+
+                description,
+
+                date,
+
+                time:
+                    time || null,
+
+                location_name:
+                    locationName || null,
+
+                latitude:
+                    selectedPlanLocation
+                        ?.lat || null,
+
+                longitude:
+                    selectedPlanLocation
+                        ?.lon || null,
+
+                created_by:
+                    "NY TRIP"
+
+            };
+
+
+            const { error } =
+                await db
+                    .from("plans")
+                    .insert(data);
+
+
+            if (error) {
+
+                alert(
+                    "No se pudo guardar el plan."
+                );
+
+                console.error(error);
+
+                return;
+
+            }
+
+
+            closeModal(
+                "plan-modal"
+            );
+
+
+            selectedPlanLocation =
+                null;
+
+
+            await loadData();
+
+
+            showScreen("plan");
+
+        }
+    );
+
+
+// ==========================================
+// RESERVAS
+// ==========================================
+
+function reservationIcon(type) {
+
+    const icons = {
+
+        restaurant: "🍽️",
+
+        activity: "🎟️",
+
+        hotel: "🏨",
+
+        flight: "✈️",
+
+        other: "📋"
+
+    };
+
+
+    return icons[type] || "📋";
+
+}
+
+
+function reservationTypeName(type) {
+
+    const names = {
+
+        restaurant: "Restaurante",
+
+        activity: "Actividad",
+
+        hotel: "Hotel",
+
+        flight: "Vuelo",
+
+        other: "Otro"
+
+    };
+
+
+    return names[type] || "Reserva";
+
+}
+
+
+function renderReservations() {
+
+    const container =
+        document.getElementById(
+            "reservation-list"
+        );
+
+
+    if (!reservations.length) {
+
+        container.innerHTML = `
+            <div class="empty">
+                📋 Todavía no hay reservas.
+                <br><br>
+                Pulsa <strong>+ Añadir</strong>.
+            </div>
+        `;
+
+        return;
+
+    }
+
+
+    container.innerHTML =
+        reservations
+            .map(
+                reservation => `
+
+                <article class="reservation-card">
+
+                    <div class="card-main">
+
+                        <span class="type-badge">
+                            ${
+                                reservationIcon(
+                                    reservation.type
+                                )
+                            }
+                            ${
+                                reservationTypeName(
+                                    reservation.type
+                                )
+                            }
+                        </span>
+
+
+                        <strong>
+                            ${escapeHTML(
+                                reservation.title
+                            )}
+                        </strong>
+
+
+                        <p>
+                            ${
+                                reservation.date
+                                    ? "📅 " +
+                                      formatDate(
+                                          reservation.date
+                                      )
+                                    : ""
+                            }
+
+                            ${
+                                reservation.time
+                                    ? " · 🕐 " +
+                                      reservation.time
+                                    : ""
+                            }
+                        </p>
+
+
+                        ${
+                            reservation.location_name
+                                ? `
+                                <p>
+                                    📍 ${
+                                        escapeHTML(
+                                            reservation.location_name
+                                        )
+                                    }
+                                </p>
+                                `
+                                : ""
+                        }
+
+
+                        ${
+                            reservation.description
+                                ? `
+                                <p>
+                                    ${
+                                        escapeHTML(
+                                            reservation.description
+                                        )
+                                    }
+                                </p>
+                                `
+                                : ""
+                        }
+
+
+                        ${
+                            reservation.booking_url
+                                ? `
+                                <p>
+                                    <a
+                                        href="${
+                                            escapeHTML(
+                                                reservation.booking_url
+                                            )
+                                        }"
+                                        target="_blank"
+                                        rel="noopener"
+                                    >
+                                        🔗 Abrir reserva
+                                    </a>
+                                </p>
+                                `
+                                : ""
+                        }
+
+                    </div>
+
+
+                    <div class="card-actions">
+
+                        <button
+                            class="danger-button"
+                            onclick="deleteReservation('${reservation.id}')"
+                        >
+                            🗑️
+                        </button>
+
+                    </div>
+
+                </article>
+
+            `
+            )
+            .join("");
+
+}
+
+
+async function deleteReservation(id) {
+
+    if (
+        !confirm(
+            "¿Eliminar esta reserva?"
+        )
+    ) {
+        return;
+    }
+
+
+    const { error } =
+        await db
+            .from("reservations")
+            .delete()
+            .eq("id", id);
+
+
+    if (error) {
+
+        alert(
+            "No se pudo eliminar."
+        );
+
+        console.error(error);
+
+        return;
+
+    }
+
+
+    await loadData();
+
+}
+
+
+let selectedReservationLocation = null;
+
+
+document
+    .getElementById(
+        "search-reservation-location"
+    )
+    .addEventListener(
+        "click",
+        () => {
+
+            const query =
+                document
+                    .getElementById(
+                        "reservation-location"
+                    )
+                    .value
+                    .trim();
+
+
+            searchLocation(
+                query,
+                "reservation-location-results",
+                (result) => {
+
+                    selectedReservationLocation =
+                        result;
+
+                }
+            );
+
+        }
+    );
+
+
+document
+    .getElementById(
+        "reservation-form"
+    )
+    .addEventListener(
+        "submit",
+        async (event) => {
+
+            event.preventDefault();
+
+
+            const data = {
+
+                type:
+                    document
+                        .getElementById(
+                            "reservation-type"
+                        )
+                        .value,
+
+                title:
+                    document
+                        .getElementById(
+                            "reservation-title"
+                        )
+                        .value
+                        .trim(),
+
+                description:
+                    document
+                        .getElementById(
+                            "reservation-description"
+                        )
+                        .value
+                        .trim(),
+
+                date:
+                    document
+                        .getElementById(
+                            "reservation-date"
+                        )
+                        .value || null,
+
+                time:
+                    document
+                        .getElementById(
+                            "reservation-time"
+                        )
+                        .value || null,
+
+                location_name:
+                    document
+                        .getElementById(
+                            "reservation-location"
+                        )
+                        .value
+                        .trim() || null,
+
+                latitude:
+                    selectedReservationLocation
+                        ?.lat || null,
+
+                longitude:
+                    selectedReservationLocation
+                        ?.lon || null,
+
+                booking_url:
+                    document
+                        .getElementById(
+                            "reservation-url"
+                        )
+                        .value
+                        .trim() || null,
+
+                created_by:
+                    "NY TRIP"
+
+            };
+
+
+            const { error } =
+                await db
+                    .from("reservations")
+                    .insert(data);
+
+
+            if (error) {
+
+                alert(
+                    "No se pudo guardar la reserva."
+                );
+
+                console.error(error);
+
+                return;
+
+            }
+
+
+            closeModal(
+                "reservation-modal"
+            );
+
+
+            selectedReservationLocation =
+                null;
+
+
+            await loadData();
+
+
+            showScreen(
+                "reservations"
+            );
+
+        }
+    );
+
+
+// ==========================================
+// TRICOUNT
+// ==========================================
+
+function calculateBalances() {
+
+    const balances = {
+
+        Laura: 0,
+
+        Sara: 0,
+
+        Belén: 0
+
+    };
+
+
+    expenses.forEach(
+        expense => {
+
+            const amount =
+                Number(
+                    expense.amount
+                );
+
+
+            const payer =
+                expense.paid_by;
+
+
+            const participants =
+                Array.isArray(
+                    expense.participants
+                )
+                    ? expense.participants
+                    : [];
+
+
+            if (!participants.length) {
+                return;
+            }
+
+
+            const share =
+                amount /
+                participants.length;
+
+
+            if (
+                balances[payer] !== undefined
+            ) {
+
+                balances[payer] += amount;
+
+            }
+
+
+            participants.forEach(
+                person => {
+
+                    if (
+                        balances[person] !== undefined
+                    ) {
+
+                        balances[person] -= share;
+
+                    }
+
+                }
+            );
+
+        }
+    );
+
+
+    return balances;
+
+}
+
+
+function calculateDebts() {
+
+    const balances =
+        calculateBalances();
+
+
+    const creditors = [];
+
+    const debtors = [];
+
+
+    Object.entries(
+        balances
+    ).forEach(
+        ([name, balance]) => {
+
+            if (
+                balance > 0.01
+            ) {
+
+                creditors.push({
+                    name,
+                    amount: balance
+                });
+
+            }
+
+
+            if (
+                balance < -0.01
+            ) {
+
+                debtors.push({
+                    name,
+                    amount: -balance
+                });
+
+            }
+
+        }
+    );
+
+
+    const debts = [];
+
+
+    let i = 0;
+    let j = 0;
+
+
+    while (
+        i < debtors.length &&
+        j < creditors.length
+    ) {
+
+        const debtor =
+            debtors[i];
+
+
+        const creditor =
+            creditors[j];
+
+
+        const amount =
+            Math.min(
+                debtor.amount,
+                creditor.amount
+            );
+
+
+        debts.push({
+
+            from:
+                debtor.name,
+
+            to:
+                creditor.name,
+
+            amount
+
+        });
+
+
+        debtor.amount -= amount;
+
+        creditor.amount -= amount;
+
+
+        if (
+            debtor.amount < 0.01
+        ) {
+            i++;
+        }
+
+
+        if (
+            creditor.amount < 0.01
+        ) {
+            j++;
+        }
+
+    }
+
+
+    return debts;
+
+}
+
+
+function renderExpenses() {
+
+    const balances =
+        calculateBalances();
+
+
+    const total =
+        expenses.reduce(
+            (sum, expense) =>
+                sum +
+                Number(
+                    expense.amount
+                ),
+            0
+        );
+
+
+    const summary =
+        document.getElementById(
+            "expense-summary"
+        );
+
+
+    summary.innerHTML =
+        TRAVELERS
+            .map(
+                person => {
+
+                    const balance =
+                        balances[person];
 
 
                     return `
 
-                        <div class="expense-item">
+                        <div class="balance-card">
 
-                            <div>
+                            <span>
+                                ${
+                                    TRAVELER_EMOJIS[
+                                        person
+                                    ]
+                                }
+                                ${person}
+                            </span>
+
+                            <strong
+                                class="${
+                                    balance > 0.01
+                                        ? "positive"
+                                        : balance < -0.01
+                                            ? "negative"
+                                            : ""
+                                }"
+                            >
+                                ${
+                                    balance >= 0
+                                        ? "+"
+                                        : ""
+                                }
+                                ${
+                                    formatMoney(
+                                        balance,
+                                        "EUR"
+                                    )
+                                }
+                            </strong>
+
+                        </div>
+
+                    `;
+
+                }
+            )
+            .join("");
+
+
+    const totalCard =
+        document.createElement(
+            "div"
+        );
+
+
+    totalCard.className =
+        "balance-card";
+
+
+    totalCard.innerHTML = `
+
+        <span>
+            Total
+        </span>
+
+        <strong>
+            ${formatMoney(total, "EUR")}
+        </strong>
+
+    `;
+
+
+    summary.appendChild(
+        totalCard
+    );
+
+
+    renderDebts();
+
+
+    const container =
+        document.getElementById(
+            "expense-list"
+        );
+
+
+    if (!expenses.length) {
+
+        container.innerHTML = `
+            <div class="empty">
+                💰 Todavía no hay gastos.
+            </div>
+        `;
+
+        return;
+
+    }
+
+
+    container.innerHTML =
+        expenses
+            .map(
+                expense => {
+
+                    const participants =
+                        Array.isArray(
+                            expense.participants
+                        )
+                            ? expense.participants
+                            : [];
+
+
+                    return `
+
+                        <article class="expense-card">
+
+                            <div class="card-main">
 
                                 <strong>
                                     ${escapeHTML(
-                                        expense.description
+                                        expense.title
                                     )}
                                 </strong>
 
                                 <p>
-                                    Pagó ${escapeHTML(
-                                        expense.payer
-                                    )}
-                                    ·
-                                    ${formatEUR(
-                                        expense.amountEUR
-                                    )}
-
+                                    ${
+                                        TRAVELER_EMOJIS[
+                                            expense.paid_by
+                                        ] || ""
+                                    }
+                                    Pagó
+                                    ${
+                                        escapeHTML(
+                                            expense.paid_by
+                                        )
+                                    }
                                 </p>
 
-                                <small>
-                                    ${expense.participants.join(
-                                        ", "
-                                    )}
-                                    ·
-                                    ${formatEUR(
-                                        share
-                                    )}
-                                    por persona
-                                </small>
+                                <p>
+                                    👥
+                                    ${
+                                        participants
+                                            .map(
+                                                person =>
+                                                    escapeHTML(
+                                                        person
+                                                    )
+                                            )
+                                            .join(
+                                                ", "
+                                            )
+                                    }
+                                </p>
+
+                                ${
+                                    expense.date
+                                        ? `
+                                        <p>
+                                            📅 ${
+                                                formatDate(
+                                                    expense.date
+                                                )
+                                            }
+                                        </p>
+                                        `
+                                        : ""
+                                }
 
                             </div>
 
 
-                            <button
-                                type="button"
-                                class="delete-expense"
-                                data-id="${expense.id}"
-                            >
-                                🗑️
-                            </button>
+                            <div class="card-actions">
 
-                        </div>
+                                <strong>
+                                    ${
+                                        formatMoney(
+                                            expense.amount,
+                                            expense.currency
+                                        )
+                                    }
+                                </strong>
+
+                                <button
+                                    class="danger-button"
+                                    onclick="deleteExpense('${expense.id}')"
+                                >
+                                    🗑️
+                                </button>
+
+                            </div>
+
+                        </article>
 
                     `;
 
@@ -986,477 +2154,1115 @@ if (expenses.length === 0) {
 }
 
 
-// -----------------------------
-// SALDOS
-// -----------------------------
+function renderDebts() {
 
-const balances =
-    calculateBalances();
-
-
-balancesElement.innerHTML =
-    PEOPLE
-        .map(
-            person => {
-
-                const balance =
-                    balances[person];
+    const container =
+        document.getElementById(
+            "debts"
+        );
 
 
-                let text;
-
-                if (
-                    Math.abs(balance) <
-                    0.01
-                ) {
-
-                    text =
-                        "Está a cero";
-
-                } else if (
-                    balance > 0
-                ) {
-
-                    text =
-                        "Debe recibir " +
-                        formatEUR(
-                            balance
-                        );
-
-                } else {
-
-                    text =
-                        "Debe pagar " +
-                        formatEUR(
-                            Math.abs(balance)
-                        );
-
-                }
+    const debts =
+        calculateDebts();
 
 
-                return `
+    if (!debts.length) {
 
-                    <div class="balance-item">
+        container.innerHTML = `
+            <div class="debt-card">
 
-                        <strong>
-                            ${person}
-                        </strong>
+                <strong>
+                    🎉 Estáis a cero
+                </strong>
 
-                        <span>
-                            ${text}
-                        </span>
+                <span>
+                    Nadie debe nada.
+                </span>
 
-                    </div>
+            </div>
+        `;
 
-                `;
+        return;
 
-            }
-        )
-        .join("");
-
-
-// -----------------------------
-// DEUDAS
-// -----------------------------
-
-const debts =
-    calculateDebts();
+    }
 
 
-if (debts.length === 0) {
-
-    debtsElement.innerHTML = `
-
-        <div class="debt-success">
-
-            ✅
-
-            <strong>
-                Estáis a mano
-            </strong>
-
-            <p>
-                Nadie debe dinero a nadie.
-            </p>
-
-        </div>
-
-    `;
-
-} else {
-
-    debtsElement.innerHTML = `
-
-        <h3>
-            💸 ¿QUIÉN DEBE A QUIÉN?
-        </h3>
-
-        ${debts
+    container.innerHTML =
+        debts
             .map(
                 debt => `
 
-                    <div class="debt-item">
+                    <div class="debt-card">
 
-                        <span>
-                            ${getPersonEmoji(
+                        <strong>
+                            ${
+                                TRAVELER_EMOJIS[
+                                    debt.from
+                                ]
+                            }
+                            ${escapeHTML(
                                 debt.from
                             )}
-                            <strong>
-                                ${debt.from}
-                            </strong>
-                        </span>
 
-                        <span>
-                            debe
-                        </span>
+                            →
 
-                        <span>
-                            ${getPersonEmoji(
+                            ${
+                                TRAVELER_EMOJIS[
+                                    debt.to
+                                ]
+                            }
+                            ${escapeHTML(
                                 debt.to
                             )}
-                            <strong>
-                                ${debt.to}
-                            </strong>
-                        </span>
-
-                        <strong class="debt-amount">
-                            ${formatEUR(
-                                debt.amount
-                            )}
                         </strong>
+
+                        <span class="debt-amount">
+                            ${
+                                formatMoney(
+                                    debt.amount,
+                                    "EUR"
+                                )
+                            }
+                        </span>
 
                     </div>
 
                 `
             )
-            .join("")}
-
-    `;
+            .join("");
 
 }
 
 
-// -----------------------------
-// BOTONES BORRAR
-// -----------------------------
+async function deleteExpense(id) {
+
+    if (
+        !confirm(
+            "¿Eliminar este gasto?"
+        )
+    ) {
+        return;
+    }
+
+
+    const { error } =
+        await db
+            .from("expenses")
+            .delete()
+            .eq("id", id);
+
+
+    if (error) {
+
+        alert(
+            "No se pudo eliminar."
+        );
+
+        console.error(error);
+
+        return;
+
+    }
+
+
+    await loadData();
+
+}
+
 
 document
-    .querySelectorAll(
-        ".delete-expense"
+    .getElementById(
+        "expense-form"
     )
-    .forEach(
-        button => {
+    .addEventListener(
+        "submit",
+        async (event) => {
 
-            button.addEventListener(
-                "click",
+            event.preventDefault();
+
+
+            const participants =
+                Array.from(
+                    document.querySelectorAll(
+                        'input[name="participant"]:checked'
+                    )
+                )
+                .map(
+                    input =>
+                        input.value
+                );
+
+
+            if (
+                participants.length === 0
+            ) {
+
+                alert(
+                    "Selecciona al menos una participante."
+                );
+
+                return;
+
+            }
+
+
+            const data = {
+
+                title:
+                    document
+                        .getElementById(
+                            "expense-title"
+                        )
+                        .value
+                        .trim(),
+
+                amount:
+                    Number(
+                        document
+                            .getElementById(
+                                "expense-amount"
+                            )
+                            .value
+                    ),
+
+                currency:
+                    document
+                        .getElementById(
+                            "expense-currency"
+                        )
+                        .value,
+
+                paid_by:
+                    document
+                        .getElementById(
+                            "expense-paid-by"
+                        )
+                        .value,
+
+                participants,
+
+                date:
+                    document
+                        .getElementById(
+                            "expense-date"
+                        )
+                        .value || null,
+
+                notes:
+                    document
+                        .getElementById(
+                            "expense-notes"
+                        )
+                        .value
+                        .trim() || null,
+
+                created_by:
+                    "NY TRIP"
+
+            };
+
+
+            const { error } =
+                await db
+                    .from("expenses")
+                    .insert(data);
+
+
+            if (error) {
+
+                alert(
+                    "No se pudo guardar el gasto."
+                );
+
+                console.error(error);
+
+                return;
+
+            }
+
+
+            closeModal(
+                "expense-modal"
+            );
+
+
+            await loadData();
+
+
+            showScreen(
+                "expenses"
+            );
+
+        }
+    );
+
+
+// ==========================================
+// MAPA
+// ==========================================
+
+function initializeMap() {
+
+    if (map) {
+        return;
+    }
+
+
+    const mapElement =
+        document.getElementById(
+            "map"
+        );
+
+
+    if (!mapElement) {
+        return;
+    }
+
+
+    map =
+        L.map(
+            mapElement
+        ).setView(
+            [
+                40.7128,
+                -74.0060
+            ],
+            12
+        );
+
+
+    L.tileLayer(
+        "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+        {
+            maxZoom: 19,
+            attribution:
+                '&copy; OpenStreetMap contributors'
+        }
+    ).addTo(map);
+
+}
+
+
+function clearMapMarkers() {
+
+    mapMarkers.forEach(
+        marker => {
+
+            map.removeLayer(
+                marker
+            );
+
+        }
+    );
+
+
+    mapMarkers = [];
+
+}
+
+
+function addMarker(
+    latitude,
+    longitude,
+    title,
+    description
+) {
+
+    if (
+        latitude === null ||
+        longitude === null ||
+        latitude === undefined ||
+        longitude === undefined
+    ) {
+        return;
+    }
+
+
+    const marker =
+        L.marker(
+            [
+                Number(latitude),
+                Number(longitude)
+            ]
+        )
+        .addTo(map);
+
+
+    marker.bindPopup(`
+
+        <strong>
+            ${escapeHTML(title)}
+        </strong>
+
+        <br>
+
+        ${
+            description
+                ? escapeHTML(
+                    description
+                )
+                : ""
+        }
+
+    `);
+
+
+    mapMarkers.push(
+        marker
+    );
+
+}
+
+
+function renderMap() {
+
+    if (!map) {
+        return;
+    }
+
+
+    clearMapMarkers();
+
+
+    addMarker(
+        HOTEL.latitude,
+        HOTEL.longitude,
+        "🏨 Hotel",
+        HOTEL.name
+    );
+
+
+    plans.forEach(
+        plan => {
+
+            addMarker(
+                plan.latitude,
+                plan.longitude,
+                `📅 ${plan.title}`,
+                plan.location_name
+            );
+
+        }
+    );
+
+
+    reservations.forEach(
+        reservation => {
+
+            addMarker(
+                reservation.latitude,
+                reservation.longitude,
+                `${
+                    reservationIcon(
+                        reservation.type
+                    )
+                } ${
+                    reservation.title
+                }`,
+                reservation.location_name
+            );
+
+        }
+    );
+
+
+    places.forEach(
+        place => {
+
+            addMarker(
+                place.latitude,
+                place.longitude,
+                `📍 ${place.name}`,
+                place.address
+            );
+
+        }
+    );
+
+
+    renderMapList();
+
+}
+
+
+function renderMapList() {
+
+    const container =
+        document.getElementById(
+            "map-list"
+        );
+
+
+    const items = [];
+
+
+    items.push({
+
+        title:
+            "🏨 " + HOTEL.name,
+
+        location:
+            HOTEL.address
+
+    });
+
+
+    plans
+        .filter(
+            plan =>
+                plan.latitude &&
+                plan.longitude
+        )
+        .forEach(
+            plan => {
+
+                items.push({
+
+                    title:
+                        "📅 " +
+                        plan.title,
+
+                    location:
+                        plan.location_name
+
+                });
+
+            }
+        );
+
+
+    reservations
+        .filter(
+            reservation =>
+                reservation.latitude &&
+                reservation.longitude
+        )
+        .forEach(
+            reservation => {
+
+                items.push({
+
+                    title:
+                        reservationIcon(
+                            reservation.type
+                        ) +
+                        " " +
+                        reservation.title,
+
+                    location:
+                        reservation.location_name
+
+                });
+
+            }
+        );
+
+
+    if (!items.length) {
+
+        container.innerHTML =
+            `<div class="empty">
+                Todavía no hay lugares.
+            </div>`;
+
+        return;
+
+    }
+
+
+    container.innerHTML =
+        items
+            .map(
+                item => `
+
+                    <div class="map-item">
+
+                        <strong>
+                            ${escapeHTML(
+                                item.title
+                            )}
+                        </strong>
+
+                        <span>
+                            ${
+                                escapeHTML(
+                                    item.location ||
+                                    ""
+                                )
+                            }
+                        </span>
+
+                    </div>
+
+                `
+            )
+            .join("");
+
+}
+
+
+document
+    .getElementById(
+        "center-map"
+    )
+    .addEventListener(
+        "click",
+        () => {
+
+            if (
+                !navigator.geolocation
+            ) {
+
+                alert(
+                    "Este navegador no permite obtener tu ubicación."
+                );
+
+                return;
+
+            }
+
+
+            navigator.geolocation.getCurrentPosition(
+
+                position => {
+
+                    initializeMap();
+
+
+                    const lat =
+                        position.coords.latitude;
+
+
+                    const lon =
+                        position.coords.longitude;
+
+
+                    map.setView(
+                        [lat, lon],
+                        15
+                    );
+
+
+                    L.circleMarker(
+                        [lat, lon],
+                        {
+                            radius: 9
+                        }
+                    )
+                    .addTo(map)
+                    .bindPopup(
+                        "📍 Estáis aquí"
+                    )
+                    .openPopup();
+
+                },
+
                 () => {
 
-                    deleteExpense(
-                        Number(
-                            button.dataset.id
-                        )
+                    alert(
+                        "No se pudo obtener la ubicación."
+                    );
+
+                }
+
+            );
+
+        }
+    );
+
+
+// ==========================================
+// BÚSQUEDA DE LUGARES — NOMINATIM
+// ==========================================
+
+async function searchLocation(
+    query,
+    resultContainerId,
+    onSelect
+) {
+
+    const container =
+        document.getElementById(
+            resultContainerId
+        );
+
+
+    if (!query) {
+
+        container.innerHTML =
+            `<div class="empty">
+                Escribe un lugar.
+            </div>`;
+
+        return;
+
+    }
+
+
+    container.innerHTML =
+        `<div class="loading">
+            🔎 Buscando...
+        </div>`;
+
+
+    try {
+
+        const url =
+            "https://nominatim.openstreetmap.org/search" +
+            "?format=jsonv2" +
+            "&limit=5" +
+            "&q=" +
+            encodeURIComponent(
+                query + ", New York"
+            );
+
+
+        const response =
+            await fetch(url);
+
+
+        if (!response.ok) {
+            throw new Error(
+                "Error buscando lugar"
+            );
+        }
+
+
+        const results =
+            await response.json();
+
+
+        if (!results.length) {
+
+            container.innerHTML =
+                `<div class="empty">
+                    No hemos encontrado ese lugar.
+                </div>`;
+
+            return;
+
+        }
+
+
+        container.innerHTML =
+            results
+                .map(
+                    (result, index) => `
+
+                        <button
+                            type="button"
+                            class="search-result"
+                            data-location-index="${index}"
+                        >
+
+                            <strong>
+                                ${
+                                    escapeHTML(
+                                        result.display_name
+                                    )
+                                }
+                            </strong>
+
+                            <span>
+                                Seleccionar
+                            </span>
+
+                        </button>
+
+                    `
+                )
+                .join("");
+
+
+        container
+            .querySelectorAll(
+                "[data-location-index]"
+            )
+            .forEach(
+                button => {
+
+                    button.addEventListener(
+                        "click",
+                        () => {
+
+                            const result =
+                                results[
+                                    Number(
+                                        button.dataset
+                                            .locationIndex
+                                    )
+                                ];
+
+
+                            const location = {
+
+                                lat:
+                                    Number(
+                                        result.lat
+                                    ),
+
+                                lon:
+                                    Number(
+                                        result.lon
+                                    ),
+
+                                display_name:
+                                    result.display_name
+
+                            };
+
+
+                            onSelect(
+                                location
+                            );
+
+
+                            if (
+                                resultContainerId ===
+                                "plan-location-results"
+                            ) {
+
+                                document
+                                    .getElementById(
+                                        "plan-location"
+                                    )
+                                    .value =
+                                    result.display_name;
+
+                            }
+
+
+                            if (
+                                resultContainerId ===
+                                "reservation-location-results"
+                            ) {
+
+                                document
+                                    .getElementById(
+                                        "reservation-location"
+                                    )
+                                    .value =
+                                    result.display_name;
+
+                            }
+
+
+                            container.innerHTML =
+                                `
+                                    <div class="search-result">
+                                        📍 Lugar seleccionado
+                                    </div>
+                                `;
+
+                        }
                     );
 
                 }
             );
 
-        }
-    );
+    } catch (error) {
 
-}
-
-// ==========================================
-// FORMATO DE EUROS
-// ==========================================
-
-function formatEUR(amount) {
-
-return new Intl.NumberFormat(
-    "es-ES",
-    {
-        style: "currency",
-        currency: "EUR"
-    }
-).format(amount);
-
-}
-
-// ==========================================
-// EMOJIS
-// ==========================================
-
-function getPersonEmoji(
-person
-) {
-
-const emojis = {
-
-    Laura: "😈",
-
-    Sara: "😇",
-
-    Belén: "🤪"
-
-};
-
-
-return (
-    emojis[person] ||
-    "👤"
-);
-
-}
-
-// ==========================================
-// EVITAR HTML INYECTADO
-// ==========================================
-
-function escapeHTML(
-value
-) {
-
-return String(value)
-    .replace(
-        /&/g,
-        "&amp;"
-    )
-    .replace(
-        /</g,
-        "&lt;"
-    )
-    .replace(
-        />/g,
-        "&gt;"
-    )
-    .replace(
-        /"/g,
-        "&quot;"
-    )
-    .replace(
-        /'/g,
-        "&#039;"
-    );
-
-}
-
-// ==========================================
-// INTERFAZ GASTOS
-// ==========================================
-
-function setupExpenseUI() {
-
-const showButton =
-    document.getElementById(
-        "show-expense-form"
-    );
-
-
-const form =
-    document.getElementById(
-        "expense-form"
-    );
-
-
-const cancelButton =
-    document.getElementById(
-        "cancel-expense"
-    );
-
-
-if (
-    !showButton ||
-    !form ||
-    !cancelButton
-) {
-
-    return;
-
-}
-
-
-showButton.addEventListener(
-    "click",
-    () => {
-
-        form.classList.remove(
-            "hidden"
+        console.error(
+            error
         );
 
-        showButton.classList.add(
-            "hidden"
-        );
+
+        container.innerHTML =
+            `<div class="empty">
+                Error al buscar el lugar.
+            </div>`;
 
     }
-);
+
+}
 
 
-cancelButton.addEventListener(
-    "click",
-    () => {
+// ==========================================
+// VUELOS
+// ==========================================
 
-        form.reset();
+function renderFlights() {
 
-        document
-            .querySelectorAll(
-                'input[name="participant"]'
+    const container =
+        document.getElementById(
+            "flight-list"
+        );
+
+
+    container.innerHTML =
+        flights
+            .map(
+                flight => `
+
+                    <article class="flight-card">
+
+                        <div class="card-main">
+
+                            <span class="type-badge">
+                                ✈️ ${
+                                    flight.airline
+                                }
+                            </span>
+
+
+                            <strong>
+                                ${
+                                    flight.flightNumber
+                                }
+                            </strong>
+
+
+                            <div class="flight-route">
+
+                                <span class="flight-airport">
+                                    ${
+                                        flight.from
+                                    }
+                                </span>
+
+                                <span class="flight-arrow">
+                                    →
+                                </span>
+
+                                <span class="flight-airport">
+                                    ${
+                                        flight.to
+                                    }
+                                </span>
+
+                            </div>
+
+
+                            <p>
+                                📅 ${
+                                    formatDate(
+                                        flight.date
+                                    )
+                                }
+                            </p>
+
+
+                            <p>
+                                🕐 ${
+                                    flight.departure
+                                }
+                                →
+                                ${
+                                    flight.arrival
+                                }
+                            </p>
+
+
+                            <p>
+                                ⏱️ ${
+                                    flight.duration
+                                }
+                            </p>
+
+                        </div>
+
+                    </article>
+
+                `
             )
-            .forEach(
-                input => {
-                    input.checked = true;
-                }
-            );
-
-
-        form.classList.add(
-            "hidden"
-        );
-
-        showButton.classList.remove(
-            "hidden"
-        );
-
-    }
-);
-
-
-form.addEventListener(
-    "submit",
-    addExpense
-);
+            .join("");
 
 }
 
+
 // ==========================================
-// NAVEGACIÓN
+// REALTIME
 // ==========================================
 
-function setupNavigation() {
+function subscribeRealtime() {
 
-const expensesButton =
-    document.getElementById(
-        "btn-expenses"
-    );
+    db
+        .channel(
+            "ny-trip-live"
+        )
+
+        .on(
+            "postgres_changes",
+            {
+                event: "*",
+                schema: "public",
+                table: "plans"
+            },
+            async () => {
+
+                await loadData();
+
+            }
+        )
+
+        .on(
+            "postgres_changes",
+            {
+                event: "*",
+                schema: "public",
+                table: "reservations"
+            },
+            async () => {
+
+                await loadData();
+
+            }
+        )
+
+        .on(
+            "postgres_changes",
+            {
+                event: "*",
+                schema: "public",
+                table: "expenses"
+            },
+            async () => {
+
+                await loadData();
+
+            }
+        )
+
+        .on(
+            "postgres_changes",
+            {
+                event: "*",
+                schema: "public",
+                table: "places"
+            },
+            async () => {
+
+                await loadData();
+
+            }
+        )
+
+        .subscribe(
+            status => {
+
+                console.log(
+                    "Realtime:",
+                    status
+                );
+
+            }
+        );
+
+}
 
 
-const navExpenses =
-    document.getElementById(
-        "nav-expenses"
-    );
+// ==========================================
+// ELIMINAR SERVICE WORKERS ANTIGUOS
+// ==========================================
 
+async function removeOldServiceWorkers() {
 
-const expensesSection =
-    document.getElementById(
-        "expenses-section"
-    );
-
-
-function showExpenses() {
-
-    if (!expensesSection) {
+    if (
+        !("serviceWorker" in navigator)
+    ) {
         return;
     }
 
-    expensesSection.scrollIntoView({
-        behavior: "smooth"
-    });
 
-}
+    try {
 
-
-if (expensesButton) {
-
-    expensesButton.addEventListener(
-        "click",
-        showExpenses
-    );
-
-}
+        const registrations =
+            await navigator
+                .serviceWorker
+                .getRegistrations();
 
 
-if (navExpenses) {
+        for (
+            const registration
+            of registrations
+        ) {
 
-    navExpenses.addEventListener(
-        "click",
-        showExpenses
-    );
-
-}
-
-
-const weatherButton =
-    document.getElementById(
-        "btn-weather"
-    );
-
-
-if (weatherButton) {
-
-    weatherButton.addEventListener(
-        "click",
-        () => {
-
-            const section =
-                document.querySelector(
-                    ".now-card"
-                );
-
-            if (section) {
-
-                section.scrollIntoView({
-                    behavior:
-                        "smooth"
-                });
-
-            }
+            await registration.unregister();
 
         }
-    );
+
+
+        if (
+            window.caches
+        ) {
+
+            const cacheNames =
+                await caches.keys();
+
+
+            await Promise.all(
+                cacheNames.map(
+                    cacheName =>
+                        caches.delete(
+                            cacheName
+                        )
+                )
+            );
+
+        }
+
+
+        console.log(
+            "🧹 NY TRIP: caché eliminada."
+        );
+
+    } catch (error) {
+
+        console.warn(
+            "No se pudo limpiar toda la caché:",
+            error
+        );
+
+    }
 
 }
 
-}
 
 // ==========================================
 // INICIAR
 // ==========================================
 
-function startNYTrip() {
+async function startNYTrip() {
 
-console.log(
-    "🗽 NY TRIP funcionando correctamente."
-);
+    console.log(
+        "🗽 NY TRIP iniciando..."
+    );
 
 
-updateTripDay();
+    updateTripDay();
 
-loadExpenses();
+    renderFlights();
 
-renderExpenses();
+    await removeOldServiceWorkers();
 
-setupExpenseUI();
+    await loadWeather();
 
-setupNavigation();
+    await loadCurrency();
 
-loadWeather();
+    await loadData();
+
+    subscribeRealtime();
+
+
+    console.log(
+        "🟢 NY TRIP funcionando."
+    );
 
 }
 
-// ==========================================
-// DOM
-// ==========================================
 
 if (
-document.readyState ===
-"loading"
+    document.readyState ===
+    "loading"
 ) {
 
-document.addEventListener(
-    "DOMContentLoaded",
-    startNYTrip
-);
+    document.addEventListener(
+        "DOMContentLoaded",
+        startNYTrip
+    );
 
 } else {
 
-startNYTrip();
+    startNYTrip();
 
 }
