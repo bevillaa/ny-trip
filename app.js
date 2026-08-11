@@ -254,4 +254,155 @@ if (
     startNYTrip();
 
 }
+// ==========================================
+// 📋 PANTALLA DE RESERVAS
+// ==========================================
+
+function openReservations() {
+
+    const homeScreen =
+        document.getElementById("home-screen");
+
+    const reservationsScreen =
+        document.getElementById("reservations-screen");
+
+    const bottomNavigation =
+        document.getElementById("bottom-navigation");
+
+
+    if (!homeScreen || !reservationsScreen) {
+        return;
+    }
+
+
+    homeScreen.style.display = "none";
+
+    reservationsScreen.style.display = "block";
+
+
+    if (bottomNavigation) {
+        bottomNavigation.style.display = "none";
+    }
+
+
+    window.scrollTo(0, 0);
+
+}
+
+
+// ==========================================
+// VOLVER AL INICIO
+// ==========================================
+
+function closeReservations() {
+
+    const homeScreen =
+        document.getElementById("home-screen");
+
+    const reservationsScreen =
+        document.getElementById("reservations-screen");
+
+    const bottomNavigation =
+        document.getElementById("bottom-navigation");
+
+
+    if (!homeScreen || !reservationsScreen) {
+        return;
+    }
+
+
+    reservationsScreen.style.display = "none";
+
+    homeScreen.style.display = "block";
+
+
+    if (bottomNavigation) {
+        bottomNavigation.style.display = "flex";
+    }
+
+
+    window.scrollTo(0, 0);
+
+}
+
+
+// ==========================================
+// ENLACE DEL HOTEL
+// ==========================================
+
+function openHotelBooking() {
+
+    if (
+        typeof tripData !== "undefined" &&
+        tripData.hotel &&
+        tripData.hotel.bookingUrl
+    ) {
+
+        window.open(
+            tripData.hotel.bookingUrl,
+            "_blank"
+        );
+
+    }
+
+}
+
+
+// ==========================================
+// ACTIVAR BOTONES
+// ==========================================
+
+document.addEventListener(
+    "DOMContentLoaded",
+    function () {
+
+        const reservationsButton =
+            document.getElementById(
+                "btn-reservations"
+            );
+
+
+        const backButton =
+            document.getElementById(
+                "btn-back-reservations"
+            );
+
+
+        const hotelButton =
+            document.getElementById(
+                "btn-hotel-booking"
+            );
+
+
+        if (reservationsButton) {
+
+            reservationsButton.addEventListener(
+                "click",
+                openReservations
+            );
+
+        }
+
+
+        if (backButton) {
+
+            backButton.addEventListener(
+                "click",
+                closeReservations
+            );
+
+        }
+
+
+        if (hotelButton) {
+
+            hotelButton.addEventListener(
+                "click",
+                openHotelBooking
+            );
+
+        }
+
+    }
+);
 
