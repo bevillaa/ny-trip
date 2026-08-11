@@ -1,852 +1,677 @@
 <!DOCTYPE html>
+
 <html lang="es">
 
 <head>
 
-    <meta charset="UTF-8">
+<meta charset="UTF-8">
 
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0, viewport-fit=cover"
-    >
+<meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+>
 
-    <meta
-        name="theme-color"
-        content="#111827"
-    >
+<meta
+    name="theme-color"
+    content="#111827"
+>
 
-    <meta
-        name="description"
-        content="NY TRIP — El tridente en Nueva York 😈😇🤪"
-    >
+<meta
+    name="description"
+    content="NY TRIP — El tridente en Nueva York 😈😇🤪"
+>
 
-    <title>🗽 NY TRIP</title>
+<title>🗽 NY TRIP</title>
 
-    <link rel="stylesheet" href="./style.css">
+<link rel="stylesheet" href="./style.css">
 
-    <link
-        rel="manifest"
-        href="./manifest.json"
-    >
+<link
+    rel="manifest"
+    href="./manifest.json"
+>
 
 </head>
 
-
 <body>
 
-<div id="app">
+<main>
+
+    <!-- CABECERA -->
+
+    <header class="app-header">
+
+        <h1>🗽 NY TRIP</h1>
+
+        <p>
+            El tridente en Nueva York 😈😇🤪
+        </p>
+
+    </header>
 
 
-    <!-- ==========================================
-         INICIO
-         ========================================== -->
+    <!-- VIAJE -->
 
-    <section
-        class="screen active"
-        id="screen-home"
-    >
+    <section class="location-card">
 
-        <header class="app-header">
+        <div>
 
-            <h1>🗽 NY TRIP</h1>
-
-            <p>
-                El tridente en Nueva York 😈😇🤪
-            </p>
-
-        </header>
-
-
-        <section class="hero-card">
-
-            <div>
-
-                <span class="eyebrow">
-                    📅 VIAJE
-                </span>
-
-                <strong id="trip-day">
-                    FALTAN...
-                </strong>
-
-            </div>
-
-            <div class="hero-location">
-                📍 Nueva York
-            </div>
-
-        </section>
-
-
-        <section class="now-card">
-
-            <span class="eyebrow">
-                ⭐ ¿QUÉ HACEMOS AHORA?
+            <span class="label">
+                📅 VIAJE
             </span>
 
-            <h2 id="next-activity-title">
-                ¡Bienvenidas a Nueva York!
-            </h2>
+            <strong id="trip-day">
+                CARGANDO...
+            </strong>
 
-            <p id="next-activity-text">
-                Aquí aparecerá vuestra próxima actividad.
-            </p>
+        </div>
 
-        </section>
 
+        <div class="weather">
 
-        <section class="section-card">
+            <span>📍</span>
 
-            <div class="section-heading">
-
-                <h2>📅 PLAN DEL VIAJE</h2>
-
-                <button
-                    class="text-button"
-                    data-screen="plan"
-                >
-                    Ver todo
-                </button>
-
-            </div>
-
-
-            <div id="home-plan-preview"></div>
-
-        </section>
-
-
-        <section class="quick-actions">
-
-            <button data-screen="transport">
-                <span>🚇</span>
-                <small>Transporte</small>
-            </button>
-
-            <button data-screen="weather">
-                <span>🌦️</span>
-                <small>Tiempo</small>
-            </button>
-
-            <button data-screen="food">
-                <span>🍽️</span>
-                <small>Comer cerca</small>
-            </button>
-
-            <button data-screen="nearby">
-                <span>📍</span>
-                <small>Cerca de mí</small>
-            </button>
-
-            <button data-screen="expenses">
-                <span>💰</span>
-                <small>Gastos</small>
-            </button>
-
-            <button data-screen="reservations">
-                <span>📋</span>
-                <small>Reservas</small>
-            </button>
-
-        </section>
-
-
-        <section class="section-card">
-
-            <div class="section-heading">
-
-                <h2>👩‍👩‍👩 EL TRIDENTE</h2>
-
-            </div>
-
-            <div
-                class="traveler-list"
-                id="home-travelers"
-            ></div>
-
-        </section>
-
-    </section>
-
-
-    <!-- ==========================================
-         PLAN
-         ========================================== -->
-
-    <section
-        class="screen"
-        id="screen-plan"
-    >
-
-        <header class="page-header">
-
-            <button
-                class="back-button"
-                data-screen="home"
-            >
-                ←
-            </button>
-
-            <div>
-
-                <h1>🗓️ PLAN</h1>
-
-                <p>Todo el viaje</p>
-
-            </div>
-
-        </header>
-
-
-        <div id="plan-content"></div>
-
-    </section>
-
-
-    <!-- ==========================================
-         RESERVAS
-         ========================================== -->
-
-    <section
-        class="screen"
-        id="screen-reservations"
-    >
-
-        <header class="page-header">
-
-            <button
-                class="back-button"
-                data-screen="home"
-            >
-                ←
-            </button>
-
-            <div>
-
-                <h1>📋 RESERVAS</h1>
-
-                <p>Vuelos y alojamiento</p>
-
-            </div>
-
-        </header>
-
-
-        <div id="reservations-content"></div>
-
-    </section>
-
-
-    <!-- ==========================================
-         GASTOS
-         ========================================== -->
-
-    <section
-        class="screen"
-        id="screen-expenses"
-    >
-
-        <header class="page-header">
-
-            <button
-                class="back-button"
-                data-screen="home"
-            >
-                ←
-            </button>
-
-            <div>
-
-                <h1>💰 GASTOS</h1>
-
-                <p>Control del viaje</p>
-
-            </div>
-
-        </header>
-
-
-        <section class="section-card">
-
-            <div class="expense-total">
-
-                <span>Total</span>
-
-                <strong id="expense-total">
-                    $0.00
-                </strong>
-
-            </div>
-
-        </section>
-
-
-        <section class="section-card">
-
-            <h2>➕ Añadir gasto</h2>
-
-            <form id="expense-form">
-
-                <label>
-                    Concepto
-                    <input
-                        type="text"
-                        id="expense-description"
-                        placeholder="Ej. Cena"
-                        required
-                    >
-                </label>
-
-                <label>
-                    Importe
-                    <input
-                        type="number"
-                        id="expense-amount"
-                        min="0"
-                        step="0.01"
-                        placeholder="0.00"
-                        required
-                    >
-                </label>
-
-                <label>
-                    Pagó
-                    <select id="expense-payer">
-
-                        <option value="Laura">
-                            😈 Laura
-                        </option>
-
-                        <option value="Sara">
-                            😇 Sara
-                        </option>
-
-                        <option value="Belén">
-                            🤪 Belén
-                        </option>
-
-                    </select>
-                </label>
-
-                <button
-                    class="primary-button"
-                    type="submit"
-                >
-                    Añadir gasto
-                </button>
-
-            </form>
-
-        </section>
-
-
-        <section class="section-card">
-
-            <h2>📋 Gastos registrados</h2>
-
-            <div id="expenses-list"></div>
-
-        </section>
-
-    </section>
-
-
-    <!-- ==========================================
-         MAPA
-         ========================================== -->
-
-    <section
-        class="screen"
-        id="screen-map"
-    >
-
-        <header class="page-header">
-
-            <button
-                class="back-button"
-                data-screen="home"
-            >
-                ←
-            </button>
-
-            <div>
-
-                <h1>🗺️ MAPA</h1>
-
-                <p>Vuestros lugares</p>
-
-            </div>
-
-        </header>
-
-
-        <section class="map-placeholder">
-
-            <div>
-                🗽
-            </div>
-
-            <h2>Nueva York</h2>
-
-            <p>
-                Aquí prepararemos el mapa del viaje.
-            </p>
-
-        </section>
-
-
-        <div id="places-list"></div>
-
-    </section>
-
-
-    <!-- ==========================================
-         TRANSPORTE
-         ========================================== -->
-
-    <section
-        class="screen"
-        id="screen-transport"
-    >
-
-        <header class="page-header">
-
-            <button
-                class="back-button"
-                data-screen="home"
-            >
-                ←
-            </button>
-
-            <div>
-
-                <h1>🚇 TRANSPORTE</h1>
-
-                <p>Moverse por Nueva York</p>
-
-            </div>
-
-        </header>
-
-
-        <section class="feature-grid">
-
-            <button class="feature-card">
-
-                <span>🚇</span>
-
-                <strong>Metro</strong>
-
-                <small>
-                    Próximamente
-                </small>
-
-            </button>
-
-            <button class="feature-card">
-
-                <span>🚕</span>
-
-                <strong>Taxi</strong>
-
-                <small>
-                    Próximamente
-                </small>
-
-            </button>
-
-            <button class="feature-card">
-
-                <span>🚶</span>
-
-                <strong>A pie</strong>
-
-                <small>
-                    Próximamente
-                </small>
-
-            </button>
-
-            <button class="feature-card">
-
-                <span>🚗</span>
-
-                <strong>Uber</strong>
-
-                <small>
-                    Próximamente
-                </small>
-
-            </button>
-
-        </section>
-
-    </section>
-
-
-    <!-- ==========================================
-         TIEMPO
-         ========================================== -->
-
-    <section
-        class="screen"
-        id="screen-weather"
-    >
-
-        <header class="page-header">
-
-            <button
-                class="back-button"
-                data-screen="home"
-            >
-                ←
-            </button>
-
-            <div>
-
-                <h1>🌦️ TIEMPO</h1>
-
-                <p>Nueva York</p>
-
-            </div>
-
-        </header>
-
-
-        <section class="weather-placeholder">
-
-            <div class="weather-icon">
-                🌤️
-            </div>
-
-            <h2>Tiempo en Nueva York</h2>
-
-            <p>
-                La previsión meteorológica se conectará
-                en una siguiente versión.
-            </p>
-
-        </section>
-
-    </section>
-
-
-    <!-- ==========================================
-         COMER CERCA
-         ========================================== -->
-
-    <section
-        class="screen"
-        id="screen-food"
-    >
-
-        <header class="page-header">
-
-            <button
-                class="back-button"
-                data-screen="home"
-            >
-                ←
-            </button>
-
-            <div>
-
-                <h1>🍽️ COMER CERCA</h1>
-
-                <p>Restaurantes y comida</p>
-
-            </div>
-
-        </header>
-
-
-        <section class="section-card">
-
-            <div class="empty-state">
-
-                <span>🍽️</span>
-
-                <h2>Busquemos dónde comer</h2>
-
-                <p>
-                    Esta sección quedará preparada para
-                    restaurantes cercanos.
-                </p>
-
-            </div>
-
-        </section>
-
-    </section>
-
-
-    <!-- ==========================================
-         CERCA DE MÍ
-         ========================================== -->
-
-    <section
-        class="screen"
-        id="screen-nearby"
-    >
-
-        <header class="page-header">
-
-            <button
-                class="back-button"
-                data-screen="home"
-            >
-                ←
-            </button>
-
-            <div>
-
-                <h1>📍 CERCA DE MÍ</h1>
-
-                <p>Lo que tenéis alrededor</p>
-
-            </div>
-
-        </header>
-
-
-        <section class="section-card">
-
-            <button
-                class="primary-button"
-                id="location-button"
-            >
-                📍 Activar mi ubicación
-            </button>
-
-            <p
-                class="location-result"
-                id="location-result"
-            >
-                Todavía no se ha solicitado la ubicación.
-            </p>
-
-        </section>
-
-
-        <section class="feature-grid">
-
-            <button class="feature-card">
-
-                <span>🍽️</span>
-
-                <strong>Restaurantes</strong>
-
-            </button>
-
-            <button class="feature-card">
-
-                <span>☕</span>
-
-                <strong>Cafeterías</strong>
-
-            </button>
-
-            <button class="feature-card">
-
-                <span>🛒</span>
-
-                <strong>Supermercados</strong>
-
-            </button>
-
-            <button class="feature-card">
-
-                <span>💊</span>
-
-                <strong>Farmacias</strong>
-
-            </button>
-
-        </section>
-
-    </section>
-
-
-    <!-- ==========================================
-         MÁS
-         ========================================== -->
-
-    <section
-        class="screen"
-        id="screen-more"
-    >
-
-        <header class="page-header">
-
-            <button
-                class="back-button"
-                data-screen="home"
-            >
-                ←
-            </button>
-
-            <div>
-
-                <h1>☰ MÁS</h1>
-
-                <p>Información del viaje</p>
-
-            </div>
-
-        </header>
-
-
-        <div class="menu-list">
-
-            <button data-screen="travelers">
-
-                👩‍👩‍👩
-
-                <span>
-                    Viajeras
-                </span>
-
-                →
-            </button>
-
-            <button data-screen="reservations">
-
-                📋
-
-                <span>
-                    Reservas
-                </span>
-
-                →
-            </button>
-
-            <button data-screen="plan">
-
-                🗓️
-
-                <span>
-                    Plan del viaje
-                </span>
-
-                →
-            </button>
+            <strong>
+                Nueva York
+            </strong>
 
         </div>
 
     </section>
 
 
-    <!-- ==========================================
-         VIAJERAS
-         ========================================== -->
+    <!-- TIEMPO -->
 
-    <section
-        class="screen"
-        id="screen-travelers"
-    >
+    <section class="now-card">
 
-        <header class="page-header">
+        <p class="section-label">
+            🌦️ TIEMPO EN NUEVA YORK
+        </p>
 
-            <button
-                class="back-button"
-                data-screen="more"
-            >
-                ←
-            </button>
+        <h2 id="weather-temperature">
+            Cargando...
+        </h2>
 
-            <div>
-
-                <h1>👩‍👩‍👩 VIAJERAS</h1>
-
-                <p>El tridente</p>
-
-            </div>
-
-        </header>
-
-
-        <div id="travelers-content"></div>
-
-
-        <section class="section-card">
-
-            <h2>📝 Notas del viaje</h2>
-
-            <textarea
-                id="trip-notes"
-                placeholder="Escribid aquí cualquier nota..."
-            ></textarea>
-
-            <button
-                class="primary-button"
-                id="save-notes"
-            >
-                Guardar notas
-            </button>
-
-            <p
-                class="save-message"
-                id="notes-message"
-            ></p>
-
-        </section>
+        <p id="weather-description">
+            Consultando el tiempo...
+        </p>
 
     </section>
 
 
-    <!-- ==========================================
-         NAVEGACIÓN INFERIOR
-         ========================================== -->
+    <!-- PLAN -->
 
-    <nav class="bottom-nav">
+    <section class="day-plan">
+
+        <div class="section-title">
+
+            <h2>
+                📅 PLAN DEL VIAJE
+            </h2>
+
+        </div>
+
+
+        <div class="activity">
+
+            <span class="activity-time">
+                26 DIC
+            </span>
+
+            <div>
+
+                <strong>
+                    ✈️ Viaje a Nueva York
+                </strong>
+
+                <p>
+                    Málaga → Dublín → JFK
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <div class="activity">
+
+            <span class="activity-time">
+                26 DIC
+            </span>
+
+            <div>
+
+                <strong>
+                    🏨 Llegada al hotel
+                </strong>
+
+                <p>
+                    Courtyard by Marriott New York Manhattan Upper East Side
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <div class="activity">
+
+            <span class="activity-time">
+                4 ENE
+            </span>
+
+            <div>
+
+                <strong>
+                    ✈️ Regreso a Málaga
+                </strong>
+
+                <p>
+                    JFK → Dublín → Málaga
+                </p>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- ACCIONES -->
+
+    <section class="quick-actions">
 
         <button
-            class="nav-button active"
-            data-screen="home"
+            type="button"
+            id="btn-weather"
         >
-            <span>🏠</span>
-            <small>Inicio</small>
+            🌦️
+            <span>
+                Tiempo
+            </span>
         </button>
+
 
         <button
-            class="nav-button"
-            data-screen="plan"
+            type="button"
+            id="btn-nearby"
         >
-            <span>🗓️</span>
-            <small>Plan</small>
+            📍
+            <span>
+                Cerca de mí
+            </span>
         </button>
+
 
         <button
-            class="nav-button"
-            data-screen="map"
+            type="button"
+            id="btn-food"
         >
-            <span>🗺️</span>
-            <small>Mapa</small>
+            🍽️
+            <span>
+                Comer cerca
+            </span>
         </button>
+
 
         <button
-            class="nav-button"
-            data-screen="expenses"
+            type="button"
+            id="btn-map"
         >
-            <span>💰</span>
-            <small>Gastos</small>
+            🗺️
+            <span>
+                Mapa
+            </span>
         </button>
+
 
         <button
-            class="nav-button"
-            data-screen="more"
+            type="button"
+            id="btn-expenses"
         >
-            <span>☰</span>
-            <small>Más</small>
+            💰
+            <span>
+                Gastos
+            </span>
         </button>
 
-    </nav>
+
+        <button
+            type="button"
+            id="btn-reservations"
+        >
+            📋
+            <span>
+                Reservas
+            </span>
+        </button>
+
+    </section>
 
 
-</div>
+    <!-- GASTOS -->
 
+    <section
+        class="day-plan"
+        id="expenses-section"
+    >
+
+        <div class="section-title">
+
+            <h2>
+                💰 GASTOS
+            </h2>
+
+        </div>
+
+
+        <div class="expense-summary">
+
+            <p>
+                Total gastado
+            </p>
+
+            <strong id="total-expenses">
+                0,00 €
+            </strong>
+
+        </div>
+
+
+        <div
+            id="balances-container"
+            class="balances-container"
+        >
+
+            <p>
+                Todavía no hay gastos.
+            </p>
+
+        </div>
+
+
+        <button
+            type="button"
+            class="primary-button"
+            id="show-expense-form"
+        >
+            ➕ Añadir gasto
+        </button>
+
+
+        <form
+            id="expense-form"
+            class="expense-form hidden"
+        >
+
+            <label>
+                Concepto
+
+                <input
+                    type="text"
+                    id="expense-description"
+                    placeholder="Ej. Cena"
+                    required
+                >
+
+            </label>
+
+
+            <label>
+                Importe
+
+                <input
+                    type="number"
+                    id="expense-amount"
+                    placeholder="0.00"
+                    min="0.01"
+                    step="0.01"
+                    required
+                >
+
+            </label>
+
+
+            <label>
+                Moneda
+
+                <select id="expense-currency">
+
+                    <option value="EUR">
+                        €
+                    </option>
+
+                    <option value="USD">
+                        $
+                    </option>
+
+                </select>
+
+            </label>
+
+
+            <label>
+                ¿Quién pagó?
+
+                <select id="expense-payer">
+
+                    <option value="Laura">
+                        😈 Laura
+                    </option>
+
+                    <option value="Sara">
+                        😇 Sara
+                    </option>
+
+                    <option value="Belén">
+                        🤪 Belén
+                    </option>
+
+                </select>
+
+            </label>
+
+
+            <div class="expense-participants">
+
+                <p>
+                    Se reparte entre:
+                </p>
+
+
+                <label class="checkbox-row">
+
+                    <input
+                        type="checkbox"
+                        name="participant"
+                        value="Laura"
+                        checked
+                    >
+
+                    Laura
+
+                </label>
+
+
+                <label class="checkbox-row">
+
+                    <input
+                        type="checkbox"
+                        name="participant"
+                        value="Sara"
+                        checked
+                    >
+
+                    Sara
+
+                </label>
+
+
+                <label class="checkbox-row">
+
+                    <input
+                        type="checkbox"
+                        name="participant"
+                        value="Belén"
+                        checked
+                    >
+
+                    Belén
+
+                </label>
+
+            </div>
+
+
+            <button
+                type="submit"
+                class="primary-button"
+            >
+                💾 Guardar gasto
+            </button>
+
+
+            <button
+                type="button"
+                class="secondary-button"
+                id="cancel-expense"
+            >
+                Cancelar
+            </button>
+
+        </form>
+
+
+        <div
+            id="expenses-list"
+            class="expenses-list"
+        >
+        </div>
+
+
+        <div
+            id="debts-container"
+            class="debts-container"
+        >
+        </div>
+
+    </section>
+
+
+    <!-- VIAJERAS -->
+
+    <section class="day-plan">
+
+        <div class="section-title">
+
+            <h2>
+                El Equipo
+            </h2>
+
+        </div>
+
+
+        <div class="activity">
+
+            <span class="activity-time">
+                😈
+            </span>
+
+            <div>
+
+                <strong>
+                    Laura
+                </strong>
+
+                <p>
+                    Viajera
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <div class="activity">
+
+            <span class="activity-time">
+                😇
+            </span>
+
+            <div>
+
+                <strong>
+                    Sara
+                </strong>
+
+                <p>
+                    Viajera
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <div class="activity">
+
+            <span class="activity-time">
+                🤪
+            </span>
+
+            <div>
+
+                <strong>
+                    Belén
+                </strong>
+
+                <p>
+                    Viajera
+                </p>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- HOTEL -->
+
+    <section class="day-plan">
+
+        <div class="section-title">
+
+            <h2>
+                🏨 HOTEL
+            </h2>
+
+        </div>
+
+
+        <div class="activity">
+
+            <div>
+
+                <strong>
+                    Courtyard by Marriott New York Manhattan Upper East Side
+                </strong>
+
+                <p>
+                    Nueva York, Estados Unidos
+                </p>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+</main>
+
+
+<!-- NAVEGACIÓN -->
+
+<nav class="bottom-nav">
+
+    <button
+        type="button"
+        class="active"
+        id="nav-home"
+    >
+
+        🏠
+
+        <span>
+            Inicio
+        </span>
+
+    </button>
+
+
+    <button
+        type="button"
+        id="nav-plan"
+    >
+
+        🗓️
+
+        <span>
+            Plan
+        </span>
+
+    </button>
+
+
+    <button
+        type="button"
+        id="nav-map"
+    >
+
+        🗺️
+
+        <span>
+            Mapa
+        </span>
+
+    </button>
+
+
+    <button
+        type="button"
+        id="nav-expenses"
+    >
+
+        💰
+
+        <span>
+            Gastos
+        </span>
+
+    </button>
+
+
+    <button
+        type="button"
+        id="nav-more"
+    >
+
+        ☰
+
+        <span>
+            Más
+        </span>
+
+    </button>
+
+</nav>
+
+
+<!-- JAVASCRIPT -->
 
 <script src="./app.js"></script>
+
+
+<!-- SERVICE WORKER -->
+
+<script>
+
+    if ("serviceWorker" in navigator) {
+
+        window.addEventListener(
+            "load",
+            function () {
+
+                navigator.serviceWorker.register(
+                    "./service-worker.js"
+                );
+
+            }
+        );
+
+    }
+
+</script>
 
 </body>
 
