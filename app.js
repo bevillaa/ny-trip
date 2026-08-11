@@ -1,5 +1,5 @@
 // ==========================================
-// 🗽 NY TRIP — APLICACIÓN COMPLETA CON GOOGLE MAPS
+// 🗽 NY TRIP — APLICACIÓN COMPLETA
 // ==========================================
 
 const SUPABASE_URL = "https://rtbrnbyosrtxeayqmvwc.supabase.co";
@@ -42,7 +42,6 @@ let map = null;
 let mapMarkers = [];
 let googleAutocomplete = null;
 let selectedPlanLocation = null;
-let selectedReservationLocation = null;
 
 function escapeHTML(value) {
     if (value === null || value === undefined) return "";
@@ -194,34 +193,46 @@ document.addEventListener("click", e => {
     if (btn) closeModal(btn.dataset.close);
 });
 
-// INITIALIZE GOOGLE MAPS PLACES AUTOCOMPLETE
+// INICIALIZACIÓN CONTROLADA DE GOOGLE MAPS AUTOCOMPLETE
 function initGoogleMapsAutocomplete() {
     const input = document.getElementById("plan-location");
-    if (!input || typeof google === "undefined" || !google.maps || !google.maps.places) return;
+    if (!input) return;
 
-    // Restringir búsquedas principalmente a Nueva York
-    const options = {
-        bounds: new google.maps.LatLngBounds(
-            new google.maps.LatLng(40.477399, -74.25909),
-            new google.maps.LatLng(40.917577, -73.700272)
-        ),
-        fields: ["name", "formatted_address", "geometry", "url"]
-    };
+    // Si Google Maps falla o no tiene clave válida, el input funcionará de forma normal sin bloquearse
+    if (typeof google === "undefined" || !google.maps || !google.maps.places) {
+        console.warn("Google Maps Places API no está lista o falta la clave. Se usará el modo texto estándar.");
+        return;
+    }
 
-    googleAutocomplete = new google.maps.places.Autocomplete(input, options);
-
-    googleAutocomplete.addListener("place_changed", () => {
-        const place = googleAutocomplete.getPlace();
-        if (!place.geometry || !place.geometry.location) return;
-
-        selectedPlanLocation = {
-            name: place.name || place.formatted_address,
-            address: place.formatted_address,
-            lat: place.geometry.location.lat(),
-            lon: place.geometry.location.lng(),
-            url: place.url || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(place.name || place.formatted_address)}`
+    try {
+        const options = {
+            bounds: new google.maps.LatLngBounds(
+                new google.maps.LatLng(40.477399, -74.25909),
+                new google.maps.LatLng(40.917577, -73.700272)
+            ),
+            fields: ["name", "formatted_address", "geometry", "url"]
         };
-    });
+
+        googleAutocomplete = new google.maps.places.Autocomplete(input, options);
+
+        googleAutocomplete.addListener("place_changed", () => {
+            const place = googleAutocomplete.getPlace();
+            if (!place || !place.geometry || !place.geometry.location) {
+                selectedPlanLocation = null;
+                return;
+            }
+
+            selectedPlanLocation = {
+                name: place.name || place.formatted_address,
+                address: place.formatted_address,
+                lat: place.geometry.location.lat(),
+                lon: place.geometry.location.lng(),
+                url: place.url || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(place.name || place.formatted_address)}`
+            };
+        });
+    } catch (err) {
+        console.error("Error al inicializar Autocomplete de Google Maps:", err);
+    }
 }
 
 // BOTONES Y MODALES
@@ -233,8 +244,6 @@ document.getElementById("open-plan-form")?.addEventListener("click", () => {
 
 document.getElementById("open-reservation-form")?.addEventListener("click", () => {
     document.getElementById("reservation-form")?.reset();
-    document.getElementById("reservation-location-results").innerHTML = "";
-    selectedReservationLocation = null;
     openModal("reservation-modal");
 });
 
@@ -351,7 +360,7 @@ function renderPlans() {
 
     container.innerHTML = visiblePlans.map(plan => {
         const category = PLAN_CATEGORIES[plan.category] || PLAN_CATEGORIES.other;
-        const mapsUrl = plan.map_url || (plan.latitude ? `https://www.google.com/maps/search/?api=1&query=${plan.latitude},${plan.longitude}` : null);
+        const mapsUrl = plan.map_url || (plan.latitude ? `https://www.google.com/maps/search/?api=1&query=${plan.latitude},${plan.longitude}` : (plan.location_name ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(plan.location_name)}` : null));
 
         return `
             <article class="activity-card">
@@ -394,7 +403,7 @@ async function deletePlan(id) {
     await loadData();
 }
 
-// GUARDAR PLAN CON GOOGLE MAPS
+// GUARDAR PLAN (Acepta selección de Google o texto libre)
 document.getElementById("plan-form")?.addEventListener("submit", async e => {
     e.preventDefault();
     const title = document.getElementById("plan-title").value.trim();
@@ -404,16 +413,19 @@ document.getElementById("plan-form")?.addEventListener("submit", async e => {
     const category = document.getElementById("plan-category").value;
     const locationInput = document.getElementById("plan-location").value.trim();
 
+    const locationName = selectedPlanLocation ? selectedPlanLocation.name : (locationInput || null);
+    const mapsUrl = selectedPlanLocation ? selectedPlanLocation.url : (locationInput ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(locationInput)}` : null);
+
     const data = {
         title,
         description,
         date,
         time: time || null,
         category: category || "other",
-        location_name: selectedPlanLocation ? selectedPlanLocation.name : (locationInput || null),
+        location_name: locationName,
         latitude: selectedPlanLocation ? selectedPlanLocation.lat : null,
         longitude: selectedPlanLocation ? selectedPlanLocation.lon : null,
-        map_url: selectedPlanLocation ? selectedPlanLocation.url : null,
+        map_url: mapsUrl,
         created_by: "NY TRIP"
     };
 
