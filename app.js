@@ -1,5 +1,5 @@
 // ==========================================
-// 🗽 NY TRIP —
+// 🗽 NY TRIP — A
 // ==========================================
 
 const SUPABASE_URL = "https://rtbrnbyosrtxeayqmvwc.supabase.co";
@@ -298,15 +298,24 @@ function updateTripDay() {
     }
 }
 
+// OBTENER TIEMPO DE NUEVA YORK (API OPTIMIZADA)
 async function loadWeather() {
     try {
-        const res = await fetch("https://api.open-meteo.com/v1/forecast?latitude=40.7128&longitude=-74.0060&current=temperature_2m,weather_code,wind_speed_10m&timezone=America%2FNew_York");
+        const res = await fetch("https://api.open-meteo.com/v1/forecast?latitude=40.7128&longitude=-74.0060&current_weather=true");
         if (!res.ok) return;
         const data = await res.json();
-        document.getElementById("weather-temperature").textContent = `${Math.round(data.current.temperature_2m)}°C`;
-        document.getElementById("weather-wind").textContent = `Viento ${Math.round(data.current.wind_speed_10m)} km/h`;
-        document.getElementById("weather-description").textContent = "Nueva York";
-    } catch (e) {}
+        const weather = data.current_weather;
+        
+        const tempEl = document.getElementById("weather-temperature");
+        const windEl = document.getElementById("weather-wind");
+        const descEl = document.getElementById("weather-description");
+
+        if (tempEl) tempEl.textContent = `${Math.round(weather.temperature)}°C`;
+        if (windEl) windEl.textContent = `Viento ${Math.round(weather.windspeed)} km/h`;
+        if (descEl) descEl.textContent = "Nueva York";
+    } catch (e) {
+        console.error("Error al cargar el tiempo:", e);
+    }
 }
 
 async function loadCurrency() {
