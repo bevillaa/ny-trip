@@ -1,5 +1,5 @@
 // ==========================================
-// 🗽 NY TRIP — APLICACIÓN COMPLETA
+// 🗽 NY TRIP — APLICACIÓN COMPLETA (100% GRATIS)
 // ==========================================
 
 const SUPABASE_URL = "https://rtbrnbyosrtxeayqmvwc.supabase.co";
@@ -40,7 +40,6 @@ let places = [];
 
 let map = null;
 let mapMarkers = [];
-let googleAutocomplete = null;
 let selectedPlanLocation = null;
 
 function escapeHTML(value) {
@@ -142,7 +141,7 @@ async function enterApplication(session) {
     
     updateTripDay();
     renderFlights();
-    initGoogleMapsAutocomplete();
+    initFreeAutocomplete();
     await loadWeather();
     await loadCurrency();
     await loadData();
@@ -193,46 +192,66 @@ document.addEventListener("click", e => {
     if (btn) closeModal(btn.dataset.close);
 });
 
-// INICIALIZACIÓN CONTROLADA DE GOOGLE MAPS AUTOCOMPLETE
-function initGoogleMapsAutocomplete() {
+// BUSCADOR DE SITIOS 100% GRATUITO (SIN API KEY DE GOOGLE)
+function initFreeAutocomplete() {
     const input = document.getElementById("plan-location");
     if (!input) return;
 
-    // Si Google Maps falla o no tiene clave válida, el input funcionará de forma normal sin bloquearse
-    if (typeof google === "undefined" || !google.maps || !google.maps.places) {
-        console.warn("Google Maps Places API no está lista o falta la clave. Se usará el modo texto estándar.");
-        return;
+    let dropdown = document.getElementById("nominatim-suggestions");
+    if (!dropdown) {
+        dropdown = document.createElement("div");
+        dropdown.id = "nominatim-suggestions";
+        dropdown.style.cssText = "position:absolute; background:#fff; border:1px solid #ccc; border-radius:8px; max-height:180px; overflow-y:auto; width:100%; z-index:1000; box-shadow:0 4px 6px rgba(0,0,0,0.1);";
+        input.parentNode.style.position = "relative";
+        input.parentNode.appendChild(dropdown);
     }
 
-    try {
-        const options = {
-            bounds: new google.maps.LatLngBounds(
-                new google.maps.LatLng(40.477399, -74.25909),
-                new google.maps.LatLng(40.917577, -73.700272)
-            ),
-            fields: ["name", "formatted_address", "geometry", "url"]
-        };
+    let timeout = null;
 
-        googleAutocomplete = new google.maps.places.Autocomplete(input, options);
+    input.addEventListener("input", () => {
+        clearTimeout(timeout);
+        const query = input.value.trim();
 
-        googleAutocomplete.addListener("place_changed", () => {
-            const place = googleAutocomplete.getPlace();
-            if (!place || !place.geometry || !place.geometry.location) {
-                selectedPlanLocation = null;
-                return;
+        if (query.length < 3) {
+            dropdown.innerHTML = "";
+            return;
+        }
+
+        timeout = setTimeout(async () => {
+            try {
+                const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&viewbox=-74.259,40.917,-73.700,40.477&limit=5`);
+                const results = await res.json();
+
+                dropdown.innerHTML = "";
+                results.forEach(place => {
+                    const item = document.createElement("div");
+                    item.style.cssText = "padding: 10px; cursor: pointer; font-size: 13px; border-bottom: 1px solid #eee; text-align: left;";
+                    item.textContent = place.display_name;
+                    
+                    item.addEventListener("click", () => {
+                        input.value = place.display_name.split(",")[0];
+                        selectedPlanLocation = {
+                            name: place.display_name.split(",")[0],
+                            address: place.display_name,
+                            lat: parseFloat(place.lat),
+                            lon: parseFloat(place.lon),
+                            url: `https://www.google.com/maps/search/?api=1&query=${place.lat},${place.lon}`
+                        };
+                        dropdown.innerHTML = "";
+                    });
+                    dropdown.appendChild(item);
+                });
+            } catch (err) {
+                console.error("Error al buscar ubicación:", err);
             }
+        }, 300);
+    });
 
-            selectedPlanLocation = {
-                name: place.name || place.formatted_address,
-                address: place.formatted_address,
-                lat: place.geometry.location.lat(),
-                lon: place.geometry.location.lng(),
-                url: place.url || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(place.name || place.formatted_address)}`
-            };
-        });
-    } catch (err) {
-        console.error("Error al inicializar Autocomplete de Google Maps:", err);
-    }
+    document.addEventListener("click", (e) => {
+        if (e.target !== input && e.target !== dropdown) {
+            dropdown.innerHTML = "";
+        }
+    });
 }
 
 // BOTONES Y MODALES
@@ -403,7 +422,7 @@ async function deletePlan(id) {
     await loadData();
 }
 
-// GUARDAR PLAN (Acepta selección de Google o texto libre)
+// GUARDAR PLAN
 document.getElementById("plan-form")?.addEventListener("submit", async e => {
     e.preventDefault();
     const title = document.getElementById("plan-title").value.trim();
@@ -485,7 +504,7 @@ document.getElementById("reservation-form")?.addEventListener("submit", async e 
     showScreen("reservations");
 });
 
-// TRICOUNT
+// TRICOUNT / GASTOS
 function calculateBalances() {
     const balances = { Laura: 0, Sara: 0, Belén: 0 };
     expenses.forEach(e => {
