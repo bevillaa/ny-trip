@@ -1,11 +1,11 @@
 // ==========================================
 // 🗽 NY TRIP
-// Datos, almacenamiento y actualización
+// Datos, almacenamiento y día del viaje
 // ==========================================
 
 
 // ==========================================
-// DATOS INICIALES DEL VIAJE
+// DATOS INICIALES
 // ==========================================
 
 const defaultTripData = {
@@ -33,7 +33,8 @@ const defaultTripData = {
     destination: "Nueva York, Estados Unidos",
 
     hotel: {
-        name: "Courtyard by Marriott New York Manhattan Upper East Side",
+        name:
+            "Courtyard by Marriott New York Manhattan Upper East Side",
 
         bookingUrl:
             "https://www.booking.com/hotel/us/manhattan-upper-east-side-courtyard-by-marriott.es.html",
@@ -204,7 +205,7 @@ const defaultTripData = {
 
 
 // ==========================================
-// GUARDAR DATOS
+// GUARDAR
 // ==========================================
 
 function saveTripData(data) {
@@ -217,7 +218,7 @@ function saveTripData(data) {
 
 
 // ==========================================
-// CARGAR DATOS
+// CARGAR
 // ==========================================
 
 function loadTripData() {
@@ -234,15 +235,12 @@ function loadTripData() {
 
     try {
 
-        const existingData =
-            JSON.parse(savedData);
-
-        return existingData;
+        return JSON.parse(savedData);
 
     } catch (error) {
 
         console.error(
-            "No se pudieron leer los datos guardados.",
+            "Error leyendo los datos guardados.",
             error
         );
 
@@ -261,11 +259,8 @@ let tripData = loadTripData();
 
 
 // ==========================================
-// ACTUALIZAR DATOS DEL VIAJE
+// ASEGURAR DATOS IMPORTANTES
 // ==========================================
-
-// Conservamos los datos que ya existan.
-// Solo añadimos la información nueva.
 
 let dataWasUpdated = false;
 
@@ -374,20 +369,15 @@ if (!tripData.preferences) {
 }
 
 
-// Guardamos solo si hubo cambios.
-
 if (dataWasUpdated) {
 
     saveTripData(tripData);
 
-    console.log(
-        "🟢 NY TRIP: datos actualizados."
-    );
 }
 
 
 // ==========================================
-// CALCULAR EL DÍA DEL VIAJE
+// CALCULAR DÍA DEL VIAJE
 // ==========================================
 
 function getTripDay(date = new Date()) {
@@ -403,6 +393,8 @@ function getTripDay(date = new Date()) {
         );
 
 
+    // Antes del viaje
+
     if (date < start) {
 
         return {
@@ -412,6 +404,8 @@ function getTripDay(date = new Date()) {
         };
     }
 
+
+    // Después del viaje
 
     if (date > end) {
 
@@ -423,13 +417,13 @@ function getTripDay(date = new Date()) {
     }
 
 
+    // Durante el viaje
+
     const millisecondsPerDay =
         1000 * 60 * 60 * 24;
 
-
     const difference =
         date.getTime() - start.getTime();
-
 
     const day =
         Math.floor(
@@ -449,17 +443,98 @@ function getTripDay(date = new Date()) {
 // FORMATEAR FECHA
 // ==========================================
 
-function formatTripDate(date) {
+function formatDayAndMonth(date) {
 
     return new Intl.DateTimeFormat(
         "es-ES",
         {
-            weekday: "long",
             day: "numeric",
-            month: "long",
-            year: "numeric"
+            month: "long"
         }
     ).format(date);
+}
+
+
+// ==========================================
+// MOSTRAR EL DÍA EN LA PANTALLA
+// ==========================================
+
+function updateTripDayOnScreen() {
+
+    const element =
+        document.getElementById(
+            "trip-day"
+        );
+
+    if (!element) {
+        return;
+    }
+
+
+    const trip =
+        getTripDay();
+
+
+    // Antes del viaje
+
+    if (trip.status === "before") {
+
+        const start =
+            new Date(
+                tripData.dates.start +
+                "T00:00:00"
+            );
+
+        const today =
+            new Date();
+
+        today.setHours(
+            0,
+            0,
+            0,
+            0
+        );
+
+
+        const difference =
+            start.getTime() -
+            today.getTime();
+
+
+        const daysLeft =
+            Math.ceil(
+                difference /
+                (1000 * 60 * 60 * 24)
+            );
+
+
+        element.textContent =
+            `FALTAN ${daysLeft} DÍAS`;
+
+        return;
+    }
+
+
+    // Durante el viaje
+
+    if (trip.status === "during") {
+
+        const dateText =
+            formatDayAndMonth(
+                trip.date
+            );
+
+        element.textContent =
+            `DÍA ${trip.day} · ${dateText}`;
+
+        return;
+    }
+
+
+    // Después del viaje
+
+    element.textContent =
+        "VIAJE FINALIZADO";
 }
 
 
@@ -481,7 +556,9 @@ function addItineraryItem(item) {
 
 function addReservation(reservation) {
 
-    tripData.reservations.push(reservation);
+    tripData.reservations.push(
+        reservation
+    );
 
     saveTripData(tripData);
 }
@@ -493,20 +570,65 @@ function addReservation(reservation) {
 
 function addExpense(expense) {
 
-    tripData.expenses.push(expense);
+    tripData.expenses.push(
+        expense
+    );
 
     saveTripData(tripData);
 }
 
 
 // ==========================================
-// COMPROBACIÓN
+// INICIAR APLICACIÓN
 // ==========================================
 
-const currentTripDay =
-    getTripDay();
+function startNYTrip() {
+
+    console.log(
+        "🗽 NY TRIP iniciado."
+    );
+
+    console.log(
+        "👥 Viajeros:",
+        tripData.travelers
+    );
+
+    console.log(
+        "🏨 Hotel:",
+        tripData.hotel
+    );
+
+    console.log(
+        "✈️ Vuelos:",
+        tripData.flights
+    );
+
+    console.log(
+        "📅 Fechas:",
+        tripData.dates
+    );
 
 
-console.log(
-    "🗽 NY
+    updateTripDayOnScreen();
+}
 
+
+// ==========================================
+// ESPERAR A QUE CARGUE LA PÁGINA
+// ==========================================
+
+if (
+    document.readyState ===
+    "loading"
+) {
+
+    document.addEventListener(
+        "DOMContentLoaded",
+        startNYTrip
+    );
+
+} else {
+
+    startNYTrip();
+
+}
