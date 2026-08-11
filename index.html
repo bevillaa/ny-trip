@@ -17,6 +17,7 @@
     <title>NY TRIP</title>
 
     <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
 </head>
 
 <body>
@@ -122,7 +123,37 @@
 
     </nav>
 
+    <script src="app.js"></script>
+
+    <script>
+        if ("serviceWorker" in navigator) {
+
+            window.addEventListener("load", () => {
+
+                navigator.serviceWorker.register("./service-worker.js")
+
+                    .then(() => {
+
+                        console.log(
+                            "🟢 NY TRIP: modo offline preparado."
+                        );
+
+                    })
+
+                    .catch((error) => {
+
+                        console.error(
+                            "🔴 NY TRIP: no se pudo activar el modo offline.",
+                            error
+                        );
+
+                    });
+
+            });
+
+        }
+    </script>
+
 </body>
 
 </html>
-<script src="app.js"></script>
