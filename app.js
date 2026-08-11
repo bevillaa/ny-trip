@@ -1,7 +1,8 @@
 // ==========================================
 // 🗽 NY TRIP
 // APLICACIÓN COMPLETA
-// SUPABASE + LOGIN
+// AUTENTICACIÓN SUPABASE
+// SIN CACHÉ
 // ==========================================
 
 
@@ -18,7 +19,14 @@ const SUPABASE_KEY =
 const db =
     window.supabase.createClient(
         SUPABASE_URL,
-        SUPABASE_KEY
+        SUPABASE_KEY,
+        {
+            auth: {
+                persistSession: true,
+                autoRefreshToken: true,
+                detectSessionInUrl: true
+            }
+        }
     );
 
 
@@ -129,7 +137,7 @@ let mapMarkers = [];
 let selectedPlanLocation = null;
 let selectedReservationLocation = null;
 
-let currentUser = null;
+let realtimeChannel = null;
 
 
 // ==========================================
@@ -212,18 +220,491 @@ function getDateTimestamp(
 
 
 // ==========================================
-// ELEMENTOS
+// LOGIN
 // ==========================================
 
-function getElement(id) {
+function showLogin() {
 
-    return document.getElementById(id);
+    const login =
+        document.getElementById(
+            "login-screen"
+        );
+
+    const app =
+        document.getElementById(
+            "app"
+        );
+
+    if (login) {
+        login.hidden = false;
+    }
+
+    if (app) {
+        app.hidden = true;
+    }
+
+}
+
+
+function showApp() {
+
+    const login =
+        document.getElementById(
+            "login-screen"
+        );
+
+    const app =
+        document.getElementById(
+            "app"
+        );
+
+    if (login) {
+        login.hidden = true;
+    }
+
+    if (app) {
+        app.hidden = false;
+    }
+
+}
+
+
+function setLoginError(
+    message
+) {
+
+    const element =
+        document.getElementById(
+            "login-error"
+        );
+
+    if (!element) {
+        return;
+    }
+
+    element.textContent =
+        message || "";
+
+    element.hidden =
+        !message;
+
+}
+
+
+function setLoginLoading(
+    loading
+) {
+
+    const button =
+        document.getElementById(
+            "login-button"
+        );
+
+    if (!button) {
+        return;
+    }
+
+    button.disabled =
+        loading;
+
+    button.textContent =
+        loading
+            ? "Entrando..."
+            : "Entrar";
+
+}
+
+
+async function loginUser(
+    email,
+    password
+) {
+
+    setLoginError("");
+    setLoginLoading(true);
+
+    try {
+
+        const {
+            data,
+            error
+        } =
+            await db.auth.signInWithPassword({
+                email,
+                password
+            });
+
+        if (error) {
+
+            console.error(
+                "Error login:",
+                error
+            );
+
+            throw error;
+        }
+
+        if (!data || !data.session) {
+
+            throw new Error(
+                "Supabase no ha creado una sesión."
+            );
+
+        }
+
+        console.log(
+            "🟢 Login correcto:",
+            data.user?.email
+        );
+
+        await enterApplication(
+            data.session
+        );
+
+    } catch (error) {
+
+        console.error(
+            "Login:",
+            error
+        );
+
+        let message =
+            "No se ha podido iniciar sesión.";
+
+        if (
+            error?.message
+                ?.toLowerCase()
+                .includes(
+                    "invalid login credentials"
+                )
+        ) {
+
+            message =
+                "Email o contraseña incorrectos.";
+
+        } else if (
+            error?.message
+                ?.toLowerCase()
+                .includes(
+                    "email not confirmed"
+                )
+        ) {
+
+            message =
+                "El email todavía no está confirmado.";
+
+        } else if (
+            error?.message
+        ) {
+
+            message =
+                error.message;
+
+        }
+
+        setLoginError(
+            message
+        );
+
+    } finally {
+
+        setLoginLoading(false);
+
+    }
+
+}
+
+
+async function logoutUser() {
+
+    try {
+
+        setConnectionStatus(
+            "● Cerrando sesión..."
+        );
+
+        const {
+            error
+        } =
+            await db.auth.signOut();
+
+        if (error) {
+            throw error;
+        }
+
+        plans = [];
+        reservations = [];
+        expenses = [];
+        places = [];
+
+        if (realtimeChannel) {
+
+            await db
+                .removeChannel(
+                    realtimeChannel
+                );
+
+            realtimeChannel =
+                null;
+
+        }
+
+        showLogin();
+
+        setLoginError("");
+
+        console.log(
+            "🔴 Sesión cerrada."
+        );
+
+    } catch (error) {
+
+        console.error(
+            "Logout:",
+            error
+        );
+
+        alert(
+            "No se pudo cerrar la sesión."
+        );
+
+    }
+
+}
+
+
+async function checkAuthentication() {
+
+    console.log(
+        "🔐 Comprobando sesión Supabase..."
+    );
+
+    try {
+
+        const {
+            data,
+            error
+        } =
+            await db.auth.getSession();
+
+        if (error) {
+
+            console.error(
+                "Error obteniendo sesión:",
+                error
+            );
+
+            showLogin();
+
+            return false;
+        }
+
+        const session =
+            data?.session;
+
+        if (!session) {
+
+            console.log(
+                "🔴 No hay sesión."
+            );
+
+            showLogin();
+
+            return false;
+        }
+
+        console.log(
+            "🟢 Sesión encontrada:",
+            session.user?.email
+        );
+
+        await enterApplication(
+            session
+        );
+
+        return true;
+
+    } catch (error) {
+
+        console.error(
+            "Autenticación:",
+            error
+        );
+
+        showLogin();
+
+        return false;
+    }
+
+}
+
+
+async function enterApplication(
+    session
+) {
+
+    if (!session) {
+
+        showLogin();
+
+        return;
+    }
+
+    showApp();
+
+    const email =
+        session.user?.email ||
+        "Usuario";
+
+    const userElement =
+        document.getElementById(
+            "current-user-email"
+        );
+
+    if (userElement) {
+
+        userElement.textContent =
+            email;
+
+    }
+
+    setConnectionStatus(
+        "● Conectando..."
+    );
+
+    updateTripDay();
+
+    renderFlights();
+
+    await loadWeather();
+
+    await loadCurrency();
+
+    await loadData();
+
+    subscribeRealtime();
+
+}
+
+
+function setupAuthentication() {
+
+    const loginForm =
+        document.getElementById(
+            "login-form"
+        );
+
+    if (loginForm) {
+
+        loginForm.addEventListener(
+            "submit",
+            async event => {
+
+                event.preventDefault();
+
+                const email =
+                    document
+                        .getElementById(
+                            "login-email"
+                        )
+                        .value
+                        .trim();
+
+                const password =
+                    document
+                        .getElementById(
+                            "login-password"
+                        )
+                        .value;
+
+                if (
+                    !email ||
+                    !password
+                ) {
+
+                    setLoginError(
+                        "Introduce email y contraseña."
+                    );
+
+                    return;
+                }
+
+                await loginUser(
+                    email,
+                    password
+                );
+
+            }
+        );
+
+    }
+
+
+    const logoutButton =
+        document.getElementById(
+            "logout-button"
+        );
+
+    if (logoutButton) {
+
+        logoutButton.addEventListener(
+            "click",
+            logoutUser
+        );
+
+    }
+
+
+    db.auth.onAuthStateChange(
+        async (
+            event,
+            session
+        ) => {
+
+            console.log(
+                "🔐 Auth:",
+                event
+            );
+
+            if (
+                event === "SIGNED_IN" &&
+                session
+            ) {
+
+                const app =
+                    document.getElementById(
+                        "app"
+                    );
+
+                if (
+                    app?.hidden
+                ) {
+
+                    await enterApplication(
+                        session
+                    );
+
+                }
+
+            }
+
+
+            if (
+                event === "SIGNED_OUT"
+            ) {
+
+                showLogin();
+
+            }
+
+        }
+    );
 
 }
 
 
 // ==========================================
-// ESTADO DE CONEXIÓN
+// CONEXIÓN
 // ==========================================
 
 function setConnectionStatus(
@@ -232,7 +713,7 @@ function setConnectionStatus(
 ) {
 
     const element =
-        getElement(
+        document.getElementById(
             "connection-status"
         );
 
@@ -251,374 +732,15 @@ function setConnectionStatus(
 
 
 // ==========================================
-// LOGIN
-// ==========================================
-
-function showLogin() {
-
-    const login =
-        getElement(
-            "login-screen"
-        );
-
-    const app =
-        getElement("app");
-
-    if (login) {
-        login.hidden = false;
-    }
-
-    if (app) {
-        app.hidden = true;
-    }
-
-}
-
-
-function showApp() {
-
-    const login =
-        getElement(
-            "login-screen"
-        );
-
-    const app =
-        getElement("app");
-
-    if (login) {
-        login.hidden = true;
-    }
-
-    if (app) {
-        app.hidden = false;
-    }
-
-}
-
-
-function showLoginError(
-    message
-) {
-
-    const error =
-        getElement(
-            "login-error"
-        );
-
-    if (!error) {
-        return;
-    }
-
-    error.textContent =
-        message;
-
-    error.hidden = false;
-
-}
-
-
-function clearLoginError() {
-
-    const error =
-        getElement(
-            "login-error"
-        );
-
-    if (!error) {
-        return;
-    }
-
-    error.textContent =
-        "";
-
-    error.hidden = true;
-
-}
-
-
-async function loginUser(
-    email,
-    password
-) {
-
-    clearLoginError();
-
-    const button =
-        getElement(
-            "login-button"
-        );
-
-    if (button) {
-
-        button.disabled = true;
-        button.textContent =
-            "Entrando...";
-
-    }
-
-    try {
-
-        const {
-            data,
-            error
-        } =
-            await db.auth.signInWithPassword({
-                email:
-                    email.trim(),
-                password
-            });
-
-        if (error) {
-            throw error;
-        }
-
-        if (!data.session) {
-
-            throw new Error(
-                "Supabase no ha creado una sesión."
-            );
-
-        }
-
-        currentUser =
-            data.user;
-
-        updateCurrentUser();
-
-        showApp();
-
-        setConnectionStatus(
-            "● Conectando..."
-        );
-
-        await startAppAfterLogin();
-
-    } catch (error) {
-
-        console.error(
-            "LOGIN ERROR:",
-            error
-        );
-
-        let message =
-            "No se ha podido iniciar sesión.";
-
-        if (
-            error?.message
-                ?.toLowerCase()
-                .includes("invalid login credentials")
-        ) {
-
-            message =
-                "Email o contraseña incorrectos.";
-
-        } else if (
-            error?.message
-                ?.toLowerCase()
-                .includes("email not confirmed")
-        ) {
-
-            message =
-                "Este email todavía no está confirmado.";
-
-        } else if (
-            error?.message
-        ) {
-
-            message =
-                error.message;
-
-        }
-
-        showLoginError(
-            message
-        );
-
-    } finally {
-
-        if (button) {
-
-            button.disabled = false;
-            button.textContent =
-                "Entrar";
-
-        }
-
-    }
-
-}
-
-
-async function logoutUser() {
-
-    try {
-
-        const {
-            error
-        } =
-            await db.auth.signOut();
-
-        if (error) {
-            throw error;
-        }
-
-        currentUser =
-            null;
-
-        plans = [];
-        reservations = [];
-        expenses = [];
-        places = [];
-
-        if (map) {
-
-            clearMapMarkers();
-
-        }
-
-        showLogin();
-
-        const emailInput =
-            getElement(
-                "login-email"
-            );
-
-        const passwordInput =
-            getElement(
-                "login-password"
-            );
-
-        if (passwordInput) {
-            passwordInput.value = "";
-        }
-
-        if (emailInput) {
-            emailInput.focus();
-        }
-
-        setConnectionStatus(
-            "● Desconectada"
-        );
-
-    } catch (error) {
-
-        console.error(
-            "LOGOUT ERROR:",
-            error
-        );
-
-        alert(
-            "No se pudo cerrar sesión."
-        );
-
-    }
-
-}
-
-
-function updateCurrentUser() {
-
-    const element =
-        getElement(
-            "current-user-email"
-        );
-
-    if (!element) {
-        return;
-    }
-
-    element.textContent =
-        currentUser?.email ||
-        "Usuario";
-
-}
-
-
-// ==========================================
-// EVENTO LOGIN
-// ==========================================
-
-function initializeLogin() {
-
-    const form =
-        getElement(
-            "login-form"
-        );
-
-    if (!form) {
-
-        console.error(
-            "No existe #login-form"
-        );
-
-        return;
-
-    }
-
-    form.addEventListener(
-        "submit",
-        async (event) => {
-
-            event.preventDefault();
-
-            const email =
-                getElement(
-                    "login-email"
-                )?.value
-                ?.trim();
-
-            const password =
-                getElement(
-                    "login-password"
-                )?.value || "";
-
-            if (!email || !password) {
-
-                showLoginError(
-                    "Introduce email y contraseña."
-                );
-
-                return;
-            }
-
-            await loginUser(
-                email,
-                password
-            );
-
-        }
-    );
-
-
-    const logoutButton =
-        getElement(
-            "logout-button"
-        );
-
-    if (logoutButton) {
-
-        logoutButton.addEventListener(
-            "click",
-            logoutUser
-        );
-
-    }
-
-}
-
-
-// ==========================================
 // NAVEGACIÓN
 // ==========================================
 
 function showScreen(name) {
 
     document
-        .querySelectorAll(
-            ".screen"
-        )
+        .querySelectorAll(".screen")
         .forEach(
-            (screen) => {
+            screen => {
 
                 screen.classList.remove(
                     "active"
@@ -629,10 +751,9 @@ function showScreen(name) {
 
 
     const target =
-        getElement(
+        document.getElementById(
             `screen-${name}`
         );
-
 
     if (target) {
 
@@ -644,11 +765,9 @@ function showScreen(name) {
 
 
     document
-        .querySelectorAll(
-            ".nav-button"
-        )
+        .querySelectorAll(".nav-button")
         .forEach(
-            (button) => {
+            button => {
 
                 button.classList.toggle(
                     "active",
@@ -659,7 +778,9 @@ function showScreen(name) {
         );
 
 
-    if (name === "map") {
+    if (
+        name === "map"
+    ) {
 
         setTimeout(
             () => {
@@ -689,29 +810,25 @@ function showScreen(name) {
 }
 
 
-function initializeNavigation() {
+document.addEventListener(
+    "click",
+    event => {
 
-    document.addEventListener(
-        "click",
-        (event) => {
-
-            const button =
-                event.target.closest(
-                    "[data-screen]"
-                );
-
-            if (!button) {
-                return;
-            }
-
-            showScreen(
-                button.dataset.screen
+        const button =
+            event.target.closest(
+                "[data-screen]"
             );
 
+        if (!button) {
+            return;
         }
-    );
 
-}
+        showScreen(
+            button.dataset.screen
+        );
+
+    }
+);
 
 
 // ==========================================
@@ -721,7 +838,7 @@ function initializeNavigation() {
 function openModal(id) {
 
     const modal =
-        getElement(id);
+        document.getElementById(id);
 
     if (modal) {
 
@@ -737,7 +854,7 @@ function openModal(id) {
 function closeModal(id) {
 
     const modal =
-        getElement(id);
+        document.getElementById(id);
 
     if (modal) {
 
@@ -750,128 +867,126 @@ function closeModal(id) {
 }
 
 
-function initializeModals() {
+document.addEventListener(
+    "click",
+    event => {
 
-    document.addEventListener(
+        const button =
+            event.target.closest(
+                "[data-close]"
+            );
+
+        if (!button) {
+            return;
+        }
+
+        closeModal(
+            button.dataset.close
+        );
+
+    }
+);
+
+
+// ==========================================
+// BOTONES MODALES
+// ==========================================
+
+document
+    .getElementById(
+        "open-plan-form"
+    )
+    ?.addEventListener(
         "click",
-        (event) => {
+        () => {
 
-            const button =
-                event.target.closest(
-                    "[data-close]"
-                );
+            document
+                .getElementById(
+                    "plan-form"
+                )
+                ?.reset();
 
-            if (!button) {
-                return;
-            }
+            document
+                .getElementById(
+                    "plan-location-results"
+                )
+                .innerHTML = "";
 
-            closeModal(
-                button.dataset.close
+            selectedPlanLocation =
+                null;
+
+            openModal(
+                "plan-modal"
             );
 
         }
     );
 
 
-    const openPlan =
-        getElement(
-            "open-plan-form"
-        );
+document
+    .getElementById(
+        "open-reservation-form"
+    )
+    ?.addEventListener(
+        "click",
+        () => {
 
-    if (openPlan) {
-
-        openPlan.addEventListener(
-            "click",
-            () => {
-
-                getElement(
-                    "plan-form"
-                )?.reset();
-
-                getElement(
-                    "plan-location-results"
-                ).innerHTML = "";
-
-                selectedPlanLocation =
-                    null;
-
-                openModal(
-                    "plan-modal"
-                );
-
-            }
-        );
-
-    }
-
-
-    const openReservation =
-        getElement(
-            "open-reservation-form"
-        );
-
-    if (openReservation) {
-
-        openReservation.addEventListener(
-            "click",
-            () => {
-
-                getElement(
+            document
+                .getElementById(
                     "reservation-form"
-                )?.reset();
+                )
+                ?.reset();
 
-                getElement(
+            document
+                .getElementById(
                     "reservation-location-results"
-                ).innerHTML = "";
+                )
+                .innerHTML = "";
 
-                selectedReservationLocation =
-                    null;
+            selectedReservationLocation =
+                null;
 
-                openModal(
-                    "reservation-modal"
-                );
+            openModal(
+                "reservation-modal"
+            );
 
-            }
-        );
-
-    }
+        }
+    );
 
 
-    const openExpense =
-        getElement(
-            "open-expense-form"
-        );
+document
+    .getElementById(
+        "open-expense-form"
+    )
+    ?.addEventListener(
+        "click",
+        () => {
 
-    if (openExpense) {
-
-        openExpense.addEventListener(
-            "click",
-            () => {
-
-                getElement(
+            document
+                .getElementById(
                     "expense-form"
-                )?.reset();
+                )
+                ?.reset();
 
-                document
-                    .querySelectorAll(
-                        'input[name="participant"]'
-                    )
-                    .forEach(
-                        input => {
-                            input.checked = true;
-                        }
-                    );
+            document
+                .querySelectorAll(
+                    'input[name="participant"]'
+                )
+                .forEach(
+                    input => {
 
-                openModal(
-                    "expense-modal"
+                        input.checked =
+                            true;
+
+                    }
                 );
 
-            }
-        );
+            openModal(
+                "expense-modal"
+            );
 
-    }
-
-}
+        }
+    );
 
 
 // ==========================================
@@ -881,7 +996,7 @@ function initializeModals() {
 function updateTripDay() {
 
     const element =
-        getElement(
+        document.getElementById(
             "trip-day"
         );
 
@@ -900,7 +1015,9 @@ function updateTripDay() {
     );
 
 
-    if (today < TRIP_START) {
+    if (
+        today < TRIP_START
+    ) {
 
         const difference =
             TRIP_START.getTime() -
@@ -916,11 +1033,12 @@ function updateTripDay() {
             `FALTAN ${days} DÍAS`;
 
         return;
-
     }
 
 
-    if (today <= TRIP_END) {
+    if (
+        today <= TRIP_END
+    ) {
 
         const difference =
             today.getTime() -
@@ -932,7 +1050,6 @@ function updateTripDay() {
                 (1000 * 60 * 60 * 24)
             ) + 1;
 
-
         const date =
             new Intl.DateTimeFormat(
                 "es-ES",
@@ -942,12 +1059,10 @@ function updateTripDay() {
                 }
             ).format(today);
 
-
         element.textContent =
             `DÍA ${day} · ${date}`;
 
         return;
-
     }
 
 
@@ -977,8 +1092,7 @@ async function loadWeather() {
             await fetch(
                 url,
                 {
-                    cache:
-                        "no-store"
+                    cache: "no-store"
                 }
             );
 
@@ -999,42 +1113,78 @@ async function loadWeather() {
             data.current;
 
 
-        getElement(
-            "weather-temperature"
-        ).textContent =
-            `${Math.round(
-                current.temperature_2m
-            )}°C`;
+        const temperature =
+            document.getElementById(
+                "weather-temperature"
+            );
 
+        const wind =
+            document.getElementById(
+                "weather-wind"
+            );
 
-        getElement(
-            "weather-wind"
-        ).textContent =
-            `Viento ${Math.round(
-                current.wind_speed_10m
-            )} km/h`;
+        const description =
+            document.getElementById(
+                "weather-description"
+            );
 
+        const icon =
+            document.getElementById(
+                "weather-icon"
+            );
 
-        getElement(
-            "weather-description"
-        ).textContent =
-            weatherDescription(
-                current.weather_code
+        const update =
+            document.getElementById(
+                "weather-update"
             );
 
 
-        getElement(
-            "weather-icon"
-        ).textContent =
-            weatherIcon(
-                current.weather_code
-            );
+        if (temperature) {
+
+            temperature.textContent =
+                `${Math.round(
+                    current.temperature_2m
+                )}°C`;
+
+        }
 
 
-        getElement(
-            "weather-update"
-        ).textContent =
-            "Actualizado ahora";
+        if (wind) {
+
+            wind.textContent =
+                `Viento ${Math.round(
+                    current.wind_speed_10m
+                )} km/h`;
+
+        }
+
+
+        if (description) {
+
+            description.textContent =
+                weatherDescription(
+                    current.weather_code
+                );
+
+        }
+
+
+        if (icon) {
+
+            icon.textContent =
+                weatherIcon(
+                    current.weather_code
+                );
+
+        }
+
+
+        if (update) {
+
+            update.textContent =
+                "Actualizado ahora";
+
+        }
 
 
     } catch (error) {
@@ -1045,7 +1195,7 @@ async function loadWeather() {
         );
 
         const element =
-            getElement(
+            document.getElementById(
                 "weather-description"
             );
 
@@ -1067,31 +1217,45 @@ function weatherDescription(code) {
         return "Despejado";
     }
 
-    if ([1, 2, 3].includes(code)) {
+    if (
+        [1, 2, 3].includes(code)
+    ) {
         return "Parcialmente nublado";
     }
 
-    if ([45, 48].includes(code)) {
+    if (
+        [45, 48].includes(code)
+    ) {
         return "Niebla";
     }
 
-    if ([51, 53, 55, 56, 57].includes(code)) {
+    if (
+        [51, 53, 55, 56, 57].includes(code)
+    ) {
         return "Llovizna";
     }
 
-    if ([61, 63, 65, 66, 67].includes(code)) {
+    if (
+        [61, 63, 65, 66, 67].includes(code)
+    ) {
         return "Lluvia";
     }
 
-    if ([71, 73, 75, 77].includes(code)) {
+    if (
+        [71, 73, 75, 77].includes(code)
+    ) {
         return "Nieve";
     }
 
-    if ([80, 81, 82].includes(code)) {
+    if (
+        [80, 81, 82].includes(code)
+    ) {
         return "Chubascos";
     }
 
-    if ([95, 96, 99].includes(code)) {
+    if (
+        [95, 96, 99].includes(code)
+    ) {
         return "Tormenta";
     }
 
@@ -1106,31 +1270,45 @@ function weatherIcon(code) {
         return "☀️";
     }
 
-    if ([1, 2, 3].includes(code)) {
+    if (
+        [1, 2, 3].includes(code)
+    ) {
         return "🌤️";
     }
 
-    if ([45, 48].includes(code)) {
+    if (
+        [45, 48].includes(code)
+    ) {
         return "🌫️";
     }
 
-    if ([51, 53, 55, 56, 57].includes(code)) {
+    if (
+        [51, 53, 55, 56, 57].includes(code)
+    ) {
         return "🌦️";
     }
 
-    if ([61, 63, 65, 66, 67].includes(code)) {
+    if (
+        [61, 63, 65, 66, 67].includes(code)
+    ) {
         return "🌧️";
     }
 
-    if ([71, 73, 75, 77].includes(code)) {
+    if (
+        [71, 73, 75, 77].includes(code)
+    ) {
         return "❄️";
     }
 
-    if ([80, 81, 82].includes(code)) {
+    if (
+        [80, 81, 82].includes(code)
+    ) {
         return "🌦️";
     }
 
-    if ([95, 96, 99].includes(code)) {
+    if (
+        [95, 96, 99].includes(code)
+    ) {
         return "⛈️";
     }
 
@@ -1146,12 +1324,12 @@ function weatherIcon(code) {
 async function loadCurrency() {
 
     const rateElement =
-        getElement(
+        document.getElementById(
             "currency-value"
         );
 
     const labelElement =
-        getElement(
+        document.getElementById(
             "currency-rate"
         );
 
@@ -1183,8 +1361,7 @@ async function loadCurrency() {
                 await fetch(
                     "https://api.frankfurter.app/latest?from=EUR&to=USD",
                     {
-                        cache:
-                            "no-store"
+                        cache: "no-store"
                     }
                 );
 
@@ -1205,7 +1382,8 @@ async function loadCurrency() {
                     value > 0
                 ) {
 
-                    rate = value;
+                    rate =
+                        value;
 
                 }
 
@@ -1214,14 +1392,16 @@ async function loadCurrency() {
         } catch (error) {
 
             console.warn(
-                "Frankfurter no disponible:",
+                "Frankfurter:",
                 error
             );
 
         }
 
 
-        if (rate === null) {
+        if (
+            rate === null
+        ) {
 
             try {
 
@@ -1229,8 +1409,7 @@ async function loadCurrency() {
                     await fetch(
                         "https://open.er-api.com/v6/latest/EUR",
                         {
-                            cache:
-                                "no-store"
+                            cache: "no-store"
                         }
                     );
 
@@ -1251,7 +1430,8 @@ async function loadCurrency() {
                         value > 0
                     ) {
 
-                        rate = value;
+                        rate =
+                            value;
 
                     }
 
@@ -1260,7 +1440,7 @@ async function loadCurrency() {
             } catch (error) {
 
                 console.warn(
-                    "ExchangeRate API no disponible:",
+                    "ExchangeRate:",
                     error
                 );
 
@@ -1269,25 +1449,18 @@ async function loadCurrency() {
         }
 
 
-        if (rate !== null) {
+        if (
+            rate !== null
+        ) {
 
             rateElement.textContent =
                 `${rate.toFixed(4)} $`;
 
 
-            if (labelElement) {
-
-                labelElement.textContent =
-                    "1 EUR → USD";
-
-            }
-
-
             const updateElement =
-                getElement(
+                document.getElementById(
                     "currency-update"
                 );
-
 
             if (updateElement) {
 
@@ -1302,7 +1475,7 @@ async function loadCurrency() {
 
 
         throw new Error(
-            "Ninguna API de divisas respondió correctamente."
+            "No hay API de divisas disponible."
         );
 
 
@@ -1315,7 +1488,6 @@ async function loadCurrency() {
 
         rateElement.textContent =
             "No disponible";
-
 
         if (labelElement) {
 
@@ -1330,27 +1502,25 @@ async function loadCurrency() {
 
 
 // ==========================================
-// SUPABASE — CARGAR DATOS
+// SUPABASE — CARGAR TODO
 // ==========================================
 
 async function loadData() {
 
-    /*
-     * IMPORTANTE:
-     * Solo cargamos la BBDD si existe
-     * una sesión autenticada.
-     */
+    // IMPORTANTE:
+    // Nunca cargar datos sin autenticación.
 
     const {
         data: sessionData
     } =
         await db.auth.getSession();
 
-
-    if (!sessionData?.session) {
+    if (
+        !sessionData?.session
+    ) {
 
         console.warn(
-            "No hay sesión. No se cargan los datos."
+            "No hay sesión. No se cargan datos."
         );
 
         showLogin();
@@ -1372,76 +1542,78 @@ async function loadData() {
             reservationsResponse,
             expensesResponse,
             placesResponse
-        ] =
-            await Promise.all([
+        ] = await Promise.all([
 
-                db
-                    .from("plans")
-                    .select("*")
-                    .order(
-                        "date",
-                        {
-                            ascending:
-                                true
-                        }
-                    )
-                    .order(
-                        "time",
-                        {
-                            ascending:
-                                true
-                        }
-                    ),
+            db
+                .from("plans")
+                .select("*")
+                .order(
+                    "date",
+                    {
+                        ascending: true
+                    }
+                )
+                .order(
+                    "time",
+                    {
+                        ascending: true
+                    }
+                ),
 
-                db
-                    .from("reservations")
-                    .select("*")
-                    .order(
-                        "date",
-                        {
-                            ascending:
-                                true
-                        }
-                    ),
+            db
+                .from("reservations")
+                .select("*")
+                .order(
+                    "date",
+                    {
+                        ascending: true
+                    }
+                ),
 
-                db
-                    .from("expenses")
-                    .select("*")
-                    .order(
-                        "date",
-                        {
-                            ascending:
-                                false
-                        }
-                    ),
+            db
+                .from("expenses")
+                .select("*")
+                .order(
+                    "date",
+                    {
+                        ascending: false
+                    }
+                ),
 
-                db
-                    .from("places")
-                    .select("*")
-                    .order(
-                        "created_at",
-                        {
-                            ascending:
-                                false
-                        }
-                    )
+            db
+                .from("places")
+                .select("*")
+                .order(
+                    "created_at",
+                    {
+                        ascending: false
+                    }
+                )
 
-            ]);
+        ]);
 
 
-        if (plansResponse.error) {
+        if (
+            plansResponse.error
+        ) {
             throw plansResponse.error;
         }
 
-        if (reservationsResponse.error) {
+        if (
+            reservationsResponse.error
+        ) {
             throw reservationsResponse.error;
         }
 
-        if (expensesResponse.error) {
+        if (
+            expensesResponse.error
+        ) {
             throw expensesResponse.error;
         }
 
-        if (placesResponse.error) {
+        if (
+            placesResponse.error
+        ) {
             throw placesResponse.error;
         }
 
@@ -1471,9 +1643,30 @@ async function loadData() {
     } catch (error) {
 
         console.error(
-            "SUPABASE DATA ERROR:",
+            "Supabase:",
             error
         );
+
+
+        if (
+            error?.message
+                ?.toLowerCase()
+                .includes(
+                    "jwt"
+                )
+        ) {
+
+            await db.auth.signOut();
+
+            showLogin();
+
+            setLoginError(
+                "La sesión ha caducado. Vuelve a entrar."
+            );
+
+            return;
+
+        }
 
 
         setConnectionStatus(
@@ -1481,12 +1674,6 @@ async function loadData() {
             "error"
         );
 
-
-        /*
-         * Si RLS rechaza la consulta,
-         * mostramos el error en consola
-         * pero no cerramos la sesión.
-         */
 
         renderAll();
 
@@ -1523,7 +1710,7 @@ function renderAll() {
 function renderNextActivity() {
 
     const element =
-        getElement(
+        document.getElementById(
             "next-activity"
         );
 
@@ -1537,34 +1724,32 @@ function renderNextActivity() {
         ...plans.map(
             item => ({
                 ...item,
-                itemType:
-                    "plan"
+                itemType: "plan"
             })
         ),
 
         ...reservations.map(
             item => ({
                 ...item,
-                itemType:
-                    "reservation"
+                itemType: "reservation"
             })
         )
 
     ]
-        .filter(
-            item => item.date
-        )
-        .sort(
-            (a, b) =>
-                getDateTimestamp(
-                    a.date,
-                    a.time
-                ) -
-                getDateTimestamp(
-                    b.date,
-                    b.time
-                )
-        );
+    .filter(
+        item => item.date
+    )
+    .sort(
+        (a, b) =>
+            getDateTimestamp(
+                a.date,
+                a.time
+            ) -
+            getDateTimestamp(
+                b.date,
+                b.time
+            )
+    );
 
 
     if (!allItems.length) {
@@ -1655,7 +1840,7 @@ function renderNextActivity() {
 function renderPlans() {
 
     const container =
-        getElement(
+        document.getElementById(
             "plan-list"
         );
 
@@ -1693,112 +1878,95 @@ function renderPlans() {
             .map(
                 plan => `
 
-                    <article class="activity-card">
+                <article class="activity-card">
 
-                        <div class="date-badge">
+                    <div class="date-badge">
 
-                            <strong>
-                                ${
+                        <strong>
+                            ${
+                                new Date(
+                                    `${plan.date}T00:00:00`
+                                ).getDate()
+                            }
+                        </strong>
+
+                        <span>
+                            ${
+                                new Intl.DateTimeFormat(
+                                    "es-ES",
+                                    {
+                                        month: "short"
+                                    }
+                                ).format(
                                     new Date(
                                         `${plan.date}T00:00:00`
-                                    ).getDate()
-                                }
-                            </strong>
-
-                            <span>
-                                ${
-                                    new Intl.DateTimeFormat(
-                                        "es-ES",
-                                        {
-                                            month:
-                                                "short"
-                                        }
-                                    ).format(
-                                        new Date(
-                                            `${plan.date}T00:00:00`
-                                        )
                                     )
-                                }
-                            </span>
-
-                        </div>
-
-
-                        <div class="card-main">
-
-                            <strong>
-                                ${
-                                    escapeHTML(
-                                        plan.title
-                                    )
-                                }
-                            </strong>
-
-
-                            <p>
-
-                                ${
-                                    plan.time
-                                        ? "🕐 " +
-                                          escapeHTML(
-                                              plan.time
-                                          )
-                                        : ""
-                                }
-
-                            </p>
-
-
-                            ${
-                                plan.location_name
-                                    ? `
-
-                                        <p>
-                                            📍 ${
-                                                escapeHTML(
-                                                    plan.location_name
-                                                )
-                                            }
-                                        </p>
-
-                                    `
-                                    : ""
+                                )
                             }
+                        </span>
 
+                    </div>
 
-                            ${
-                                plan.description
-                                    ? `
+                    <div class="card-main">
 
-                                        <p>
-                                            ${
-                                                escapeHTML(
-                                                    plan.description
-                                                )
-                                            }
-                                        </p>
+                        <strong>
+                            ${escapeHTML(
+                                plan.title
+                            )}
+                        </strong>
 
-                                    `
-                                    : ""
-                            }
+                        ${
+                            plan.time
+                                ? `
+                                <p>
+                                    🕐 ${escapeHTML(
+                                        plan.time
+                                    )}
+                                </p>
+                                `
+                                : ""
+                        }
 
-                        </div>
+                        ${
+                            plan.location_name
+                                ? `
+                                <p>
+                                    📍 ${escapeHTML(
+                                        plan.location_name
+                                    )}
+                                </p>
+                                `
+                                : ""
+                        }
 
+                        ${
+                            plan.description
+                                ? `
+                                <p>
+                                    ${escapeHTML(
+                                        plan.description
+                                    )}
+                                </p>
+                                `
+                                : ""
+                        }
 
-                        <div class="card-actions">
+                    </div>
 
-                            <button
-                                class="danger-button"
-                                onclick="deletePlan('${plan.id}')"
-                            >
-                                🗑️
-                            </button>
+                    <div class="card-actions">
 
-                        </div>
+                        <button
+                            class="danger-button"
+                            onclick="deletePlan('${plan.id}')"
+                        >
+                            🗑️
+                        </button>
 
-                    </article>
+                    </div>
 
-                `
+                </article>
+
+            `
             )
             .join("");
 
@@ -1852,57 +2020,43 @@ async function deletePlan(id) {
 // CREAR PLAN
 // ==========================================
 
-function initializePlanForm() {
+document
+    .getElementById(
+        "search-plan-location"
+    )
+    ?.addEventListener(
+        "click",
+        () => {
 
-    const searchButton =
-        getElement(
-            "search-plan-location"
-        );
-
-
-    if (searchButton) {
-
-        searchButton.addEventListener(
-            "click",
-            () => {
-
-                const query =
-                    getElement(
+            const query =
+                document
+                    .getElementById(
                         "plan-location"
                     )
-                    ?.value
-                    ?.trim();
+                    .value
+                    .trim();
 
 
-                searchLocation(
-                    query,
-                    "plan-location-results",
-                    result => {
+            searchLocation(
+                query,
+                "plan-location-results",
+                result => {
 
-                        selectedPlanLocation =
-                            result;
+                    selectedPlanLocation =
+                        result;
 
-                    }
-                );
+                }
+            );
 
-            }
-        );
-
-    }
+        }
+    );
 
 
-    const form =
-        getElement(
-            "plan-form"
-        );
-
-
-    if (!form) {
-        return;
-    }
-
-
-    form.addEventListener(
+document
+    .getElementById(
+        "plan-form"
+    )
+    ?.addEventListener(
         "submit",
         async event => {
 
@@ -1910,41 +2064,46 @@ function initializePlanForm() {
 
 
             const title =
-                getElement(
-                    "plan-title"
-                )
-                .value
-                .trim();
+                document
+                    .getElementById(
+                        "plan-title"
+                    )
+                    .value
+                    .trim();
 
 
             const description =
-                getElement(
-                    "plan-description"
-                )
-                .value
-                .trim();
+                document
+                    .getElementById(
+                        "plan-description"
+                    )
+                    .value
+                    .trim();
 
 
             const date =
-                getElement(
-                    "plan-date"
-                )
-                .value;
+                document
+                    .getElementById(
+                        "plan-date"
+                    )
+                    .value;
 
 
             const time =
-                getElement(
-                    "plan-time"
-                )
-                .value;
+                document
+                    .getElementById(
+                        "plan-time"
+                    )
+                    .value;
 
 
             const locationName =
-                getElement(
-                    "plan-location"
-                )
-                .value
-                .trim();
+                document
+                    .getElementById(
+                        "plan-location"
+                    )
+                    .value
+                    .trim();
 
 
             const data = {
@@ -1959,22 +2118,18 @@ function initializePlanForm() {
                     time || null,
 
                 location_name:
-                    locationName ||
-                    null,
+                    locationName || null,
 
                 latitude:
                     selectedPlanLocation
-                        ?.lat ??
-                    null,
+                        ?.lat ?? null,
 
                 longitude:
                     selectedPlanLocation
-                        ?.lon ??
-                    null,
+                        ?.lon ?? null,
 
                 created_by:
-                    currentUser?.id ||
-                    null
+                    "NY TRIP"
 
             };
 
@@ -1984,7 +2139,9 @@ function initializePlanForm() {
             } =
                 await db
                     .from("plans")
-                    .insert(data);
+                    .insert(
+                        data
+                    );
 
 
             if (error) {
@@ -2013,15 +2170,12 @@ function initializePlanForm() {
 
             await loadData();
 
-
             showScreen(
                 "plan"
             );
 
         }
     );
-
-}
 
 
 // ==========================================
@@ -2032,20 +2186,15 @@ function reservationIcon(type) {
 
     const icons = {
 
-        restaurant:
-            "🍽️",
+        restaurant: "🍽️",
 
-        activity:
-            "🎟️",
+        activity: "🎟️",
 
-        hotel:
-            "🏨",
+        hotel: "🏨",
 
-        flight:
-            "✈️",
+        flight: "✈️",
 
-        other:
-            "📋"
+        other: "📋"
 
     };
 
@@ -2061,20 +2210,15 @@ function reservationTypeName(type) {
 
     const names = {
 
-        restaurant:
-            "Restaurante",
+        restaurant: "Restaurante",
 
-        activity:
-            "Actividad",
+        activity: "Actividad",
 
-        hotel:
-            "Hotel",
+        hotel: "Hotel",
 
-        flight:
-            "Vuelo",
+        flight: "Vuelo",
 
-        other:
-            "Otro"
+        other: "Otro"
 
     };
 
@@ -2089,10 +2233,9 @@ function reservationTypeName(type) {
 function renderReservations() {
 
     const container =
-        getElement(
+        document.getElementById(
             "reservation-list"
         );
-
 
     if (!container) {
         return;
@@ -2128,134 +2271,122 @@ function renderReservations() {
             .map(
                 reservation => `
 
-                    <article class="reservation-card">
+                <article class="reservation-card">
 
-                        <div class="card-main">
+                    <div class="card-main">
 
-                            <span class="type-badge">
-
-                                ${
-                                    reservationIcon(
-                                        reservation.type
-                                    )
-                                }
-
-                                ${
-                                    reservationTypeName(
-                                        reservation.type
-                                    )
-                                }
-
-                            </span>
-
-
-                            <strong>
-
-                                ${
-                                    escapeHTML(
-                                        reservation.title
-                                    )
-                                }
-
-                            </strong>
-
-
-                            <p>
-
-                                ${
-                                    reservation.date
-                                        ? "📅 " +
-                                          formatDate(
-                                              reservation.date
-                                          )
-                                        : ""
-                                }
-
-                                ${
-                                    reservation.time
-                                        ? " · 🕐 " +
-                                          reservation.time
-                                        : ""
-                                }
-
-                            </p>
-
+                        <span class="type-badge">
 
                             ${
-                                reservation.location_name
-                                    ? `
-
-                                        <p>
-                                            📍 ${
-                                                escapeHTML(
-                                                    reservation.location_name
-                                                )
-                                            }
-                                        </p>
-
-                                    `
-                                    : ""
+                                reservationIcon(
+                                    reservation.type
+                                )
                             }
-
 
                             ${
-                                reservation.description
-                                    ? `
-
-                                        <p>
-                                            ${
-                                                escapeHTML(
-                                                    reservation.description
-                                                )
-                                            }
-                                        </p>
-
-                                    `
-                                    : ""
+                                reservationTypeName(
+                                    reservation.type
+                                )
                             }
 
+                        </span>
 
-                            ${
-                                reservation.booking_url
-                                    ? `
+                        <strong>
+                            ${escapeHTML(
+                                reservation.title
+                            )}
+                        </strong>
 
-                                        <p>
+                        ${
+                            reservation.date
+                                ? `
+                                <p>
+                                    📅 ${
+                                        formatDate(
+                                            reservation.date
+                                        )
+                                    }
 
-                                            <a
-                                                href="${
-                                                    escapeHTML(
-                                                        reservation.booking_url
-                                                    )
-                                                }"
-                                                target="_blank"
-                                                rel="noopener"
-                                            >
-                                                🔗 Abrir reserva
-                                            </a>
+                                    ${
+                                        reservation.time
+                                            ? " · 🕐 " +
+                                              escapeHTML(
+                                                  reservation.time
+                                              )
+                                            : ""
+                                    }
 
-                                        </p>
+                                </p>
+                                `
+                                : ""
+                        }
 
-                                    `
-                                    : ""
-                            }
+                        ${
+                            reservation.location_name
+                                ? `
+                                <p>
+                                    📍 ${
+                                        escapeHTML(
+                                            reservation.location_name
+                                        )
+                                    }
+                                </p>
+                                `
+                                : ""
+                        }
 
-                        </div>
+                        ${
+                            reservation.description
+                                ? `
+                                <p>
+                                    ${
+                                        escapeHTML(
+                                            reservation.description
+                                        )
+                                    }
+                                </p>
+                                `
+                                : ""
+                        }
 
+                        ${
+                            reservation.booking_url
+                                ? `
+                                <p>
 
-                        <div class="card-actions">
+                                    <a
+                                        href="${
+                                            escapeHTML(
+                                                reservation.booking_url
+                                            )
+                                        }"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                    >
+                                        🔗 Abrir reserva
+                                    </a>
 
-                            <button
-                                class="danger-button"
-                                onclick="deleteReservation('${reservation.id}')"
-                            >
-                                🗑️
-                            </button>
+                                </p>
+                                `
+                                : ""
+                        }
 
-                        </div>
+                    </div>
 
-                    </article>
+                    <div class="card-actions">
 
-                `
+                        <button
+                            class="danger-button"
+                            onclick="deleteReservation('${reservation.id}')"
+                        >
+                            🗑️
+                        </button>
+
+                    </div>
+
+                </article>
+
+            `
             )
             .join("");
 
@@ -2305,57 +2436,43 @@ async function deleteReservation(id) {
 }
 
 
-function initializeReservationForm() {
+document
+    .getElementById(
+        "search-reservation-location"
+    )
+    ?.addEventListener(
+        "click",
+        () => {
 
-    const searchButton =
-        getElement(
-            "search-reservation-location"
-        );
-
-
-    if (searchButton) {
-
-        searchButton.addEventListener(
-            "click",
-            () => {
-
-                const query =
-                    getElement(
+            const query =
+                document
+                    .getElementById(
                         "reservation-location"
                     )
-                    ?.value
-                    ?.trim();
+                    .value
+                    .trim();
 
 
-                searchLocation(
-                    query,
-                    "reservation-location-results",
-                    result => {
+            searchLocation(
+                query,
+                "reservation-location-results",
+                result => {
 
-                        selectedReservationLocation =
-                            result;
+                    selectedReservationLocation =
+                        result;
 
-                    }
-                );
+                }
+            );
 
-            }
-        );
-
-    }
+        }
+    );
 
 
-    const form =
-        getElement(
-            "reservation-form"
-        );
-
-
-    if (!form) {
-        return;
-    }
-
-
-    form.addEventListener(
+document
+    .getElementById(
+        "reservation-form"
+    )
+    ?.addEventListener(
         "submit",
         async event => {
 
@@ -2365,44 +2482,51 @@ function initializeReservationForm() {
             const data = {
 
                 type:
-                    getElement(
-                        "reservation-type"
-                    ).value,
+                    document
+                        .getElementById(
+                            "reservation-type"
+                        )
+                        .value,
 
                 title:
-                    getElement(
-                        "reservation-title"
-                    )
-                    .value
-                    .trim(),
+                    document
+                        .getElementById(
+                            "reservation-title"
+                        )
+                        .value
+                        .trim(),
 
                 description:
-                    getElement(
-                        "reservation-description"
-                    )
-                    .value
-                    .trim(),
+                    document
+                        .getElementById(
+                            "reservation-description"
+                        )
+                        .value
+                        .trim(),
 
                 date:
-                    getElement(
-                        "reservation-date"
-                    )
-                    .value ||
+                    document
+                        .getElementById(
+                            "reservation-date"
+                        )
+                        .value ||
                     null,
 
                 time:
-                    getElement(
-                        "reservation-time"
-                    )
-                    .value ||
+                    document
+                        .getElementById(
+                            "reservation-time"
+                        )
+                        .value ||
                     null,
 
                 location_name:
-                    getElement(
-                        "reservation-location"
-                    )
-                    .value
-                    .trim() ||
+                    document
+                        .getElementById(
+                            "reservation-location"
+                        )
+                        .value
+                        .trim() ||
                     null,
 
                 latitude:
@@ -2416,16 +2540,16 @@ function initializeReservationForm() {
                     null,
 
                 booking_url:
-                    getElement(
-                        "reservation-url"
-                    )
-                    .value
-                    .trim() ||
+                    document
+                        .getElementById(
+                            "reservation-url"
+                        )
+                        .value
+                        .trim() ||
                     null,
 
                 created_by:
-                    currentUser?.id ||
-                    null
+                    "NY TRIP"
 
             };
 
@@ -2435,7 +2559,9 @@ function initializeReservationForm() {
             } =
                 await db
                     .from("reservations")
-                    .insert(data);
+                    .insert(
+                        data
+                    );
 
 
             if (error) {
@@ -2464,15 +2590,12 @@ function initializeReservationForm() {
 
             await loadData();
 
-
             showScreen(
                 "reservations"
             );
 
         }
     );
-
-}
 
 
 // ==========================================
@@ -2484,7 +2607,9 @@ function calculateBalances() {
     const balances = {
 
         Laura: 0,
+
         Sara: 0,
+
         Belén: 0
 
     };
@@ -2511,7 +2636,9 @@ function calculateBalances() {
                     : [];
 
 
-            if (!participants.length) {
+            if (
+                !participants.length
+            ) {
                 return;
             }
 
@@ -2522,8 +2649,7 @@ function calculateBalances() {
 
 
             if (
-                balances[payer] !==
-                undefined
+                balances[payer] !== undefined
             ) {
 
                 balances[payer] +=
@@ -2536,8 +2662,7 @@ function calculateBalances() {
                 person => {
 
                     if (
-                        balances[person] !==
-                        undefined
+                        balances[person] !== undefined
                     ) {
 
                         balances[person] -=
@@ -2564,13 +2689,13 @@ function calculateDebts() {
 
 
     const creditors = [];
+
     const debtors = [];
 
 
     Object.entries(
         balances
-    )
-    .forEach(
+    ).forEach(
         ([name, balance]) => {
 
             if (
@@ -2579,8 +2704,7 @@ function calculateDebts() {
 
                 creditors.push({
                     name,
-                    amount:
-                        balance
+                    amount: balance
                 });
 
             }
@@ -2592,8 +2716,7 @@ function calculateDebts() {
 
                 debtors.push({
                     name,
-                    amount:
-                        -balance
+                    amount: -balance
                 });
 
             }
@@ -2604,8 +2727,8 @@ function calculateDebts() {
 
     const debts = [];
 
-
     let i = 0;
+
     let j = 0;
 
 
@@ -2616,7 +2739,6 @@ function calculateDebts() {
 
         const debtor =
             debtors[i];
-
 
         const creditor =
             creditors[j];
@@ -2650,22 +2772,16 @@ function calculateDebts() {
 
 
         if (
-            debtor.amount <
-            0.01
+            debtor.amount < 0.01
         ) {
-
             i++;
-
         }
 
 
         if (
-            creditor.amount <
-            0.01
+            creditor.amount < 0.01
         ) {
-
             j++;
-
         }
 
     }
@@ -2677,17 +2793,6 @@ function calculateDebts() {
 
 
 function renderExpenses() {
-
-    const summary =
-        getElement(
-            "expense-summary"
-        );
-
-
-    if (!summary) {
-        return;
-    }
-
 
     const balances =
         calculateBalances();
@@ -2702,6 +2807,16 @@ function renderExpenses() {
                 ),
             0
         );
+
+
+    const summary =
+        document.getElementById(
+            "expense-summary"
+        );
+
+    if (!summary) {
+        return;
+    }
 
 
     summary.innerHTML =
@@ -2728,7 +2843,6 @@ function renderExpenses() {
                                 ${person}
 
                             </span>
-
 
                             <strong
                                 class="${
@@ -2801,10 +2915,9 @@ function renderExpenses() {
 
 
     const container =
-        getElement(
+        document.getElementById(
             "expense-list"
         );
-
 
     if (!container) {
         return;
@@ -2848,15 +2961,10 @@ function renderExpenses() {
                             <div class="card-main">
 
                                 <strong>
-
-                                    ${
-                                        escapeHTML(
-                                            expense.title
-                                        )
-                                    }
-
+                                    ${escapeHTML(
+                                        expense.title
+                                    )}
                                 </strong>
-
 
                                 <p>
 
@@ -2875,7 +2983,6 @@ function renderExpenses() {
                                     }
 
                                 </p>
-
 
                                 <p>
 
@@ -2896,27 +3003,21 @@ function renderExpenses() {
 
                                 </p>
 
-
                                 ${
                                     expense.date
                                         ? `
-
-                                            <p>
-
-                                                📅 ${
-                                                    formatDate(
-                                                        expense.date
-                                                    )
-                                                }
-
-                                            </p>
-
+                                        <p>
+                                            📅 ${
+                                                formatDate(
+                                                    expense.date
+                                                )
+                                            }
+                                        </p>
                                         `
                                         : ""
                                 }
 
                             </div>
-
 
                             <div class="card-actions">
 
@@ -2930,7 +3031,6 @@ function renderExpenses() {
                                     }
 
                                 </strong>
-
 
                                 <button
                                     class="danger-button"
@@ -2955,10 +3055,9 @@ function renderExpenses() {
 function renderDebts() {
 
     const container =
-        getElement(
+        document.getElementById(
             "debts"
         );
-
 
     if (!container) {
         return;
@@ -3025,7 +3124,6 @@ function renderDebts() {
 
                         </strong>
 
-
                         <span class="debt-amount">
 
                             ${
@@ -3089,20 +3187,11 @@ async function deleteExpense(id) {
 }
 
 
-function initializeExpenseForm() {
-
-    const form =
-        getElement(
-            "expense-form"
-        );
-
-
-    if (!form) {
-        return;
-    }
-
-
-    form.addEventListener(
+document
+    .getElementById(
+        "expense-form"
+    )
+    ?.addEventListener(
         "submit",
         async event => {
 
@@ -3137,48 +3226,57 @@ function initializeExpenseForm() {
             const data = {
 
                 title:
-                    getElement(
-                        "expense-title"
-                    )
-                    .value
-                    .trim(),
+                    document
+                        .getElementById(
+                            "expense-title"
+                        )
+                        .value
+                        .trim(),
 
                 amount:
                     Number(
-                        getElement(
-                            "expense-amount"
-                        ).value
+                        document
+                            .getElementById(
+                                "expense-amount"
+                            )
+                            .value
                     ),
 
                 currency:
-                    getElement(
-                        "expense-currency"
-                    ).value,
+                    document
+                        .getElementById(
+                            "expense-currency"
+                        )
+                        .value,
 
                 paid_by:
-                    getElement(
-                        "expense-paid-by"
-                    ).value,
+                    document
+                        .getElementById(
+                            "expense-paid-by"
+                        )
+                        .value,
 
                 participants,
 
                 date:
-                    getElement(
-                        "expense-date"
-                    ).value ||
+                    document
+                        .getElementById(
+                            "expense-date"
+                        )
+                        .value ||
                     null,
 
                 notes:
-                    getElement(
-                        "expense-notes"
-                    )
-                    .value
-                    .trim() ||
+                    document
+                        .getElementById(
+                            "expense-notes"
+                        )
+                        .value
+                        .trim() ||
                     null,
 
                 created_by:
-                    currentUser?.id ||
-                    null
+                    "NY TRIP"
 
             };
 
@@ -3188,7 +3286,9 @@ function initializeExpenseForm() {
             } =
                 await db
                     .from("expenses")
-                    .insert(data);
+                    .insert(
+                        data
+                    );
 
 
             if (error) {
@@ -3221,8 +3321,6 @@ function initializeExpenseForm() {
         }
     );
 
-}
-
 
 // ==========================================
 // MAPA
@@ -3236,7 +3334,7 @@ function initializeMap() {
 
 
     const mapElement =
-        getElement(
+        document.getElementById(
             "map"
         );
 
@@ -3246,25 +3344,10 @@ function initializeMap() {
     }
 
 
-    if (
-        typeof L ===
-        "undefined"
-    ) {
-
-        console.error(
-            "Leaflet no está cargado."
-        );
-
-        return;
-
-    }
-
-
     map =
         L.map(
             mapElement
-        )
-        .setView(
+        ).setView(
             [
                 40.7128,
                 -74.0060
@@ -3280,8 +3363,9 @@ function initializeMap() {
             attribution:
                 "&copy; OpenStreetMap contributors"
         }
-    )
-    .addTo(map);
+    ).addTo(
+        map
+    );
 
 }
 
@@ -3316,20 +3400,13 @@ function addMarker(
     description
 ) {
 
-    if (!map) {
-        return;
-    }
-
-
     if (
         latitude === null ||
         longitude === null ||
         latitude === undefined ||
         longitude === undefined
     ) {
-
         return;
-
     }
 
 
@@ -3340,13 +3417,17 @@ function addMarker(
                 Number(longitude)
             ]
         )
-        .addTo(map);
+        .addTo(
+            map
+        );
 
 
     marker.bindPopup(`
 
         <strong>
-            ${escapeHTML(title)}
+            ${escapeHTML(
+                title
+            )}
         </strong>
 
         <br>
@@ -3443,7 +3524,7 @@ function renderMap() {
 function renderMapList() {
 
     const container =
-        getElement(
+        document.getElementById(
             "map-list"
         );
 
@@ -3471,8 +3552,8 @@ function renderMapList() {
     plans
         .filter(
             plan =>
-                plan.latitude &&
-                plan.longitude
+                plan.latitude !== null &&
+                plan.longitude !== null
         )
         .forEach(
             plan => {
@@ -3495,8 +3576,8 @@ function renderMapList() {
     reservations
         .filter(
             reservation =>
-                reservation.latitude &&
-                reservation.longitude
+                reservation.latitude !== null &&
+                reservation.longitude !== null
         )
         .forEach(
             reservation => {
@@ -3545,24 +3626,18 @@ function renderMapList() {
                     <div class="map-item">
 
                         <strong>
-
-                            ${
-                                escapeHTML(
-                                    item.title
-                                )
-                            }
-
+                            ${escapeHTML(
+                                item.title
+                            )}
                         </strong>
 
                         <span>
-
                             ${
                                 escapeHTML(
                                     item.location ||
                                     ""
                                 )
                             }
-
                         </span>
 
                     </div>
@@ -3574,20 +3649,11 @@ function renderMapList() {
 }
 
 
-function initializeMapControls() {
-
-    const button =
-        getElement(
-            "center-map"
-        );
-
-
-    if (!button) {
-        return;
-    }
-
-
-    button.addEventListener(
+document
+    .getElementById(
+        "center-map"
+    )
+    ?.addEventListener(
         "click",
         () => {
 
@@ -3619,11 +3685,6 @@ function initializeMapControls() {
                         position.coords.longitude;
 
 
-                    if (!map) {
-                        return;
-                    }
-
-
                     map.setView(
                         [
                             lat,
@@ -3642,7 +3703,9 @@ function initializeMapControls() {
                             radius: 9
                         }
                     )
-                    .addTo(map)
+                    .addTo(
+                        map
+                    )
                     .bindPopup(
                         "📍 Estáis aquí"
                     )
@@ -3664,8 +3727,6 @@ function initializeMapControls() {
         }
     );
 
-}
-
 
 // ==========================================
 // BÚSQUEDA DE LUGARES
@@ -3678,7 +3739,7 @@ async function searchLocation(
 ) {
 
     const container =
-        getElement(
+        document.getElementById(
             resultContainerId
         );
 
@@ -3735,8 +3796,7 @@ async function searchLocation(
             await fetch(
                 url,
                 {
-                    cache:
-                        "no-store"
+                    cache: "no-store"
                 }
             );
 
@@ -3775,7 +3835,10 @@ async function searchLocation(
         container.innerHTML =
             results
                 .map(
-                    (result, index) => `
+                    (
+                        result,
+                        index
+                    ) => `
 
                         <button
                             type="button"
@@ -3793,11 +3856,8 @@ async function searchLocation(
 
                             </strong>
 
-
                             <span>
-
                                 Seleccionar
-
                             </span>
 
                         </button>
@@ -3855,9 +3915,11 @@ async function searchLocation(
                                 "plan-location-results"
                             ) {
 
-                                getElement(
-                                    "plan-location"
-                                ).value =
+                                document
+                                    .getElementById(
+                                        "plan-location"
+                                    )
+                                    .value =
                                     result.display_name;
 
                             }
@@ -3868,9 +3930,11 @@ async function searchLocation(
                                 "reservation-location-results"
                             ) {
 
-                                getElement(
-                                    "reservation-location"
-                                ).value =
+                                document
+                                    .getElementById(
+                                        "reservation-location"
+                                    )
+                                    .value =
                                     result.display_name;
 
                             }
@@ -3924,7 +3988,7 @@ async function searchLocation(
 function renderFlights() {
 
     const container =
-        getElement(
+        document.getElementById(
             "flight-list"
         );
 
@@ -3946,47 +4010,44 @@ function renderFlights() {
                             <span class="type-badge">
 
                                 ✈️ ${
-                                    flight.airline
+                                    escapeHTML(
+                                        flight.airline
+                                    )
                                 }
 
                             </span>
 
-
                             <strong>
-
                                 ${
-                                    flight.flightNumber
+                                    escapeHTML(
+                                        flight.flightNumber
+                                    )
                                 }
-
                             </strong>
-
 
                             <div class="flight-route">
 
                                 <span class="flight-airport">
-
                                     ${
-                                        flight.from
+                                        escapeHTML(
+                                            flight.from
+                                        )
                                     }
-
                                 </span>
-
 
                                 <span class="flight-arrow">
                                     →
                                 </span>
 
-
                                 <span class="flight-airport">
-
                                     ${
-                                        flight.to
+                                        escapeHTML(
+                                            flight.to
+                                        )
                                     }
-
                                 </span>
 
                             </div>
-
 
                             <p>
 
@@ -3997,7 +4058,6 @@ function renderFlights() {
                                 }
 
                             </p>
-
 
                             <p>
 
@@ -4012,7 +4072,6 @@ function renderFlights() {
                                 }
 
                             </p>
-
 
                             <p>
 
@@ -4039,10 +4098,23 @@ function renderFlights() {
 
 function subscribeRealtime() {
 
-    db
-        .channel(
-            "ny-trip-live"
-        )
+    if (
+        realtimeChannel
+    ) {
+
+        return;
+
+    }
+
+
+    realtimeChannel =
+        db
+            .channel(
+                "ny-trip-live"
+            );
+
+
+    realtimeChannel
 
         .on(
             "postgres_changes",
@@ -4115,108 +4187,80 @@ function subscribeRealtime() {
 
 
 // ==========================================
-// INICIAR APP DESPUÉS DEL LOGIN
+// LIMPIAR CACHÉ
 // ==========================================
 
-let appStarted = false;
+async function removeOldServiceWorkers() {
 
+    if (
+        !("serviceWorker" in navigator)
+    ) {
 
-async function startAppAfterLogin() {
-
-    /*
-     * Evita inicializar Realtime,
-     * formularios, etc. varias veces.
-     */
-
-    if (!appStarted) {
-
-        appStarted = true;
-
-        updateTripDay();
-
-        renderFlights();
-
-        initializeNavigation();
-
-        initializeModals();
-
-        initializePlanForm();
-
-        initializeReservationForm();
-
-        initializeExpenseForm();
-
-        initializeMapControls();
-
-        subscribeRealtime();
+        return;
 
     }
 
 
-    updateCurrentUser();
-
-    await loadWeather();
-
-    await loadCurrency();
-
-    await loadData();
-
-}
-
-
-// ==========================================
-// COMPROBAR SESIÓN
-// ==========================================
-
-async function checkExistingSession() {
-
     try {
 
-        const {
-            data,
-            error
-        } =
-            await db.auth.getSession();
+        const registrations =
+            await navigator
+                .serviceWorker
+                .getRegistrations();
 
 
-        if (error) {
-            throw error;
+        for (
+            const registration
+            of registrations
+        ) {
+
+            try {
+
+                await registration.unregister();
+
+            } catch (error) {
+
+                console.warn(
+                    "No se pudo desregistrar SW:",
+                    error
+                );
+
+            }
+
         }
 
 
         if (
-            data?.session?.user
+            window.caches
         ) {
 
-            currentUser =
-                data.session.user;
+            const cacheNames =
+                await caches.keys();
 
-            updateCurrentUser();
 
-            showApp();
-
-            await startAppAfterLogin();
-
-            return;
+            await Promise.all(
+                cacheNames.map(
+                    cacheName =>
+                        caches.delete(
+                            cacheName
+                        )
+                )
+            );
 
         }
 
 
-        showLogin();
+        console.log(
+            "🧹 NY TRIP: Service Workers y cachés eliminados."
+        );
 
 
     } catch (error) {
 
-        console.error(
-            "SESSION ERROR:",
+        console.warn(
+            "No se pudo limpiar toda la caché:",
             error
         );
-
-        showLoginError(
-            "No se pudo comprobar la sesión."
-        );
-
-        showLogin();
 
     }
 
@@ -4224,57 +4268,27 @@ async function checkExistingSession() {
 
 
 // ==========================================
-// CAMBIOS DE AUTENTICACIÓN
+// EVITAR EJECUCIÓN DE APP ANTIGUA
 // ==========================================
 
-function subscribeAuthChanges() {
+window.addEventListener(
+    "pageshow",
+    event => {
 
-    db.auth.onAuthStateChange(
-        async (
-            event,
-            session
-        ) => {
+        if (
+            event.persisted
+        ) {
 
-            console.log(
-                "AUTH:",
-                event
-            );
-
-
-            if (
-                event ===
-                "SIGNED_OUT"
-            ) {
-
-                currentUser =
-                    null;
-
-                showLogin();
-
-                return;
-
-            }
-
-
-            if (
-                session?.user
-            ) {
-
-                currentUser =
-                    session.user;
-
-                updateCurrentUser();
-
-            }
+            window.location.reload();
 
         }
-    );
 
-}
+    }
+);
 
 
 // ==========================================
-// INICIAR NY TRIP
+// INICIAR
 // ==========================================
 
 async function startNYTrip() {
@@ -4284,31 +4298,27 @@ async function startNYTrip() {
     );
 
 
-    /*
-     * Primero mostramos login
-     * mientras comprobamos la sesión.
-     */
-
-    showLogin();
+    // Primero limpiamos cachés antiguas.
+    await removeOldServiceWorkers();
 
 
-    initializeLogin();
+    // Configuramos autenticación.
+    setupAuthentication();
 
-    subscribeAuthChanges();
 
-
-    await checkExistingSession();
+    // Comprobamos la sesión.
+    await checkAuthentication();
 
 
     console.log(
-        "🟢 NY TRIP listo."
+        "🟢 NY TRIP preparado."
     );
 
 }
 
 
 // ==========================================
-// DOM READY
+// ARRANQUE
 // ==========================================
 
 if (
