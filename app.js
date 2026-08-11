@@ -1,5 +1,5 @@
 // ==========================================
-// 🗽 NY TRIP — APLICACIÓN COMPLETA (100% GRATIS)
+// 🗽 NY TRIP 
 // ==========================================
 
 const SUPABASE_URL = "https://rtbrnbyosrtxeayqmvwc.supabase.co";
