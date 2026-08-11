@@ -1,5 +1,5 @@
 // ==========================================
-// 🗽 NY TRIP 
+// 🗽 NY TRIP
 // ==========================================
 
 const SUPABASE_URL = "https://rtbrnbyosrtxeayqmvwc.supabase.co";
@@ -431,7 +431,7 @@ async function deletePlan(id) {
     await loadData();
 }
 
-// GUARDAR PLAN (DETECCION DE ERRORES MEJORADA)
+// GUARDAR PLAN
 document.getElementById("plan-form")?.addEventListener("submit", async e => {
     e.preventDefault();
     const title = document.getElementById("plan-title").value.trim();
@@ -599,8 +599,9 @@ function renderMap() {
 
     const addM = (lat, lon, title, desc, url) => {
         if (!lat || !lon) return;
+        const mapsUrl = url || `https://www.google.com/maps/search/?api=1&query=${lat},${lon}`;
         const m = L.marker([Number(lat), Number(lon)]).addTo(map);
-        m.bindPopup(`<strong>${escapeHTML(title)}</strong><br>${escapeHTML(desc || '')}${url ? `<br><a href="${url}" target="_blank">Abrir Google Maps</a>` : ''}`);
+        m.bindPopup(`<strong>${escapeHTML(title)}</strong><br>${escapeHTML(desc || '')}<br><a href="${mapsUrl}" target="_blank">Abrir Google Maps</a>`);
         mapMarkers.push(m);
     };
 
