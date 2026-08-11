@@ -1,17 +1,8 @@
 // ==========================================
 // 🗽 NY TRIP
 // Service Worker
+// SIN CACHÉ
 // ==========================================
-
-const CACHE_NAME = "ny-trip-v2";
-
-const FILES_TO_CACHE = [
-    "./",
-    "./index.html",
-    "./style.css",
-    "./app.js",
-    "./manifest.json"
-];
 
 
 // ==========================================
@@ -20,17 +11,7 @@ const FILES_TO_CACHE = [
 
 self.addEventListener("install", (event) => {
 
-    event.waitUntil(
-
-        caches.open(CACHE_NAME)
-            .then((cache) => {
-
-                return cache.addAll(FILES_TO_CACHE);
-
-            })
-
-    );
-
+    // Activar inmediatamente la nueva versión
     self.skipWaiting();
 
 });
@@ -47,27 +28,26 @@ self.addEventListener("activate", (event) => {
         caches.keys()
             .then((cacheNames) => {
 
+                // Borrar TODAS las cachés antiguas
                 return Promise.all(
 
-                    cacheNames
-                        .filter((cacheName) => {
+                    cacheNames.map((cacheName) => {
 
-                            return cacheName !== CACHE_NAME;
+                        return caches.delete(cacheName);
 
-                        })
-                        .map((cacheName) => {
-
-                            return caches.delete(cacheName);
-
-                        })
+                    })
 
                 );
 
             })
+            .then(() => {
+
+                // Tomar el control inmediatamente
+                return self.clients.claim();
+
+            })
 
     );
-
-    self.clients.claim();
 
 });
 
@@ -78,65 +58,13 @@ self.addEventListener("activate", (event) => {
 
 self.addEventListener("fetch", (event) => {
 
-    // Para páginas HTML intentamos primero Internet.
-    // Así las actualizaciones de NY TRIP aparecen
-    // sin tener que cambiar la URL.
-
-    if (event.request.mode === "navigate") {
-
-        event.respondWith(
-
-            fetch(event.request)
-                .then((response) => {
-
-                    const responseClone =
-                        response.clone();
-
-                    caches.open(CACHE_NAME)
-                        .then((cache) => {
-
-                            cache.put(
-                                event.request,
-                                responseClone
-                            );
-
-                        });
-
-                    return response;
-
-                })
-                .catch(() => {
-
-                    return caches.match(
-                        event.request
-                    );
-
-                })
-
-        );
-
-        return;
-
-    }
-
-
-    // Para archivos como CSS, JavaScript e imágenes:
-    // usamos caché y, si no existe, Internet.
+    // NO usamos caché.
+    // Todas las peticiones van directamente
+    // a GitHub Pages.
 
     event.respondWith(
 
-        caches.match(event.request)
-            .then((cachedResponse) => {
-
-                if (cachedResponse) {
-
-                    return cachedResponse;
-
-                }
-
-                return fetch(event.request);
-
-            })
+        fetch(event.request)
 
     );
 
