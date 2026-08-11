@@ -1,7 +1,9 @@
+```html id="x2z8qv"
 <!DOCTYPE html>
 <html lang="es">
 
 <head>
+
     <meta charset="UTF-8">
 
     <meta
@@ -17,29 +19,73 @@
     <title>NY TRIP</title>
 
     <link rel="stylesheet" href="style.css">
-    <link rel="manifest" href="manifest.json">
+
+    <link
+        rel="manifest"
+        href="manifest.json"
+    >
+
 </head>
+
 
 <body>
 
     <main>
 
+        <!-- ==================================
+             CABECERA
+        =================================== -->
+
         <header class="app-header">
-            <h1>🗽 NY TRIP</h1>
-            <p>El tridente en Nueva York 😈😇🤪</p>
+
+            <h1>
+                🗽 NY TRIP
+            </h1>
+
+            <p>
+                El tridente en Nueva York 😈😇🤪
+            </p>
+
         </header>
 
+
+        <!-- ==================================
+             DÍA DEL VIAJE
+        =================================== -->
+
         <section class="location-card">
+
             <div>
-                <span class="label">📍 UBICACIÓN</span>
-                <strong>Nueva York</strong>
+
+                <span class="label">
+                    📅 VIAJE
+                </span>
+
+                <strong id="trip-day">
+                    Preparando...
+                </strong>
+
             </div>
 
+
             <div class="weather">
-                <span>🌡️</span>
-                <strong>--°C</strong>
+
+                <span>
+                    📍
+                </span>
+
+                <strong>
+                    Nueva York
+                </strong>
+
             </div>
+
         </section>
+
+
+        <!-- ==================================
+             ¿QUÉ HACEMOS AHORA?
+        =================================== -->
 
         <section class="now-card">
 
@@ -47,113 +93,248 @@
                 ⭐ ¿QUÉ HACEMOS AHORA?
             </p>
 
-            <h2>Preparando vuestro viaje...</h2>
+            <h2>
+                Preparando vuestro viaje...
+            </h2>
 
             <p>
-                Aquí aparecerá nuestra próxima actividad.
+                Aquí aparecerá vuestra próxima actividad.
             </p>
 
         </section>
 
+
+        <!-- ==================================
+             PLAN DE HOY
+        =================================== -->
+
         <section class="day-plan">
 
             <div class="section-title">
-                <h2>📅 PLAN DE HOY</h2>
+
+                <h2>
+                    📅 PLAN DE HOY
+                </h2>
+
             </div>
 
+
             <div class="activity">
-                <span class="activity-time">10:00</span>
+
+                <span class="activity-time">
+                    10:00
+                </span>
+
 
                 <div>
-                    <strong>Primera actividad</strong>
-                    <p>Añadiremos vuestro itinerario aquí.</p>
+
+                    <strong>
+                        Primera actividad
+                    </strong>
+
+                    <p>
+                        Añadiremos vuestro itinerario aquí.
+                    </p>
+
                 </div>
+
             </div>
 
+
             <div class="activity">
-                <span class="activity-time">14:00</span>
+
+                <span class="activity-time">
+                    14:00
+                </span>
+
 
                 <div>
-                    <strong>Comida</strong>
-                    <p>Reserva o actividad pendiente.</p>
+
+                    <strong>
+                        Comida
+                    </strong>
+
+                    <p>
+                        Reserva o actividad pendiente.
+                    </p>
+
                 </div>
+
             </div>
 
         </section>
 
+
+        <!-- ==================================
+             ACCIONES RÁPIDAS
+        =================================== -->
+
         <section class="quick-actions">
 
-            <button>🚇<span>Transporte</span></button>
-            <button>🌦️<span>Tiempo</span></button>
-            <button>🍽️<span>Comer cerca</span></button>
-            <button>📍<span>Cerca de mí</span></button>
-            <button>💰<span>Gastos</span></button>
-            <button>📋<span>Reservas</span></button>
+            <button>
+                🚇
+                <span>
+                    Transporte
+                </span>
+            </button>
+
+
+            <button>
+                🌦️
+                <span>
+                    Tiempo
+                </span>
+            </button>
+
+
+            <button>
+                🍽️
+                <span>
+                    Comer cerca
+                </span>
+            </button>
+
+
+            <button>
+                📍
+                <span>
+                    Cerca de mí
+                </span>
+            </button>
+
+
+            <button>
+                💰
+                <span>
+                    Gastos
+                </span>
+            </button>
+
+
+            <button>
+                📋
+                <span>
+                    Reservas
+                </span>
+            </button>
 
         </section>
 
     </main>
 
+
+    <!-- ======================================
+         NAVEGACIÓN INFERIOR
+    ======================================= -->
+
     <nav class="bottom-nav">
 
         <button class="active">
+
             🏠
-            <span>Inicio</span>
+
+            <span>
+                Inicio
+            </span>
+
         </button>
 
+
         <button>
+
             🗓️
-            <span>Plan</span>
+
+            <span>
+                Plan
+            </span>
+
         </button>
 
+
         <button>
+
             🗺️
-            <span>Mapa</span>
+
+            <span>
+                Mapa
+            </span>
+
         </button>
 
+
         <button>
+
             💰
-            <span>Gastos</span>
+
+            <span>
+                Gastos
+            </span>
+
         </button>
 
+
         <button>
+
             ☰
-            <span>Más</span>
+
+            <span>
+                Más
+            </span>
+
         </button>
 
     </nav>
 
+
+    <!-- ======================================
+         JAVASCRIPT
+    ======================================= -->
+
     <script src="app.js"></script>
 
+
+    <!-- ======================================
+         SERVICE WORKER
+    ======================================= -->
+
     <script>
+
         if ("serviceWorker" in navigator) {
 
-            window.addEventListener("load", () => {
+            window.addEventListener(
+                "load",
+                () => {
 
-                navigator.serviceWorker.register("./service-worker.js")
+                    navigator.serviceWorker
+                        .register(
+                            "./service-worker.js"
+                        )
 
-                    .then(() => {
+                        .then(() => {
 
-                        console.log(
-                            "🟢 NY TRIP: modo offline preparado."
-                        );
+                            console.log(
+                                "🟢 NY TRIP: modo offline preparado."
+                            );
 
-                    })
+                        })
 
-                    .catch((error) => {
+                        .catch((error) => {
 
-                        console.error(
-                            "🔴 NY TRIP: no se pudo activar el modo offline.",
-                            error
-                        );
+                            console.error(
+                                "🔴 NY TRIP: error en Service Worker.",
+                                error
+                            );
 
-                    });
+                        });
 
-            });
+                }
+            );
 
         }
+
     </script>
 
 </body>
 
 </html>
+```
