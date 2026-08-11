@@ -1832,9 +1832,75 @@ function renderNextActivity() {
 
 }
 
-
 // ==========================================
 // PLANES
+// ==========================================
+
+const PLAN_CATEGORIES = {
+
+    rooftop: {
+        label: "RoofTops",
+        icon: "🌇"
+    },
+
+    spot: {
+        label: "Spots",
+        icon: "📍"
+    },
+
+    restaurant: {
+        label: "Restaurantes",
+        icon: "🍽️"
+    },
+
+    sweet: {
+        label: "Dulces",
+        icon: "🍰"
+    },
+
+    sightseeing: {
+        label: "Turisteo",
+        icon: "🗽"
+    },
+
+    shopping: {
+        label: "Tiendas",
+        icon: "🛍️"
+    },
+
+    other: {
+        label: "Otros",
+        icon: "📌"
+    }
+
+};
+
+
+// ==========================================
+// FILTRO ACTUAL
+// ==========================================
+
+let activePlanFilter = "all";
+
+
+// ==========================================
+// OBTENER CATEGORÍA
+// ==========================================
+
+function getPlanCategory(category) {
+
+    return (
+        PLAN_CATEGORIES[category] || {
+            label: "Otros",
+            icon: "📌"
+        }
+    );
+
+}
+
+
+// ==========================================
+// RENDER PLANES
 // ==========================================
 
 function renderPlans() {
@@ -1848,6 +1914,35 @@ function renderPlans() {
         return;
     }
 
+
+    // ======================================
+    // FILTRAR PLANES
+    // ======================================
+
+    let visiblePlans =
+        [...plans];
+
+
+    if (
+        activePlanFilter !== "all"
+    ) {
+
+        visiblePlans =
+            visiblePlans.filter(
+                plan =>
+                    (
+                        plan.category ||
+                        "other"
+                    ) ===
+                    activePlanFilter
+            );
+
+    }
+
+
+    // ======================================
+    // NO HAY PLANES
+    // ======================================
 
     if (!plans.length) {
 
@@ -1873,105 +1968,285 @@ function renderPlans() {
     }
 
 
+    // ======================================
+    // NO HAY RESULTADOS DEL FILTRO
+    // ======================================
+
+    if (!visiblePlans.length) {
+
+        const category =
+            getPlanCategory(
+                activePlanFilter
+            );
+
+
+        container.innerHTML = `
+
+            <div class="empty">
+
+                ${category.icon}
+
+                No hay planes de
+                <strong>
+                    ${escapeHTML(
+                        category.label
+                    )}
+                </strong>.
+
+            </div>
+
+        `;
+
+        return;
+
+    }
+
+
+    // ======================================
+    // PINTAR PLANES
+    // ======================================
+
     container.innerHTML =
-        plans
+        visiblePlans
             .map(
-                plan => `
+                plan => {
 
-                <article class="activity-card">
+                    const category =
+                        getPlanCategory(
+                            plan.category
+                        );
 
-                    <div class="date-badge">
 
-                        <strong>
-                            ${
-                                new Date(
-                                    `${plan.date}T00:00:00`
-                                ).getDate()
-                            }
-                        </strong>
+                    const planDate =
+                        plan.date
+                            ? new Date(
+                                `${plan.date}T00:00:00`
+                            )
+                            : null;
 
-                        <span>
-                            ${
-                                new Intl.DateTimeFormat(
-                                    "es-ES",
-                                    {
-                                        month: "short"
-                                    }
-                                ).format(
-                                    new Date(
-                                        `${plan.date}T00:00:00`
-                                    )
+
+                    const day =
+                        planDate
+                            ? planDate.getDate()
+                            : "";
+
+
+                    const month =
+                        planDate
+                            ? new Intl.DateTimeFormat(
+                                "es-ES",
+                                {
+                                    month: "short"
+                                }
+                            ).format(
+                                planDate
+                            )
+                            : "";
+
+
+                    return `
+
+                        <article
+                            class="activity-card"
+                            data-plan-category="${
+                                escapeHTML(
+                                    plan.category ||
+                                    "other"
                                 )
-                            }
-                        </span>
-
-                    </div>
-
-                    <div class="card-main">
-
-                        <strong>
-                            ${escapeHTML(
-                                plan.title
-                            )}
-                        </strong>
-
-                        ${
-                            plan.time
-                                ? `
-                                <p>
-                                    🕐 ${escapeHTML(
-                                        plan.time
-                                    )}
-                                </p>
-                                `
-                                : ""
-                        }
-
-                        ${
-                            plan.location_name
-                                ? `
-                                <p>
-                                    📍 ${escapeHTML(
-                                        plan.location_name
-                                    )}
-                                </p>
-                                `
-                                : ""
-                        }
-
-                        ${
-                            plan.description
-                                ? `
-                                <p>
-                                    ${escapeHTML(
-                                        plan.description
-                                    )}
-                                </p>
-                                `
-                                : ""
-                        }
-
-                    </div>
-
-                    <div class="card-actions">
-
-                        <button
-                            class="danger-button"
-                            onclick="deletePlan('${plan.id}')"
+                            }"
                         >
-                            🗑️
-                        </button>
 
-                    </div>
+                            <!-- =========================
+                                 FECHA
+                            ========================== -->
 
-                </article>
+                            <div class="date-badge">
 
-            `
+                                <strong>
+                                    ${day}
+                                </strong>
+
+                                <span>
+                                    ${escapeHTML(
+                                        month
+                                    )}
+                                </span>
+
+                            </div>
+
+
+                            <!-- =========================
+                                 CONTENIDO
+                            ========================== -->
+
+                            <div class="card-main">
+
+                                <!-- CATEGORÍA -->
+
+                                <span
+                                    class="type-badge"
+                                >
+
+                                    ${category.icon}
+
+                                    ${escapeHTML(
+                                        category.label
+                                    )}
+
+                                </span>
+
+
+                                <!-- TÍTULO -->
+
+                                <strong>
+                                    ${escapeHTML(
+                                        plan.title
+                                    )}
+                                </strong>
+
+
+                                <!-- HORA -->
+
+                                ${
+                                    plan.time
+                                        ? `
+                                            <p>
+                                                🕐
+                                                ${escapeHTML(
+                                                    plan.time
+                                                )}
+                                            </p>
+                                        `
+                                        : ""
+                                }
+
+
+                                <!-- UBICACIÓN -->
+
+                                ${
+                                    plan.location_name
+                                        ? `
+                                            <p>
+                                                📍
+                                                ${escapeHTML(
+                                                    plan.location_name
+                                                )}
+                                            </p>
+                                        `
+                                        : ""
+                                }
+
+
+                                <!-- DESCRIPCIÓN -->
+
+                                ${
+                                    plan.description
+                                        ? `
+                                            <p>
+                                                ${escapeHTML(
+                                                    plan.description
+                                                )}
+                                            </p>
+                                        `
+                                        : ""
+                                }
+
+                            </div>
+
+
+                            <!-- =========================
+                                 ACCIONES
+                            ========================== -->
+
+                            <div class="card-actions">
+
+                                <button
+                                    type="button"
+                                    class="danger-button"
+                                    onclick="deletePlan('${escapeHTML(
+                                        plan.id
+                                    )}')"
+                                    aria-label="Eliminar plan"
+                                >
+                                    🗑️
+                                </button>
+
+                            </div>
+
+                        </article>
+
+                    `;
+
+                }
             )
             .join("");
 
 }
 
+
+// ==========================================
+// FILTROS DE PLANES
+// ==========================================
+
+function setupPlanFilters() {
+
+    const filterContainer =
+        document.getElementById(
+            "plan-filters"
+        );
+
+
+    if (!filterContainer) {
+        return;
+    }
+
+
+    filterContainer
+        .querySelectorAll(
+            "[data-plan-filter]"
+        )
+        .forEach(
+            button => {
+
+                button.addEventListener(
+                    "click",
+                    () => {
+
+                        activePlanFilter =
+                            button.dataset.planFilter ||
+                            "all";
+
+
+                        filterContainer
+                            .querySelectorAll(
+                                "[data-plan-filter]"
+                            )
+                            .forEach(
+                                filterButton => {
+
+                                    filterButton.classList.toggle(
+                                        "active",
+                                        filterButton === button
+                                    );
+
+                                }
+                            );
+
+
+                        renderPlans();
+
+                    }
+                );
+
+            }
+        );
+
+}
+
+
+// ==========================================
+// ELIMINAR PLAN
+// ==========================================
 
 async function deletePlan(id) {
 
@@ -2020,6 +2295,10 @@ async function deletePlan(id) {
 // CREAR PLAN
 // ==========================================
 
+// ------------------------------------------
+// BUSCAR UBICACIÓN
+// ------------------------------------------
+
 document
     .getElementById(
         "search-plan-location"
@@ -2052,6 +2331,10 @@ document
     );
 
 
+// ------------------------------------------
+// GUARDAR PLAN
+// ------------------------------------------
+
 document
     .getElementById(
         "plan-form"
@@ -2062,6 +2345,10 @@ document
 
             event.preventDefault();
 
+
+            // ==================================
+            // DATOS DEL FORMULARIO
+            // ==================================
 
             const title =
                 document
@@ -2106,6 +2393,26 @@ document
                     .trim();
 
 
+            // ==================================
+            // CATEGORÍA
+            // ==================================
+
+            const categoryElement =
+                document.getElementById(
+                    "plan-category"
+                );
+
+
+            const category =
+                categoryElement
+                    ? categoryElement.value
+                    : "other";
+
+
+            // ==================================
+            // DATOS PARA SUPABASE
+            // ==================================
+
             const data = {
 
                 title,
@@ -2115,24 +2422,42 @@ document
                 date,
 
                 time:
-                    time || null,
+                    time ||
+                    null,
+
+                category:
+                    category ||
+                    "other",
 
                 location_name:
-                    locationName || null,
+                    locationName ||
+                    null,
 
                 latitude:
                     selectedPlanLocation
-                        ?.lat ?? null,
+                        ?.lat ??
+                    null,
 
                 longitude:
                     selectedPlanLocation
-                        ?.lon ?? null,
+                        ?.lon ??
+                    null,
 
                 created_by:
                     "NY TRIP"
 
             };
 
+
+            console.log(
+                "📅 Guardando plan:",
+                data
+            );
+
+
+            // ==================================
+            // INSERTAR EN SUPABASE
+            // ==================================
 
             const {
                 error
@@ -2151,6 +2476,7 @@ document
                 );
 
                 console.error(
+                    "Error creando plan:",
                     error
                 );
 
@@ -2158,6 +2484,10 @@ document
 
             }
 
+
+            // ==================================
+            // CERRAR MODAL
+            // ==================================
 
             closeModal(
                 "plan-modal"
@@ -2168,7 +2498,12 @@ document
                 null;
 
 
+            // ==================================
+            // RECARGAR DATOS
+            // ==================================
+
             await loadData();
+
 
             showScreen(
                 "plan"
@@ -2176,6 +2511,13 @@ document
 
         }
     );
+
+
+// ==========================================
+// INICIALIZAR FILTROS
+// ==========================================
+
+setupPlanFilters();
 
 
 // ==========================================
@@ -2197,6 +2539,7 @@ function reservationIcon(type) {
         other: "📋"
 
     };
+
 
     return (
         icons[type] ||
@@ -2222,6 +2565,7 @@ function reservationTypeName(type) {
 
     };
 
+
     return (
         names[type] ||
         "Reserva"
@@ -2236,6 +2580,7 @@ function renderReservations() {
         document.getElementById(
             "reservation-list"
         );
+
 
     if (!container) {
         return;
@@ -2291,11 +2636,13 @@ function renderReservations() {
 
                         </span>
 
+
                         <strong>
                             ${escapeHTML(
                                 reservation.title
                             )}
                         </strong>
+
 
                         ${
                             reservation.date
@@ -2321,6 +2668,7 @@ function renderReservations() {
                                 : ""
                         }
 
+
                         ${
                             reservation.location_name
                                 ? `
@@ -2335,6 +2683,7 @@ function renderReservations() {
                                 : ""
                         }
 
+
                         ${
                             reservation.description
                                 ? `
@@ -2348,6 +2697,7 @@ function renderReservations() {
                                 `
                                 : ""
                         }
+
 
                         ${
                             reservation.booking_url
@@ -2373,11 +2723,16 @@ function renderReservations() {
 
                     </div>
 
+
                     <div class="card-actions">
 
                         <button
+                            type="button"
                             class="danger-button"
-                            onclick="deleteReservation('${reservation.id}')"
+                            onclick="deleteReservation('${escapeHTML(
+                                reservation.id
+                            )}')"
+                            aria-label="Eliminar reserva"
                         >
                             🗑️
                         </button>
@@ -2436,6 +2791,10 @@ async function deleteReservation(id) {
 }
 
 
+// ==========================================
+// BUSCAR UBICACIÓN DE RESERVA
+// ==========================================
+
 document
     .getElementById(
         "search-reservation-location"
@@ -2468,6 +2827,10 @@ document
     );
 
 
+// ==========================================
+// CREAR RESERVA
+// ==========================================
+
 document
     .getElementById(
         "reservation-form"
@@ -2488,6 +2851,7 @@ document
                         )
                         .value,
 
+
                 title:
                     document
                         .getElementById(
@@ -2495,6 +2859,7 @@ document
                         )
                         .value
                         .trim(),
+
 
                 description:
                     document
@@ -2504,6 +2869,7 @@ document
                         .value
                         .trim(),
 
+
                 date:
                     document
                         .getElementById(
@@ -2512,6 +2878,7 @@ document
                         .value ||
                     null,
 
+
                 time:
                     document
                         .getElementById(
@@ -2519,6 +2886,7 @@ document
                         )
                         .value ||
                     null,
+
 
                 location_name:
                     document
@@ -2529,15 +2897,18 @@ document
                         .trim() ||
                     null,
 
+
                 latitude:
                     selectedReservationLocation
                         ?.lat ??
                     null,
 
+
                 longitude:
                     selectedReservationLocation
                         ?.lon ??
                     null,
+
 
                 booking_url:
                     document
@@ -2547,6 +2918,7 @@ document
                         .value
                         .trim() ||
                     null,
+
 
                 created_by:
                     "NY TRIP"
@@ -2590,13 +2962,13 @@ document
 
             await loadData();
 
+
             showScreen(
                 "reservations"
             );
 
         }
     );
-
 
 // ==========================================
 // TRICOUNT
