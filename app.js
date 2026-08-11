@@ -192,7 +192,7 @@ document.addEventListener("click", e => {
     if (btn) closeModal(btn.dataset.close);
 });
 
-// BUSCADOR MEJORADO Y GRATUITO (PHOTON API - POTENCIADO PARA SITIOS TURÍSTICOS)
+// BUSCADOR GRATUITO PHOTON API (CON MULTILENGUAJE Y FOCO EN NUEVA YORK)
 function initFreeAutocomplete() {
     const input = document.getElementById("plan-location");
     if (!input) return;
@@ -219,7 +219,6 @@ function initFreeAutocomplete() {
 
         timeout = setTimeout(async () => {
             try {
-                // Utiliza la API de Photon orientada geográficamente a Nueva York
                 const res = await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&lat=40.7128&lon=-73.9352&limit=5`);
                 const data = await res.json();
 
@@ -228,7 +227,7 @@ function initFreeAutocomplete() {
 
                 data.features.forEach(feature => {
                     const props = feature.properties;
-                    const coords = feature.geometry.coordinates; // [lon, lat]
+                    const coords = feature.geometry.coordinates;
 
                     const name = props.name || query;
                     const city = props.city || props.state || "New York";
@@ -432,7 +431,7 @@ async function deletePlan(id) {
     await loadData();
 }
 
-// GUARDAR PLAN
+// GUARDAR PLAN (DETECCION DE ERRORES MEJORADA)
 document.getElementById("plan-form")?.addEventListener("submit", async e => {
     e.preventDefault();
     const title = document.getElementById("plan-title").value.trim();
@@ -447,8 +446,8 @@ document.getElementById("plan-form")?.addEventListener("submit", async e => {
 
     const data = {
         title,
-        description,
-        date,
+        description: description || null,
+        date: date || null,
         time: time || null,
         category: category || "other",
         location_name: locationName,
@@ -458,9 +457,11 @@ document.getElementById("plan-form")?.addEventListener("submit", async e => {
         created_by: "NY TRIP"
     };
 
-    const { error } = await db.from("plans").insert(data);
+    const { error } = await db.from("plans").insert([data]);
+    
     if (error) {
-        alert("Error al guardar el plan.");
+        console.error("Error Supabase:", error);
+        alert(`Error al guardar: ${error.message} (${error.details || error.hint || 'Revisa Supabase'})`);
         return;
     }
 
