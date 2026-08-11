@@ -37,7 +37,89 @@
 
 <body>
 
-<div id="app">
+<!-- ==========================================
+     LOGIN
+=========================================== -->
+
+<div
+    id="login-screen"
+    class="login-screen"
+>
+
+    <div class="login-card">
+
+        <div class="login-logo">
+            🗽
+        </div>
+
+        <h1>
+            NY TRIP
+        </h1>
+
+        <p class="login-subtitle">
+            El tridente en Nueva York 😈😇🤪
+        </p>
+
+        <form id="login-form">
+
+            <label>
+                Email
+
+                <input
+                    id="login-email"
+                    type="email"
+                    autocomplete="email"
+                    placeholder="Tu email"
+                    required
+                >
+
+            </label>
+
+
+            <label>
+                Contraseña
+
+                <input
+                    id="login-password"
+                    type="password"
+                    autocomplete="current-password"
+                    placeholder="Tu contraseña"
+                    required
+                >
+
+            </label>
+
+
+            <button
+                id="login-button"
+                class="primary-button full"
+                type="submit"
+            >
+                Entrar
+            </button>
+
+
+            <div
+                id="login-error"
+                class="login-error"
+                hidden
+            ></div>
+
+        </form>
+
+    </div>
+
+</div>
+
+
+<!-- ==========================================
+     APP
+=========================================== -->
+
+<div
+    id="app"
+    hidden
+>
 
 
     <!-- ==========================================
@@ -661,6 +743,48 @@
                     <strong>Plan</strong>
                     <span>Actividades</span>
                 </button>
+
+            </div>
+
+
+            <!-- ======================================
+                 CUENTA
+            ======================================= -->
+
+            <div class="section-heading">
+
+                <h2>
+                    🔐 Cuenta
+                </h2>
+
+            </div>
+
+
+            <div class="info-card">
+
+                <span class="info-icon">
+                    👤
+                </span>
+
+                <div>
+
+                    <strong id="current-user-email">
+                        Usuario
+                    </strong>
+
+                    <p>
+                        Sesión iniciada
+                    </p>
+
+                    <button
+                        id="logout-button"
+                        class="secondary-button"
+                        type="button"
+                    >
+                        🚪 Cerrar sesión
+                    </button>
+
+                </div>
 
             </div>
 
