@@ -1,9 +1,16 @@
+```javascript
 // ==========================================
 // 🗽 NY TRIP
-// Service Worker
+// SERVICE WORKER
 // ==========================================
 
-const CACHE_NAME = "ny-trip-v1";
+// Cambiamos el número de versión.
+// Esto obliga al navegador a crear una caché nueva.
+
+const CACHE_NAME = "ny-trip-v2";
+
+
+// Archivos básicos de la aplicación.
 
 const FILES_TO_CACHE = [
     "./",
@@ -18,73 +25,122 @@ const FILES_TO_CACHE = [
 // INSTALACIÓN
 // ==========================================
 
-self.addEventListener("install", (event) => {
+self.addEventListener(
+    "install",
+    function (event) {
 
-    event.waitUntil(
+        event.waitUntil(
 
-        caches.open(CACHE_NAME)
-            .then((cache) => {
+            caches
+                .open(CACHE_NAME)
+                .then(
+                    function (cache) {
 
-                return cache.addAll(FILES_TO_CACHE);
+                        return cache.addAll(
+                            FILES_TO_CACHE
+                        );
 
-            })
+                    }
+                )
 
-    );
+        );
 
-    self.skipWaiting();
-});
+        // Activar inmediatamente
+        // la nueva versión.
+
+        self.skipWaiting();
+    }
+);
 
 
 // ==========================================
 // ACTIVACIÓN
 // ==========================================
 
-self.addEventListener("activate", (event) => {
+self.addEventListener(
+    "activate",
+    function (event) {
 
-    event.waitUntil(
+        event.waitUntil(
 
-        caches.keys()
-            .then((cacheNames) => {
+            caches
+                .keys()
+                .then(
+                    function (cacheNames) {
 
-                return Promise.all(
+                        return Promise.all(
 
-                    cacheNames
-                        .filter((cacheName) => {
-                            return cacheName !== CACHE_NAME;
-                        })
-                        .map((cacheName) => {
-                            return caches.delete(cacheName);
-                        })
+                            cacheNames
+                                .filter(
+                                    function (cacheName) {
 
-                );
+                                        return (
+                                            cacheName !==
+                                            CACHE_NAME
+                                        );
 
-            })
+                                    }
+                                )
+                                .map(
+                                    function (cacheName) {
 
-    );
+                                        return caches.delete(
+                                            cacheName
+                                        );
 
-    self.clients.claim();
-});
+                                    }
+                                )
+
+                        );
+
+                    }
+                )
+
+        );
+
+        // Tomar control inmediatamente.
+
+        self.clients.claim();
+    }
+);
 
 
 // ==========================================
 // PETICIONES
 // ==========================================
 
-self.addEventListener("fetch", (event) => {
+self.addEventListener(
+    "fetch",
+    function (event) {
 
-    event.respondWith(
+        event.respondWith(
 
-        caches.match(event.request)
-            .then((cachedResponse) => {
+            fetch(event.request)
+                .then(
+                    function (response) {
 
-                if (cachedResponse) {
-                    return cachedResponse;
-                }
+                        // Si tenemos conexión,
+                        // usamos la versión nueva.
 
-                return fetch(event.request);
+                        return response;
 
-            })
+                    }
+                )
+                .catch(
+                    function () {
 
-    );
+                        // Si no hay Internet,
+                        // usamos la copia guardada.
 
-});
+                        return caches.match(
+                            event.request
+                        );
+
+                    }
+                )
+
+        );
+
+    }
+);
+```
