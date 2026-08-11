@@ -946,6 +946,45 @@ fieldset {
     font-weight: 800;
 }
 
+/* ==========================================
+   FILTROS DEL PLAN
+========================================== */
+
+.plan-filters {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding: 4px 0 12px;
+    margin-bottom: 8px;
+    scrollbar-width: none;
+}
+
+.plan-filters::-webkit-scrollbar {
+    display: none;
+}
+
+.plan-filter {
+    flex: 0 0 auto;
+    border: 1px solid #d1d5db;
+    background: #ffffff;
+    color: #374151;
+    border-radius: 999px;
+    padding: 9px 13px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.plan-filter.active {
+    background: #111827;
+    color: #ffffff;
+    border-color: #111827;
+}
+
+.plan-filter:active {
+    transform: scale(0.97);
+}
 
 /* ==========================================
    MÓVIL
