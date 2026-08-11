@@ -1,12 +1,10 @@
 /* ==========================================
-   🗽 NY TRIP
-   DISEÑO
+   🗽 NY TRIP — DISEÑO COMPLETO
 ========================================== */
 
 * {
     box-sizing: border-box;
 }
-
 
 :root {
     --bg: #f4f6fa;
@@ -19,7 +17,6 @@
     --danger: #dc2626;
     --success: #15803d;
 }
-
 
 html,
 body {
@@ -37,11 +34,9 @@ body {
         sans-serif;
 }
 
-
 body {
     padding-bottom: 82px;
 }
-
 
 button,
 input,
@@ -50,24 +45,20 @@ select {
     font: inherit;
 }
 
-
 button {
     cursor: pointer;
 }
-
 
 a {
     color: var(--accent);
     text-decoration: none;
 }
 
-
 #app {
     width: 100%;
     max-width: 760px;
     margin: 0 auto;
 }
-
 
 /* ==========================================
    CABECERA
@@ -87,12 +78,10 @@ a {
     gap: 15px;
 }
 
-
 .app-header h1 {
     margin: 0;
     font-size: 25px;
 }
-
 
 .app-header p {
     margin: 5px 0 0;
@@ -100,23 +89,19 @@ a {
     font-size: 13px;
 }
 
-
 .connection-status {
     font-size: 11px;
     white-space: nowrap;
     opacity: .8;
 }
 
-
 .connection-status.ok {
     color: #86efac;
 }
 
-
 .connection-status.error {
     color: #fca5a5;
 }
-
 
 /* ==========================================
    PANTALLAS
@@ -126,17 +111,14 @@ main {
     min-height: calc(100vh - 80px);
 }
 
-
 .screen {
     display: none;
     padding: 18px 16px 30px;
 }
 
-
 .screen.active {
     display: block;
 }
-
 
 /* ==========================================
    HERO
@@ -164,7 +146,6 @@ main {
         0 10px 25px rgba(0,0,0,.12);
 }
 
-
 .small-label {
     display: block;
     font-size: 11px;
@@ -173,19 +154,16 @@ main {
     margin-bottom: 6px;
 }
 
-
 .hero-card strong {
     display: block;
     font-size: 22px;
 }
-
 
 .hero-card p {
     margin: 8px 0 0;
     font-size: 12px;
     opacity: .7;
 }
-
 
 .hero-location {
     display: flex;
@@ -196,9 +174,8 @@ main {
     font-size: 13px;
 }
 
-
 /* ==========================================
-   WEATHER
+   WEATHER & CURRENCY
 ========================================== */
 
 .weather-card,
@@ -210,30 +187,25 @@ main {
     padding: 16px;
 }
 
-
 .weather-main {
     display: flex;
     align-items: center;
     gap: 13px;
 }
 
-
 .weather-main > span {
     font-size: 35px;
 }
-
 
 .weather-main strong {
     display: block;
     font-size: 25px;
 }
 
-
 .weather-main span {
     color: var(--muted);
     font-size: 12px;
 }
-
 
 .weather-extra {
     display: flex;
@@ -243,24 +215,20 @@ main {
     font-size: 12px;
 }
 
-
 .currency-card {
     display: flex;
     align-items: center;
     justify-content: space-between;
 }
 
-
 .currency-card strong {
     display: block;
 }
-
 
 .currency-card > span {
     font-size: 18px;
     font-weight: 700;
 }
-
 
 /* ==========================================
    SECCIONES
@@ -270,17 +238,14 @@ main {
     margin: 25px 2px 10px;
 }
 
-
 .section-heading.compact {
     margin-top: 20px;
 }
-
 
 .section-heading h2 {
     margin: 0;
     font-size: 15px;
 }
-
 
 /* ==========================================
    TARJETAS
@@ -300,23 +265,19 @@ main {
     padding: 16px;
 }
 
-
 .next-card {
     display: flex;
     gap: 14px;
     align-items: center;
 }
 
-
 .next-card > span {
     font-size: 30px;
 }
 
-
 .next-card strong {
     display: block;
 }
-
 
 .next-card p,
 .info-card p,
@@ -329,7 +290,6 @@ main {
     font-size: 13px;
 }
 
-
 /* ==========================================
    ACCIONES
 ========================================== */
@@ -340,7 +300,6 @@ main {
     gap: 9px;
     margin-top: 12px;
 }
-
 
 .quick-button {
     border: 1px solid var(--border);
@@ -354,16 +313,13 @@ main {
     color: var(--text);
 }
 
-
 .quick-button span {
     font-size: 25px;
 }
 
-
 .quick-button strong {
     font-size: 11px;
 }
-
 
 /* ==========================================
    VIAJERAS
@@ -375,7 +331,6 @@ main {
     gap: 10px;
 }
 
-
 .traveler-card {
     background: white;
     border: 1px solid var(--border);
@@ -384,13 +339,11 @@ main {
     text-align: center;
 }
 
-
 .traveler-card span {
     display: block;
     font-size: 30px;
     margin-bottom: 6px;
 }
-
 
 /* ==========================================
    INFO
@@ -401,11 +354,9 @@ main {
     gap: 13px;
 }
 
-
 .info-icon {
     font-size: 30px;
 }
-
 
 /* ==========================================
    TITULO PANTALLA
@@ -419,31 +370,26 @@ main {
     margin-bottom: 18px;
 }
 
-
 .screen-title > div:first-child {
     display: flex;
     align-items: center;
     gap: 12px;
 }
 
-
 .screen-title > div:first-child > span {
     font-size: 28px;
 }
-
 
 .screen-title h2 {
     margin: 0;
     font-size: 21px;
 }
 
-
 .screen-title p {
     margin: 3px 0 0;
     color: var(--muted);
     font-size: 12px;
 }
-
 
 /* ==========================================
    BOTONES
@@ -457,24 +403,20 @@ main {
     font-weight: 700;
 }
 
-
 .primary-button {
     background: var(--primary);
     color: white;
 }
-
 
 .secondary-button {
     background: #eef2ff;
     color: #3730a3;
 }
 
-
 .primary-button.full {
     width: 100%;
     margin-top: 10px;
 }
-
 
 .danger-button {
     border: 0;
@@ -483,7 +425,6 @@ main {
     border-radius: 10px;
     padding: 8px 11px;
 }
-
 
 /* ==========================================
    LISTAS
@@ -495,7 +436,6 @@ main {
     gap: 10px;
 }
 
-
 .activity-card,
 .reservation-card,
 .expense-card,
@@ -505,18 +445,15 @@ main {
     gap: 12px;
 }
 
-
 .card-main {
     min-width: 0;
     flex: 1;
 }
 
-
 .card-actions {
     display: flex;
     align-items: flex-start;
 }
-
 
 .date-badge {
     flex: 0 0 60px;
@@ -526,18 +463,15 @@ main {
     padding: 8px 4px;
 }
 
-
 .date-badge strong {
     display: block;
     font-size: 17px;
 }
 
-
 .date-badge span {
     font-size: 10px;
     color: var(--muted);
 }
-
 
 .type-badge {
     display: inline-block;
@@ -547,7 +481,6 @@ main {
     font-size: 10px;
     margin-bottom: 6px;
 }
-
 
 /* ==========================================
    GASTOS
@@ -559,12 +492,10 @@ main {
     gap: 8px;
 }
 
-
 .balance-card {
     padding: 13px 8px;
     text-align: center;
 }
-
 
 .balance-card span {
     display: block;
@@ -572,23 +503,19 @@ main {
     font-size: 11px;
 }
 
-
 .balance-card strong {
     display: block;
     margin-top: 5px;
     font-size: 16px;
 }
 
-
 .positive {
     color: var(--success);
 }
 
-
 .negative {
     color: var(--danger);
 }
-
 
 .debts {
     display: flex;
@@ -596,23 +523,19 @@ main {
     gap: 8px;
 }
 
-
 .debt-card {
     display: flex;
     justify-content: space-between;
     align-items: center;
 }
 
-
 .debt-card strong {
     font-size: 14px;
 }
 
-
 .debt-amount {
     font-weight: 800;
 }
-
 
 /* ==========================================
    VUELOS
@@ -625,17 +548,14 @@ main {
     margin: 9px 0;
 }
 
-
 .flight-airport {
     font-weight: 800;
     font-size: 20px;
 }
 
-
 .flight-arrow {
     color: var(--muted);
 }
-
 
 /* ==========================================
    MÁS
@@ -646,7 +566,6 @@ main {
     grid-template-columns: 1fr 1fr;
     gap: 10px;
 }
-
 
 .more-card {
     border: 1px solid var(--border);
@@ -659,22 +578,18 @@ main {
     gap: 6px;
 }
 
-
 .more-card:first-child {
     font-size: 27px;
 }
-
 
 .more-card strong {
     font-size: 15px;
 }
 
-
 .more-card span {
     color: var(--muted);
     font-size: 11px;
 }
-
 
 /* ==========================================
    MAPA
@@ -685,11 +600,9 @@ main {
     padding-right: 0;
 }
 
-
 .map-screen .screen-title {
     padding: 0 16px;
 }
-
 
 #map {
     width: 100%;
@@ -697,11 +610,9 @@ main {
     min-height: 420px;
 }
 
-
 .map-list {
     padding: 12px 16px 20px;
 }
-
 
 .map-item {
     background: white;
@@ -711,11 +622,9 @@ main {
     margin-bottom: 8px;
 }
 
-
 .map-item strong {
     display: block;
 }
-
 
 .map-item span {
     display: block;
@@ -723,7 +632,6 @@ main {
     font-size: 11px;
     margin-top: 3px;
 }
-
 
 /* ==========================================
    MODALES
@@ -739,11 +647,9 @@ main {
     justify-content: center;
 }
 
-
 .modal.hidden {
     display: none;
 }
-
 
 .modal-content {
     width: 100%;
@@ -755,7 +661,6 @@ main {
     padding: 20px 17px 30px;
 }
 
-
 .modal-header {
     display: flex;
     justify-content: space-between;
@@ -763,12 +668,10 @@ main {
     margin-bottom: 15px;
 }
 
-
 .modal-header h2 {
     margin: 0;
     font-size: 20px;
 }
-
 
 .close-modal {
     border: 0;
@@ -778,7 +681,6 @@ main {
     border-radius: 50%;
     font-size: 23px;
 }
-
 
 /* ==========================================
    FORMULARIOS
@@ -790,13 +692,11 @@ form {
     gap: 13px;
 }
 
-
 label,
 fieldset legend {
     font-size: 12px;
     font-weight: 700;
 }
-
 
 input,
 textarea,
@@ -811,12 +711,10 @@ select {
     color: var(--text);
 }
 
-
 textarea {
     min-height: 80px;
     resize: vertical;
 }
-
 
 .form-row {
     display: grid;
@@ -824,13 +722,11 @@ textarea {
     gap: 10px;
 }
 
-
 fieldset {
     border: 1px solid var(--border);
     border-radius: 12px;
     padding: 12px;
 }
-
 
 .check-label {
     display: flex;
@@ -840,19 +736,50 @@ fieldset {
     font-weight: 500;
 }
 
-
 .check-label input {
     width: auto;
     margin: 0;
 }
 
+/* Sugerencias de Autocompletado Gratis (Nominatim/OSM) */
+#nominatim-suggestions {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: #ffffff;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 6000;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.12);
+    margin-top: 4px;
+}
+
+.suggestion-item {
+    padding: 11px 14px;
+    cursor: pointer;
+    font-size: 13px;
+    border-bottom: 1px solid #f3f4f6;
+    color: var(--text);
+    transition: background-color 0.15s ease;
+}
+
+.suggestion-item:last-child {
+    border-bottom: none;
+}
+
+.suggestion-item:hover,
+.suggestion-item:active {
+    background-color: #f3f4f6;
+}
 
 .search-results {
     display: flex;
     flex-direction: column;
     gap: 6px;
 }
-
 
 .search-result {
     border: 1px solid var(--border);
@@ -862,11 +789,9 @@ fieldset {
     text-align: left;
 }
 
-
 .search-result strong {
     display: block;
 }
-
 
 .search-result span {
     display: block;
@@ -874,7 +799,6 @@ fieldset {
     font-size: 11px;
     margin-top: 3px;
 }
-
 
 /* ==========================================
    VACÍO / CARGANDO
@@ -889,11 +813,9 @@ fieldset {
     border-radius: 16px;
 }
 
-
 .loading {
     color: var(--muted);
 }
-
 
 /* ==========================================
    NAVEGACIÓN INFERIOR
@@ -918,7 +840,6 @@ fieldset {
     backdrop-filter: blur(12px);
 }
 
-
 .nav-button {
     border: 0;
     background: transparent;
@@ -930,16 +851,13 @@ fieldset {
     gap: 3px;
 }
 
-
 .nav-button span {
     font-size: 21px;
 }
 
-
 .nav-button small {
     font-size: 9px;
 }
-
 
 .nav-button.active {
     color: var(--accent);
