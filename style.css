@@ -1,6 +1,6 @@
 /* ==========================================
    🗽 NY TRIP
-   Diseño móvil
+   ESTILOS PRINCIPALES
    ========================================== */
 
 * {
@@ -9,29 +9,29 @@
     padding: 0;
 }
 
+
 :root {
-    --bg: #f4f6f8;
+    --bg: #f3f4f6;
     --card: #ffffff;
-    --text: #172033;
+    --text: #111827;
     --muted: #6b7280;
     --border: #e5e7eb;
     --primary: #111827;
-    --accent: #e11d48;
-    --bottom-nav: #ffffff;
+    --accent: #2563eb;
+    --danger: #dc2626;
+    --radius: 18px;
 }
+
 
 html {
-    min-height: 100%;
-    background: var(--bg);
+    scroll-behavior: smooth;
 }
 
+
 body {
-    min-height: 100vh;
     font-family:
         -apple-system,
         BlinkMacSystemFont,
-        "SF Pro Display",
-        "SF Pro Text",
         "Segoe UI",
         Roboto,
         Arial,
@@ -40,297 +40,689 @@ body {
     background: var(--bg);
     color: var(--text);
 
-    -webkit-font-smoothing: antialiased;
-    text-rendering: optimizeLegibility;
+    min-height: 100vh;
 }
 
 
-/* ==========================================
-   CONTENEDOR PRINCIPAL
-   ========================================== */
+button,
+input,
+select,
+textarea {
+    font: inherit;
+}
 
-main {
+
+button {
+    cursor: pointer;
+}
+
+
+#app {
+    min-height: 100vh;
+}
+
+
+.screen {
+    display: none;
     width: 100%;
-    max-width: 680px;
+    max-width: 760px;
     margin: 0 auto;
+    padding: 20px 16px 110px;
+}
 
-    padding:
-        max(20px, env(safe-area-inset-top))
-        16px
-        110px
-        16px;
+
+.screen.active {
+    display: block;
 }
 
 
 /* ==========================================
-   CABECERA
+   CABECERAS
    ========================================== */
 
 .app-header {
-    padding: 20px 4px 18px;
+    text-align: center;
+    padding: 18px 0 24px;
 }
+
 
 .app-header h1 {
     font-size: 30px;
-    line-height: 1.1;
-    font-weight: 800;
-    letter-spacing: -0.8px;
+    margin-bottom: 6px;
 }
 
-.app-header p {
-    margin-top: 7px;
 
-    font-size: 15px;
-    line-height: 1.4;
-
+.app-header p,
+.page-header p {
     color: var(--muted);
-    font-weight: 500;
+}
+
+
+.page-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 12px 0 24px;
+}
+
+
+.page-header h1 {
+    font-size: 24px;
+}
+
+
+.back-button {
+    width: 44px;
+    height: 44px;
+
+    border: 0;
+    border-radius: 50%;
+
+    background: var(--card);
+    color: var(--text);
+
+    font-size: 24px;
+
+    box-shadow:
+        0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 
 /* ==========================================
-   TARJETA UBICACIÓN + TIEMPO
+   TARJETAS
    ========================================== */
 
-.location-card {
+.hero-card,
+.now-card,
+.section-card,
+.map-placeholder,
+.weather-placeholder {
+    background: var(--card);
+    border-radius: var(--radius);
+    margin-bottom: 16px;
+    padding: 20px;
+
+    box-shadow:
+        0 4px 18px rgba(0, 0, 0, 0.05);
+}
+
+
+.hero-card {
+    background: var(--primary);
+    color: white;
+
     display: flex;
     align-items: center;
     justify-content: space-between;
 
     gap: 16px;
-
-    padding: 18px;
-
-    background: var(--card);
-
-    border: 1px solid var(--border);
-    border-radius: 20px;
-
-    box-shadow:
-        0 4px 18px rgba(17, 24, 39, 0.06);
 }
 
-.location-card > div:first-child {
-    min-width: 0;
+
+.hero-card strong {
+    display: block;
+    font-size: 24px;
+    margin-top: 6px;
 }
 
-.label {
+
+.hero-location {
+    white-space: nowrap;
+    font-size: 14px;
+}
+
+
+.eyebrow {
     display: block;
 
-    margin-bottom: 5px;
-
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 800;
-    letter-spacing: 0.7px;
 
+    letter-spacing: 0.08em;
+
+    opacity: 0.8;
+}
+
+
+.now-card h2 {
+    margin: 10px 0 8px;
+    font-size: 22px;
+}
+
+
+.now-card p {
     color: var(--muted);
 }
 
-.location-card strong {
-    display: block;
 
-    font-size: 18px;
-    line-height: 1.2;
-
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.weather {
-    flex-shrink: 0;
-
-    display: flex;
-    align-items: center;
-
-    gap: 6px;
-}
-
-.weather span {
-    font-size: 24px;
-}
-
-.weather strong {
-    font-size: 20px;
-}
-
-
-/* ==========================================
-   ¿QUÉ HACEMOS AHORA?
-   ========================================== */
-
-.now-card {
-    margin-top: 14px;
-
-    padding: 22px 20px;
-
-    background: var(--primary);
-    color: white;
-
-    border-radius: 22px;
-
-    box-shadow:
-        0 8px 24px rgba(17, 24, 39, 0.16);
-}
-
-.section-label {
-    font-size: 11px;
-    font-weight: 800;
-
-    letter-spacing: 0.8px;
-
-    opacity: 0.72;
-}
-
-.now-card h2 {
-    margin-top: 12px;
-
-    font-size: 23px;
-    line-height: 1.2;
-
-    letter-spacing: -0.4px;
-}
-
-.now-card > p:last-child {
-    margin-top: 8px;
-
-    font-size: 14px;
-    line-height: 1.45;
-
-    opacity: 0.72;
-}
-
-
-/* ==========================================
-   PLAN DEL DÍA
-   ========================================== */
-
-.day-plan {
-    margin-top: 22px;
-}
-
-.section-title {
+.section-heading {
     display: flex;
     align-items: center;
     justify-content: space-between;
 
-    margin-bottom: 12px;
+    gap: 12px;
+
+    margin-bottom: 16px;
 }
 
-.section-title h2 {
+
+.section-heading h2,
+.section-card > h2 {
     font-size: 18px;
-    font-weight: 800;
-
-    letter-spacing: -0.3px;
 }
 
-.activity {
-    display: flex;
 
-    gap: 14px;
-
-    padding: 16px;
-
-    margin-bottom: 10px;
-
-    background: var(--card);
-
-    border: 1px solid var(--border);
-    border-radius: 18px;
-}
-
-.activity-time {
-    flex-shrink: 0;
-
-    min-width: 48px;
-
-    padding-top: 1px;
-
-    font-size: 14px;
-    font-weight: 800;
-
+.text-button {
+    border: 0;
+    background: transparent;
     color: var(--accent);
-}
-
-.activity strong {
-    display: block;
-
-    font-size: 16px;
-    line-height: 1.25;
-}
-
-.activity p {
-    margin-top: 5px;
-
-    font-size: 13px;
-    line-height: 1.4;
-
-    color: var(--muted);
+    font-weight: 700;
 }
 
 
 /* ==========================================
-   ACCIONES RÁPIDAS
+   ACTIVIDADES
+   ========================================== */
+
+.activity {
+    display: flex;
+    gap: 14px;
+
+    padding: 15px 0;
+
+    border-bottom: 1px solid var(--border);
+}
+
+
+.activity:last-child {
+    border-bottom: 0;
+}
+
+
+.activity-time {
+    flex: 0 0 64px;
+
+    font-size: 11px;
+    font-weight: 800;
+
+    color: var(--accent);
+
+    padding-top: 2px;
+}
+
+
+.activity strong {
+    display: block;
+    margin-bottom: 5px;
+}
+
+
+.activity p {
+    color: var(--muted);
+    font-size: 14px;
+    margin-top: 4px;
+}
+
+
+.day-block {
+    margin-bottom: 16px;
+}
+
+
+.day-title {
+    padding: 4px 2px 10px;
+    font-weight: 800;
+}
+
+
+/* ==========================================
+   ACCIONES
    ========================================== */
 
 .quick-actions {
     display: grid;
 
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns:
+        repeat(3, 1fr);
 
     gap: 10px;
 
-    margin-top: 22px;
+    margin-bottom: 16px;
 }
 
+
 .quick-actions button {
-    min-height: 88px;
+    min-height: 92px;
+
+    border: 0;
+    border-radius: 16px;
+
+    background: var(--card);
 
     display: flex;
     flex-direction: column;
+
     align-items: center;
     justify-content: center;
 
     gap: 7px;
 
-    padding: 10px 5px;
-
-    background: var(--card);
-
-    border: 1px solid var(--border);
-    border-radius: 18px;
-
     color: var(--text);
 
-    font-family: inherit;
-
-    font-size: 25px;
-
-    cursor: pointer;
-
     box-shadow:
-        0 3px 12px rgba(17, 24, 39, 0.04);
-
-    -webkit-tap-highlight-color: transparent;
-
-    transition:
-        transform 0.12s ease,
-        background 0.12s ease;
+        0 3px 12px rgba(0, 0, 0, 0.05);
 }
+
 
 .quick-actions button span {
-    font-size: 11px;
-    font-weight: 700;
+    font-size: 26px;
 }
 
-.quick-actions button:active {
-    transform: scale(0.96);
-    background: #f1f3f5;
+
+.quick-actions button small {
+    font-weight: 700;
 }
 
 
 /* ==========================================
-   NAVEGACIÓN INFERIOR
+   VIAJERAS
+   ========================================== */
+
+.traveler-list {
+    display: grid;
+    gap: 10px;
+}
+
+
+.traveler {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    padding: 12px;
+
+    background: #f9fafb;
+
+    border-radius: 14px;
+}
+
+
+.traveler-avatar {
+    width: 42px;
+    height: 42px;
+
+    display: grid;
+    place-items: center;
+
+    border-radius: 50%;
+
+    background: white;
+
+    font-size: 22px;
+}
+
+
+.traveler small {
+    display: block;
+    color: var(--muted);
+    margin-top: 3px;
+}
+
+
+/* ==========================================
+   RESERVAS
+   ========================================== */
+
+.reservation-card {
+    background: var(--card);
+    border-radius: var(--radius);
+
+    padding: 20px;
+    margin-bottom: 16px;
+
+    box-shadow:
+        0 4px 18px rgba(0, 0, 0, 0.05);
+}
+
+
+.reservation-card h2 {
+    font-size: 18px;
+    margin-bottom: 16px;
+}
+
+
+.flight-route {
+    font-size: 19px;
+    font-weight: 800;
+    margin-bottom: 8px;
+}
+
+
+.flight-meta {
+    color: var(--muted);
+    line-height: 1.7;
+    font-size: 14px;
+}
+
+
+.primary-button {
+    width: 100%;
+
+    border: 0;
+    border-radius: 13px;
+
+    padding: 13px 16px;
+
+    background: var(--primary);
+    color: white;
+
+    font-weight: 800;
+
+    margin-top: 12px;
+}
+
+
+.secondary-button {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+
+    padding: 10px 14px;
+
+    background: white;
+}
+
+
+/* ==========================================
+   FORMULARIOS
+   ========================================== */
+
+form {
+    display: grid;
+    gap: 14px;
+}
+
+
+label {
+    display: grid;
+    gap: 7px;
+
+    font-size: 14px;
+    font-weight: 700;
+}
+
+
+input,
+select,
+textarea {
+    width: 100%;
+
+    border: 1px solid var(--border);
+    border-radius: 12px;
+
+    background: white;
+
+    padding: 13px;
+
+    outline: none;
+}
+
+
+input:focus,
+select:focus,
+textarea:focus {
+    border-color: var(--accent);
+}
+
+
+textarea {
+    min-height: 150px;
+    resize: vertical;
+}
+
+
+/* ==========================================
+   GASTOS
+   ========================================== */
+
+.expense-total {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+
+.expense-total span {
+    color: var(--muted);
+}
+
+
+.expense-total strong {
+    font-size: 30px;
+}
+
+
+.expense-item {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+
+    padding: 14px 0;
+
+    border-bottom: 1px solid var(--border);
+}
+
+
+.expense-item:last-child {
+    border-bottom: 0;
+}
+
+
+.expense-item strong {
+    display: block;
+}
+
+
+.expense-item small {
+    color: var(--muted);
+}
+
+
+.expense-right {
+    text-align: right;
+}
+
+
+.delete-expense {
+    border: 0;
+    background: transparent;
+
+    color: var(--danger);
+
+    font-size: 12px;
+
+    margin-top: 5px;
+}
+
+
+/* ==========================================
+   MAPA
+   ========================================== */
+
+.map-placeholder {
+    min-height: 280px;
+
+    display: flex;
+    flex-direction: column;
+
+    align-items: center;
+    justify-content: center;
+
+    text-align: center;
+
+    background:
+        linear-gradient(
+            135deg,
+            #dbeafe,
+            #e0e7ff
+        );
+}
+
+
+.map-placeholder > div {
+    font-size: 70px;
+    margin-bottom: 10px;
+}
+
+
+.map-placeholder p {
+    color: var(--muted);
+    margin-top: 6px;
+}
+
+
+/* ==========================================
+   FUNCIONES
+   ========================================== */
+
+.feature-grid {
+    display: grid;
+
+    grid-template-columns:
+        repeat(2, 1fr);
+
+    gap: 12px;
+}
+
+
+.feature-card {
+    border: 0;
+
+    background: var(--card);
+
+    border-radius: var(--radius);
+
+    padding: 22px 14px;
+
+    display: flex;
+    flex-direction: column;
+
+    align-items: center;
+
+    gap: 7px;
+
+    box-shadow:
+        0 4px 18px rgba(0, 0, 0, 0.05);
+}
+
+
+.feature-card span {
+    font-size: 34px;
+}
+
+
+.feature-card small {
+    color: var(--muted);
+}
+
+
+.weather-placeholder {
+    text-align: center;
+    padding: 50px 20px;
+}
+
+
+.weather-icon {
+    font-size: 70px;
+    margin-bottom: 15px;
+}
+
+
+.weather-placeholder p {
+    color: var(--muted);
+    margin-top: 8px;
+}
+
+
+.empty-state {
+    text-align: center;
+    padding: 30px 10px;
+}
+
+
+.empty-state span {
+    font-size: 50px;
+}
+
+
+.empty-state h2 {
+    margin: 12px 0 8px;
+}
+
+
+.empty-state p {
+    color: var(--muted);
+}
+
+
+/* ==========================================
+   MENÚ
+   ========================================== */
+
+.menu-list {
+    display: grid;
+    gap: 10px;
+}
+
+
+.menu-list button {
+    display: flex;
+    align-items: center;
+
+    gap: 14px;
+
+    width: 100%;
+
+    border: 0;
+
+    border-radius: 15px;
+
+    padding: 17px;
+
+    background: var(--card);
+
+    text-align: left;
+
+    box-shadow:
+        0 3px 12px rgba(0, 0, 0, 0.05);
+}
+
+
+.menu-list button span {
+    flex: 1;
+    font-weight: 700;
+}
+
+
+/* ==========================================
+   UBICACIÓN
+   ========================================== */
+
+.location-result {
+    color: var(--muted);
+    margin-top: 12px;
+    font-size: 14px;
+}
+
+
+.save-message {
+    color: #16a34a;
+    font-size: 13px;
+    margin-top: 10px;
+}
+
+
+/* ==========================================
+   NAVEGACIÓN
    ========================================== */
 
 .bottom-nav {
@@ -342,123 +734,75 @@ main {
     transform: translateX(-50%);
 
     width: 100%;
-    max-width: 680px;
+    max-width: 760px;
 
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns:
+        repeat(5, 1fr);
 
     padding:
-        8px
-        8px
-        max(8px, env(safe-area-inset-bottom));
+        8px 8px
+        calc(8px + env(safe-area-inset-bottom));
 
-    background: rgba(255, 255, 255, 0.94);
+    background: rgba(255, 255, 255, 0.96);
 
     border-top: 1px solid var(--border);
-
-    backdrop-filter: blur(18px);
-    -webkit-backdrop-filter: blur(18px);
 
     z-index: 100;
 }
 
-.bottom-nav button {
-    min-height: 58px;
 
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-
-    gap: 3px;
-
+.nav-button {
     border: 0;
     background: transparent;
 
-    color: #8a9099;
+    color: var(--muted);
 
-    font-family: inherit;
+    display: flex;
+    flex-direction: column;
 
-    font-size: 21px;
+    align-items: center;
 
-    cursor: pointer;
+    gap: 3px;
 
-    -webkit-tap-highlight-color: transparent;
+    padding: 6px;
 }
 
-.bottom-nav button span {
-    font-size: 10px;
+
+.nav-button span {
+    font-size: 21px;
+}
+
+
+.nav-button small {
+    font-size: 11px;
     font-weight: 700;
 }
 
-.bottom-nav button.active {
-    color: var(--primary);
+
+.nav-button.active {
+    color: var(--accent);
 }
 
 
 /* ==========================================
-   TABLET / ORDENADOR
+   MÓVIL
    ========================================== */
 
-@media (min-width: 700px) {
+@media (max-width: 480px) {
 
-    main {
-        padding-top: 35px;
+    .hero-card {
+        align-items: flex-start;
+        flex-direction: column;
     }
 
-    .app-header {
-        padding-top: 10px;
+    .hero-location {
+        white-space: normal;
     }
 
     .quick-actions {
-        grid-template-columns: repeat(6, 1fr);
+        grid-template-columns:
+            repeat(2, 1fr);
     }
 
-    .quick-actions button {
-        min-height: 100px;
-    }
 }
-
-
-/* ==========================================
-   PANTALLAS MUY PEQUEÑAS
-   ========================================== */
-
-@media (max-width: 360px) {
-
-    main {
-        padding-left: 12px;
-        padding-right: 12px;
-    }
-
-    .app-header h1 {
-        font-size: 27px;
-    }
-
-    .quick-actions {
-        gap: 7px;
-    }
-
-    .quick-actions button {
-        min-height: 82px;
-    }
-
-    .quick-actions button span {
-        font-size: 10px;
-    }
-}
-
-
-/* ==========================================
-   REDUCIR ANIMACIONES SI EL USUARIO LO PIDE
-   ========================================== */
-
-@media (prefers-reduced-motion: reduce) {
-
-    * {
-        scroll-behavior: auto !important;
-        transition: none !important;
-        animation: none !important;
-    }
-}
-
