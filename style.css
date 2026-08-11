@@ -1,31 +1,370 @@
+```css
 * {
     box-sizing: border-box;
 }
 
+:root {
+    --background: #f3f4f6;
+    --card: #ffffff;
+    --text: #111827;
+    --muted: #6b7280;
+    --border: #e5e7eb;
+    --primary: #111827;
+    --success: #16a34a;
+}
+
 html {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    background: #f3f4f6;
+    font-family:
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        Roboto,
+        Helvetica,
+        Arial,
+        sans-serif;
+
+    background: var(--background);
 }
 
 body {
     margin: 0;
     min-height: 100vh;
-    background: #ffffff;
-    color: #111827;
+
+    background: var(--background);
+    color: var(--text);
+
+    padding-bottom: 90px;
 }
 
 main {
+    width: 100%;
     max-width: 600px;
+
     margin: 0 auto;
-    padding: 24px 20px;
+
+    padding:
+        max(24px, env(safe-area-inset-top))
+        18px
+        24px;
 }
 
-h1 {
+/* ENCABEZADO */
+
+.app-header {
+    margin-bottom: 20px;
+}
+
+.app-header h1 {
     margin: 0;
+
     font-size: 32px;
+    line-height: 1.1;
+    font-weight: 800;
+    letter-spacing: -0.8px;
 }
 
-p {
-    font-size: 18px;
-    color: #6b7280;
+.app-header p {
+    margin: 7px 0 0;
+
+    font-size: 16px;
+    color: var(--muted);
 }
+
+/* UBICACIÓN Y TIEMPO */
+
+.location-card {
+    display: flex;
+
+    align-items: center;
+    justify-content: space-between;
+
+    background: var(--card);
+
+    border: 1px solid var(--border);
+
+    border-radius: 18px;
+
+    padding: 17px;
+
+    margin-bottom: 14px;
+
+    box-shadow:
+        0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.location-card > div:first-child {
+    display: flex;
+    flex-direction: column;
+
+    gap: 4px;
+}
+
+.label {
+    font-size: 11px;
+
+    font-weight: 700;
+
+    color: var(--muted);
+
+    letter-spacing: 0.7px;
+}
+
+.location-card strong {
+    font-size: 18px;
+}
+
+.weather {
+    display: flex;
+    align-items: center;
+
+    gap: 6px;
+
+    font-size: 20px;
+}
+
+.weather strong {
+    font-size: 21px;
+}
+
+/* QUÉ HACEMOS AHORA */
+
+.now-card {
+    background: var(--primary);
+
+    color: white;
+
+    border-radius: 22px;
+
+    padding: 22px;
+
+    margin-bottom: 22px;
+
+    box-shadow:
+        0 8px 20px rgba(0, 0, 0, 0.12);
+}
+
+.section-label {
+    margin: 0 0 12px;
+
+    font-size: 12px;
+
+    font-weight: 800;
+
+    letter-spacing: 0.8px;
+}
+
+.now-card h2 {
+    margin: 0 0 8px;
+
+    font-size: 24px;
+
+    line-height: 1.2;
+}
+
+.now-card p:last-child {
+    margin: 0;
+
+    color: #d1d5db;
+
+    font-size: 15px;
+
+    line-height: 1.5;
+}
+
+/* PLAN */
+
+.day-plan {
+    margin-bottom: 22px;
+}
+
+.section-title h2 {
+    margin: 0 0 12px;
+
+    font-size: 18px;
+}
+
+/* ACTIVIDADES */
+
+.activity {
+    display: flex;
+
+    gap: 15px;
+
+    background: var(--card);
+
+    border: 1px solid var(--border);
+
+    border-radius: 16px;
+
+    padding: 16px;
+
+    margin-bottom: 10px;
+}
+
+.activity-time {
+    min-width: 48px;
+
+    font-size: 16px;
+
+    font-weight: 800;
+}
+
+.activity strong {
+    font-size: 16px;
+}
+
+.activity p {
+    margin: 4px 0 0;
+
+    color: var(--muted);
+
+    font-size: 14px;
+
+    line-height: 1.4;
+}
+
+/* BOTONES RÁPIDOS */
+
+.quick-actions {
+    display: grid;
+
+    grid-template-columns: repeat(3, 1fr);
+
+    gap: 10px;
+
+    margin-bottom: 20px;
+}
+
+.quick-actions button {
+    min-height: 82px;
+
+    border: 1px solid var(--border);
+
+    border-radius: 16px;
+
+    background: var(--card);
+
+    color: var(--text);
+
+    font: inherit;
+
+    cursor: pointer;
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+
+    justify-content: center;
+
+    gap: 7px;
+
+    font-size: 25px;
+
+    transition:
+        transform 0.1s ease,
+        background 0.1s ease;
+}
+
+.quick-actions button span {
+    font-size: 12px;
+
+    font-weight: 700;
+}
+
+.quick-actions button:active {
+    transform: scale(0.96);
+
+    background: #f9fafb;
+}
+
+/* NAVEGACIÓN INFERIOR */
+
+.bottom-nav {
+    position: fixed;
+
+    left: 0;
+    right: 0;
+    bottom: 0;
+
+    z-index: 100;
+
+    display: grid;
+
+    grid-template-columns: repeat(5, 1fr);
+
+    max-width: 600px;
+
+    margin: 0 auto;
+
+    padding:
+        8px
+        8px
+        max(8px, env(safe-area-inset-bottom));
+
+    background: rgba(255, 255, 255, 0.96);
+
+    border-top: 1px solid var(--border);
+
+    backdrop-filter: blur(12px);
+}
+
+.bottom-nav button {
+    border: 0;
+
+    background: transparent;
+
+    color: var(--muted);
+
+    font: inherit;
+
+    min-height: 58px;
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+
+    justify-content: center;
+
+    gap: 4px;
+
+    cursor: pointer;
+
+    font-size: 21px;
+}
+
+.bottom-nav button span {
+    font-size: 10px;
+
+    font-weight: 700;
+}
+
+.bottom-nav button.active {
+    color: var(--text);
+}
+
+/* MÓVILES MUY PEQUEÑOS */
+
+@media (max-width: 360px) {
+
+    main {
+        padding-left: 14px;
+        padding-right: 14px;
+    }
+
+    .app-header h1 {
+        font-size: 28px;
+    }
+
+    .quick-actions {
+        gap: 7px;
+    }
+
+    .quick-actions button {
+        min-height: 76px;
+    }
+}
+```
