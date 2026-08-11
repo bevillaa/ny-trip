@@ -1,5 +1,5 @@
 // ==========================================
-// 🗽 NY TRIP — APLICACIÓN COMPLETA (100% GRATIS)
+// 🗽 NY TRIP
 // ==========================================
 
 const SUPABASE_URL = "https://rtbrnbyosrtxeayqmvwc.supabase.co";
@@ -192,7 +192,7 @@ document.addEventListener("click", e => {
     if (btn) closeModal(btn.dataset.close);
 });
 
-// BUSCADOR DE SITIOS 100% GRATUITO (SIN API KEY DE GOOGLE)
+// BUSCADOR DE SITIOS OPTIMIZADO (MEJOR BÚSQUEDA DE PUNTOS TURÍSTICOS)
 function initFreeAutocomplete() {
     const input = document.getElementById("plan-location");
     if (!input) return;
@@ -201,7 +201,7 @@ function initFreeAutocomplete() {
     if (!dropdown) {
         dropdown = document.createElement("div");
         dropdown.id = "nominatim-suggestions";
-        dropdown.style.cssText = "position:absolute; background:#fff; border:1px solid #ccc; border-radius:8px; max-height:180px; overflow-y:auto; width:100%; z-index:1000; box-shadow:0 4px 6px rgba(0,0,0,0.1);";
+        dropdown.className = "search-results";
         input.parentNode.style.position = "relative";
         input.parentNode.appendChild(dropdown);
     }
@@ -212,26 +212,39 @@ function initFreeAutocomplete() {
         clearTimeout(timeout);
         const query = input.value.trim();
 
-        if (query.length < 3) {
+        if (query.length < 2) {
             dropdown.innerHTML = "";
             return;
         }
 
         timeout = setTimeout(async () => {
             try {
-                const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&viewbox=-74.259,40.917,-73.700,40.477&limit=5`);
-                const results = await res.json();
+                // Priorizar búsqueda en New York agregando el contexto automáticamente
+                const searchQuery = query.toLowerCase().includes("new york") || query.toLowerCase().includes("ny") ? query : `${query}, New York`;
+                
+                const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}&limit=5&addressdetails=1`);
+                let results = await res.json();
+
+                // Si no hay resultados con 'New York', buscar exactamente la consulta del usuario
+                if (!results.length) {
+                    const fallbackRes = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5`);
+                    results = await fallbackRes.json();
+                }
 
                 dropdown.innerHTML = "";
                 results.forEach(place => {
                     const item = document.createElement("div");
-                    item.style.cssText = "padding: 10px; cursor: pointer; font-size: 13px; border-bottom: 1px solid #eee; text-align: left;";
-                    item.textContent = place.display_name;
+                    item.className = "suggestion-item";
+                    
+                    const name = place.display_name.split(",")[0];
+                    const details = place.display_name.split(",").slice(1, 3).join(",");
+
+                    item.innerHTML = `<strong>📍 ${escapeHTML(name)}</strong><span style="font-size:11px; color:#6b7280; display:block;">${escapeHTML(details)}</span>`;
                     
                     item.addEventListener("click", () => {
-                        input.value = place.display_name.split(",")[0];
+                        input.value = name;
                         selectedPlanLocation = {
-                            name: place.display_name.split(",")[0],
+                            name: name,
                             address: place.display_name,
                             lat: parseFloat(place.lat),
                             lon: parseFloat(place.lon),
@@ -248,7 +261,7 @@ function initFreeAutocomplete() {
     });
 
     document.addEventListener("click", (e) => {
-        if (e.target !== input && e.target !== dropdown) {
+        if (e.target !== input && !dropdown.contains(e.target)) {
             dropdown.innerHTML = "";
         }
     });
@@ -379,7 +392,7 @@ function renderPlans() {
 
     container.innerHTML = visiblePlans.map(plan => {
         const category = PLAN_CATEGORIES[plan.category] || PLAN_CATEGORIES.other;
-        const mapsUrl = plan.map_url || (plan.latitude ? `https://www.google.com/maps/search/?api=1&query=${plan.latitude},${plan.longitude}` : (plan.location_name ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(plan.location_name)}` : null));
+        const mapsUrl = plan.map_url || (plan.latitude ? `https://www.google.com/maps/search/?api=1&query=${plan.latitude},${plan.longitude}` : (plan.location_name ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(plan.location_name + " New York")}` : null));
 
         return `
             <article class="activity-card">
@@ -433,7 +446,7 @@ document.getElementById("plan-form")?.addEventListener("submit", async e => {
     const locationInput = document.getElementById("plan-location").value.trim();
 
     const locationName = selectedPlanLocation ? selectedPlanLocation.name : (locationInput || null);
-    const mapsUrl = selectedPlanLocation ? selectedPlanLocation.url : (locationInput ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(locationInput)}` : null);
+    const mapsUrl = selectedPlanLocation ? selectedPlanLocation.url : (locationInput ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(locationInput + " New York")}` : null);
 
     const data = {
         title,
