@@ -24,7 +24,7 @@
     <!-- ==========================================
          STYLE (Actualiza v= para forzar recarga)
     =========================================== -->
-    <link rel="stylesheet" href="./style.css?v=20260812-003">
+    <link rel="stylesheet" href="./style.css?v=20260812-004">
 
     <!-- ==========================================
          LIMPIEZA DE CACHÉ / SERVICE WORKERS
@@ -48,7 +48,7 @@
                     await Promise.all(cacheNames.map(cacheName => caches.delete(cacheName)));
                 }
 
-                window.NY_TRIP_VERSION = "20260812-003";
+                window.NY_TRIP_VERSION = "20260812-004";
                 console.log("🧹 NY TRIP: caché limpiada.");
             } catch (error) {
                 console.warn("⚠️ No se pudo limpiar toda la caché:", error);
@@ -217,10 +217,10 @@
                 <div class="plan-filters" id="plan-filters">
                     <button type="button" class="plan-filter active" data-plan-filter="all">✨ Todos</button>
                     <button type="button" class="plan-filter" data-plan-filter="food">🍽️ Restaurantes</button>
-                    <button type="button" class="plan-filter" data-plan-filter="sightseeing">🍪 Dulces</button>
+                    <button type="button" class="plan-filter" data-plan-filter="sweet">🍪 Dulces</button>
                     <button type="button" class="plan-filter" data-plan-filter="activity">📍 Spots</button>
                     <button type="button" class="plan-filter" data-plan-filter="shopping">🛍️ Tiendas</button>
-                    <button type="button" class="plan-filter" data-plan-filter="nightlife">🗽 Turisteo</button>
+                    <button type="button" class="plan-filter" data-plan-filter="sightseeing">🗽 Turisteo</button>
                     <button type="button" class="plan-filter" data-plan-filter="other">📌 Otros</button>
                 </div>
 
@@ -498,19 +498,6 @@
     =========================================== -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="./app.js?v=20260812-003"></script>
-
-    <!-- FILTROS DE PLANES -->
-    <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            const filterButtons = document.querySelectorAll("[data-plan-filter]");
-            filterButtons.forEach(function (button) {
-                button.addEventListener("click", function () {
-                    filterButtons.forEach(item => item.classList.remove("active"));
-                    this.classList.add("active");
-                });
-            });
-        });
-    </script>
+    <script src="./app.js?v=20260812-004"></script>
 </body>
 </html>
