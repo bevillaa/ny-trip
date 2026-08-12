@@ -41,11 +41,22 @@ const CATEGORIES = {
     rooftop: { name: "RoofTops", icon: "🌇" },
     spot: { name: "Spots", icon: "📍" },
     restaurant: { name: "Restaurantes", icon: "🍽️" },
+    food: { name: "Restaurantes", icon: "🍽️" },
     sweet: { name: "Dulces", icon: "🍰" },
     sightseeing: { name: "Turisteo", icon: "🗽" },
     shopping: { name: "Tiendas", icon: "🛍️" },
+    activity: { name: "Spots", icon: "📍" },
+    nightlife: { name: "Turisteo", icon: "🗽" },
     other: { name: "Otros", icon: "📌" }
 };
+
+// Función auxiliar para obtener el icono según la categoría
+function getCategoryIcon(category) {
+    if (CATEGORIES[category]) {
+        return CATEGORIES[category].icon;
+    }
+    return "📌";
+}
 
 /* ==========================================================================
    INICIALIZACIÓN
@@ -671,7 +682,7 @@ function renderNextActivity() {
             <span>🗽</span>
             <div>
                 <strong>¡Sin planes próximos!</strong>
-                <p>Añade actividades para sincronizarlas con el mapa.</p>
+                <p>Añade actividades para synchronizarlas con el mapa.</p>
             </div>
         `;
     }
@@ -819,21 +830,40 @@ function renderMap() {
 
     const bounds = [[state.hotel.lat, state.hotel.lng]];
 
-    const hotelMarker = L.marker([state.hotel.lat, state.hotel.lng])
+    // Marcador de Hotel
+    const hotelIcon = L.divIcon({
+        className: 'custom-map-marker',
+        html: `<div class="marker-pin">🏨</div>`,
+        iconSize: [36, 36],
+        iconAnchor: [18, 18],
+        popupAnchor: [0, -18]
+    });
+
+    const hotelMarker = L.marker([state.hotel.lat, state.hotel.lng], { icon: hotelIcon })
         .addTo(state.map)
         .bindPopup(`<b>🏨 ${escapeHTML(state.hotel.name)}</b><br>${escapeHTML(state.hotel.address)}`);
     state.markers.push(hotelMarker);
 
+    // Marcadores de Planes con su emoji correspondiente
     state.plans.forEach(plan => {
         const lat = parseFloat(plan.latitude);
         const lng = parseFloat(plan.longitude);
 
         if (!isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0) {
-            const cat = CATEGORIES[plan.category] || CATEGORIES.other;
-            const marker = L.marker([lat, lng])
+            const emoji = getCategoryIcon(plan.category);
+
+            const customIcon = L.divIcon({
+                className: 'custom-map-marker',
+                html: `<div class="marker-pin">${emoji}</div>`,
+                iconSize: [36, 36],
+                iconAnchor: [18, 18],
+                popupAnchor: [0, -18]
+            });
+
+            const marker = L.marker([lat, lng], { icon: customIcon })
                 .addTo(state.map)
                 .bindPopup(`
-                    <b>${cat.icon} ${escapeHTML(plan.title)}</b><br>
+                    <b>${emoji} ${escapeHTML(plan.title)}</b><br>
                     ${plan.location_name ? '📍 ' + escapeHTML(plan.location_name) : ''}<br>
                     ${plan.description ? '<small>' + escapeHTML(plan.description) + '</small>' : ''}
                 `);
