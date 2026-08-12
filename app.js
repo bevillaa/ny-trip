@@ -38,15 +38,11 @@ const state = {
 
 // CATEGORÍAS DE PLANES
 const CATEGORIES = {
-    rooftop: { name: "RoofTops", icon: "🌇" },
-    spot: { name: "Spots", icon: "📍" },
-    restaurant: { name: "Restaurantes", icon: "🍽️" },
     food: { name: "Restaurantes", icon: "🍽️" },
     sweet: { name: "Dulces", icon: "🍪" },
-    sightseeing: { name: "Turisteo", icon: "🗽" },
-    shopping: { name: "Tiendas", icon: "🛍️" },
     activity: { name: "Spots", icon: "📍" },
-    nightlife: { name: "Turisteo", icon: "🗽" },
+    shopping: { name: "Tiendas", icon: "🛍️" },
+    sightseeing: { name: "Turisteo", icon: "🗽" },
     other: { name: "Otros", icon: "📌" }
 };
 
