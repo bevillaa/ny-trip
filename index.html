@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NY Trip 2026/2027</title>
     <link rel="stylesheet" href="style.css">
-    <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 </head>
 <body>
@@ -41,35 +40,35 @@
             <div id="header-clocks" class="header-clocks"></div>
         </header>
 
-        <!-- CONTENIDO PRINCIPAL (PANTALLAS) -->
+        <!-- CONTENIDO PRINCIPAL -->
         <main class="main-content">
 
             <!-- PANTALLA: INICIO -->
             <section id="screen-home" class="screen active">
                 <div class="welcome-card">
-                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                    <div class="welcome-header">
                         <div>
                             <h3>¡Hola, <span id="current-user-email">Viajero</span>! 👋</h3>
-                            <p id="connection-status" style="font-size: 12px; color: var(--muted);">● Conectando...</p>
+                            <p id="connection-status">● Conectando...</p>
                         </div>
                         <button id="logout-button" class="btn-logout" title="Cerrar sesión">🚪 Salir</button>
                     </div>
                 </div>
 
-                <!-- Tarjeta Widget Tiempo y Divisa -->
+                <!-- Dashboard Grid -->
                 <div class="dashboard-grid">
                     <div class="card info-card">
                         <div class="card-title">🌤️ Tiempo en NY</div>
                         <div id="weather-temperature" class="big-stat">--°C</div>
                         <div id="weather-description" class="sub-stat">Cargando...</div>
-                        <small id="weather-wind" style="display: block; margin-top: 4px; color: var(--muted);"></small>
-                        <small id="weather-update" style="display: block; font-size: 10px; opacity: 0.6;"></small>
+                        <small id="weather-wind"></small>
+                        <small id="weather-update"></small>
                     </div>
                     <div class="card info-card">
                         <div class="card-title">💵 Cambio USD/EUR</div>
                         <div id="currency-value" class="big-stat">-- $</div>
                         <div class="sub-stat">1 EUR</div>
-                        <small id="currency-update" style="display: block; margin-top: 4px; color: var(--muted);"></small>
+                        <small id="currency-update"></small>
                     </div>
                 </div>
 
@@ -83,7 +82,7 @@
                     </div>
                 </div>
 
-                <!-- Info Hotel Destacada -->
+                <!-- Alojamiento Base (Actualizado) -->
                 <div class="section-title">Alojamiento Base</div>
                 <div class="card hotel-card">
                     <h3>🏨 Courtyard by Marriott Upper East Side</h3>
@@ -99,7 +98,6 @@
                     <button id="open-plan-form" class="btn btn-primary">+ Añadir Plan</button>
                 </div>
 
-                <!-- Filtros por categoría -->
                 <div class="filters-scroll">
                     <button class="filter-btn active" data-plan-filter="all">Todos</button>
                     <button class="filter-btn" data-plan-filter="food">🍽️ Restaurantes</button>
@@ -110,9 +108,7 @@
                     <button class="filter-btn" data-plan-filter="other">📌 Otros</button>
                 </div>
 
-                <div id="plan-list" class="plan-list">
-                    <!-- Los planes se cargan dinámicamente -->
-                </div>
+                <div id="plan-list" class="plan-list"></div>
             </section>
 
             <!-- PANTALLA: MAPA -->
@@ -123,34 +119,24 @@
                 <div id="map" class="map-container"></div>
             </section>
 
-            <!-- PANTALLA: MÁS (RESERVAS, HOTEL, VUELOS, GASTOS) -->
+            <!-- PANTALLA: MÁS -->
             <section id="screen-more" class="screen">
                 <div class="section-header">
                     <h2>Detalles del Viaje</h2>
                 </div>
 
-                <!-- Hotel Info -->
                 <div class="section-title">🏨 Alojamiento</div>
-                <div id="hotel-container">
-                    <div class="card hotel-card">
-                        <h3>🏨 Courtyard by Marriott New York Manhattan/Upper East Side</h3>
-                        <p>📍 410 East 92nd Street, Upper East Side, New York, NY 10128</p>
-                        <small>📅 Check-in: 26 Dic 2026 (from 15:00) | Check-out: 04 Ene 2027 (until 12:00)</small>
-                    </div>
-                </div>
+                <div id="hotel-container"></div>
 
-                <!-- Vuelos -->
                 <div class="section-title">✈️ Vuelos</div>
                 <div id="flight-list"></div>
 
-                <!-- Reservas -->
                 <div class="section-header" style="margin-top: 24px;">
                     <h3>📋 Reservas y Entradas</h3>
                     <button id="open-reservation-form" class="btn btn-secondary btn-sm">+ Reserva</button>
                 </div>
                 <div id="reservation-list"></div>
 
-                <!-- Gastos Compartidos -->
                 <div class="section-header" style="margin-top: 24px;">
                     <h3>💰 Gastos Compartidos</h3>
                     <button id="open-expense-form" class="btn btn-secondary btn-sm">+ Gasto</button>
@@ -161,7 +147,7 @@
 
         </main>
 
-        <!-- BARRA DE NAVEGACIÓN INFERIOR -->
+        <!-- NAVEGACIÓN INFERIOR -->
         <nav class="bottom-nav">
             <button class="nav-button active" data-screen="home">
                 <span class="icon">🏠</span>
@@ -181,7 +167,7 @@
             </button>
         </nav>
 
-        <!-- MODAL: AÑADIR / EDITAR PLAN -->
+        <!-- MODALES -->
         <div id="plan-modal" class="modal hidden">
             <div class="modal-content">
                 <div class="modal-header">
@@ -229,7 +215,6 @@
             </div>
         </div>
 
-        <!-- MODAL: RESERVAS -->
         <div id="reservation-modal" class="modal hidden">
             <div class="modal-content">
                 <div class="modal-header">
@@ -266,14 +251,13 @@
                     </div>
                     <div class="form-group">
                         <label for="reservation-description">Detalles / Cód. Confirmación</label>
-                        <textarea id="reservation-description" rows="2" placeholder="Código de reserva, número de asientos, etc."></textarea>
+                        <textarea id="reservation-description" rows="2" placeholder="Código de reserva..."></textarea>
                     </div>
                     <button type="submit" class="btn btn-primary btn-full">Guardar Reserva</button>
                 </form>
             </div>
         </div>
 
-        <!-- MODAL: GASTOS -->
         <div id="expense-modal" class="modal hidden">
             <div class="modal-content">
                 <div class="modal-header">
@@ -313,11 +297,8 @@
 
     </div>
 
-    <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <!-- Supabase JS -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <!-- App Script -->
     <script src="app.js"></script>
 </body>
 </html>
