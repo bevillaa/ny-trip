@@ -248,7 +248,6 @@ function updateClocksAndCountdown() {
    BÚSQUEDA GRATUITA Y AUTOCOMPLETADO DE LUGARES (PHOTON API)
    ========================================================================== */
 function setupLocationSearch() {
-    // Configurar autocompletado en tiempo real para planes y reservas
     initPhotonAutocomplete("plan-location", "plan-location-results");
     initPhotonAutocomplete("reservation-location", "reservation-location-results");
 }
@@ -259,7 +258,6 @@ function initPhotonAutocomplete(inputId, resultsContainerId) {
 
     let container = document.getElementById(resultsContainerId);
     
-    // Si no existe el contenedor de resultados, lo creamos dinámicamente
     if (!container) {
         container = document.createElement("div");
         container.id = resultsContainerId;
@@ -270,7 +268,6 @@ function initPhotonAutocomplete(inputId, resultsContainerId) {
 
     let timeout = null;
 
-    // Evento de escritura en tiempo real con debounce
     input.addEventListener("input", () => {
         clearTimeout(timeout);
         const query = input.value.trim();
@@ -282,7 +279,6 @@ function initPhotonAutocomplete(inputId, resultsContainerId) {
 
         timeout = setTimeout(async () => {
             try {
-                // Petición optimizada a Photon priorizando coordenadas de Nueva York
                 const url = `https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&lat=40.7128&lon=-73.9352&limit=5`;
                 const res = await fetch(url);
                 const data = await res.json();
@@ -322,7 +318,6 @@ function initPhotonAutocomplete(inputId, resultsContainerId) {
         }, 250);
     });
 
-    // Cerrar el desplegable si el usuario hace clic fuera
     document.addEventListener("click", (e) => {
         if (e.target !== input && !container.contains(e.target)) {
             container.innerHTML = "";
@@ -341,7 +336,6 @@ function selectSearchLocation(name, inputId, resultsContainerId, lat, lon) {
     if (container) container.innerHTML = "";
 }
 
-// Función auxiliar para sanitizar cadenas de texto contra ataques XSS
 function escapeHTML(str) {
     if (!str) return "";
     return String(str)
@@ -453,6 +447,8 @@ function openPlanModal(planToEdit = null) {
     const resultsContainer = document.getElementById("plan-location-results");
     if (resultsContainer) resultsContainer.innerHTML = "";
 
+    const locInput = document.getElementById("plan-location");
+
     if (planToEdit) {
         document.getElementById("plan-id").value = planToEdit.id;
         document.getElementById("plan-title").value = planToEdit.title || "";
@@ -461,15 +457,18 @@ function openPlanModal(planToEdit = null) {
         document.getElementById("plan-date").value = planToEdit.date || ""; 
         document.getElementById("plan-time").value = planToEdit.time || "";
         
-        const locInput = document.getElementById("plan-location");
         if (locInput) {
-            locInput.value = planToEdit.location || "";
-            locInput.dataset.lat = planToEdit.lat || "";
-            locInput.dataset.lng = planToEdit.lng || "";
+            locInput.value = planToEdit.location_name || "";
+            locInput.dataset.lat = planToEdit.latitude || "";
+            locInput.dataset.lng = planToEdit.longitude || "";
         }
     } else {
         const idInput = document.getElementById("plan-id");
         if (idInput) idInput.value = "";
+        if (locInput) {
+            delete locInput.dataset.lat;
+            delete locInput.dataset.lng;
+        }
     }
 
     openModal("plan-modal");
@@ -482,36 +481,52 @@ function setupForms() {
     document.getElementById("plan-form")?.addEventListener("submit", async (e) => {
         e.preventDefault();
         
+        const submitBtn = e.target.querySelector('button[type="submit"]');
+        if (submitBtn) submitBtn.disabled = true;
+
         const id = document.getElementById("plan-id").value;
         const dateValue = document.getElementById("plan-date").value;
         const locInput = document.getElementById("plan-location");
 
-        // Objeto de plan (Fecha Opcional)
+        // Objeto con las columnas EXACTAS de tu esquema de Supabase
         const planData = {
             title: document.getElementById("plan-title").value,
-            category: document.getElementById("plan-category").value,
+            category: document.getElementById("plan-category").value || null,
             description: document.getElementById("plan-description").value || null,
-            date: dateValue ? dateValue : null, // Si está vacío se guarda como null sin dar error
+            date: dateValue ? dateValue : null,
             time: document.getElementById("plan-time").value || null,
-            location: locInput ? locInput.value : null
+            location_name: locInput ? locInput.value : null,
+            created_by: state.currentUser ? (state.currentUser.email || state.currentUser.id) : null
         };
 
         if (locInput && locInput.dataset.lat) {
-            planData.lat = parseFloat(locInput.dataset.lat);
-            planData.lng = parseFloat(locInput.dataset.lng);
+            planData.latitude = parseFloat(locInput.dataset.lat);
+            planData.longitude = parseFloat(locInput.dataset.lng);
         }
 
-        if (id) {
-            if (supabaseApp) await supabaseApp.from("plans").update(planData).eq("id", id);
-        } else {
-            if (supabaseApp) {
-                const { data } = await supabaseApp.from("plans").insert([planData]).select();
-                if (data) state.plans.push(data[0]);
+        try {
+            if (!supabaseApp) throw new Error("Cliente de Supabase no inicializado");
+
+            if (id) {
+                const { error } = await supabaseApp.from("plans").update(planData).eq("id", id);
+                if (error) throw error;
+            } else {
+                const { data, error } = await supabaseApp.from("plans").insert([planData]).select();
+                if (error) throw error;
+                if (data && data.length > 0) {
+                    state.plans.push(data[0]);
+                }
             }
-        }
 
-        closeModal("plan-modal");
-        loadAllData();
+            closeModal("plan-modal");
+            await loadAllData();
+
+        } catch (err) {
+            console.error("Error al guardar el plan en Supabase:", err);
+            alert("Error al guardar el plan: " + (err.message || "Comprueba la consola"));
+        } finally {
+            if (submitBtn) submitBtn.disabled = false;
+        }
     });
 
     document.getElementById("reservation-form")?.addEventListener("submit", async (e) => {
@@ -593,7 +608,7 @@ function renderPlans() {
                 </div>
                 <h3>${escapeHTML(plan.title)}</h3>
                 ${plan.description ? `<p>${escapeHTML(plan.description)}</p>` : ''}
-                ${plan.location ? `<small>📍 ${escapeHTML(plan.location)}</small>` : ''}
+                ${plan.location_name ? `<small>📍 ${escapeHTML(plan.location_name)}</small>` : ''}
                 <div class="card-actions">
                     <button class="icon-button" onclick="editPlan('${plan.id}')" title="Editar">✏️ Editar</button>
                     <button class="icon-button danger" onclick="deletePlan('${plan.id}')" title="Eliminar">🗑️ Borrar</button>
@@ -647,7 +662,7 @@ function renderNextActivity() {
             <span>📅</span>
             <div>
                 <strong>${escapeHTML(next.title)}</strong>
-                <p>${dateText} ${next.time ? 'a las ' + next.time : ''} — ${next.location ? escapeHTML(next.location) : 'Nueva York'}</p>
+                <p>${dateText} ${next.time ? 'a las ' + next.time : ''} — ${next.location_name ? escapeHTML(next.location_name) : 'Nueva York'}</p>
             </div>
         `;
     } else {
@@ -805,12 +820,12 @@ function renderMap() {
         .bindPopup(`<b>🏨 ${escapeHTML(state.hotel.name)}</b><br>${escapeHTML(state.hotel.address)}`);
     state.markers.push(hotelMarker);
 
-    // Renderizar pines en el mapa para planes que tengan latitud y longitud
+    // Renderizar pines leyendo latitude/longitude y location_name
     state.plans.forEach(plan => {
-        if (plan.lat && plan.lng) {
-            const marker = L.marker([plan.lat, plan.lng])
+        if (plan.latitude && plan.longitude) {
+            const marker = L.marker([plan.latitude, plan.longitude])
                 .addTo(state.map)
-                .bindPopup(`<b>📍 ${escapeHTML(plan.title)}</b><br>${plan.location ? escapeHTML(plan.location) : ''}`);
+                .bindPopup(`<b>📍 ${escapeHTML(plan.title)}</b><br>${plan.location_name ? escapeHTML(plan.location_name) : ''}`);
             state.markers.push(marker);
         }
     });
