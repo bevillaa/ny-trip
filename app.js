@@ -639,7 +639,7 @@ function renderPlans() {
         const cat = CATEGORIES[catKey] || CATEGORIES.other;
         const isDone = !!plan.completed;
 
-        let dateText = "Por definir";
+        let dateText = "";
         if (plan.date) {
             const dateObj = new Date(plan.date + "T00:00:00");
             dateText = dateObj.toLocaleDateString("es-ES", { day: "numeric", month: "short" });
