@@ -4,7 +4,7 @@
 
 // Configuración de Supabase
 const SUPABASE_URL = "https://rtbrnbyosrtxeayqmvwc.supabase.co";
-const SUPABASE_KEY = "sb_publishable_xvstsFi5T_bbgYb-9qiJ6A_y8OrAL";
+const SUPABASE_KEY = "sb_publishable_xvstsFi5T_bbgYb-9qiJ6A_y8OrALEA";
 
 // Evita la colisión de nombres usando la variable global del navegador
 if (!window.supabaseClient && window.supabase && SUPABASE_URL !== "https://TU-PROYECTO.supabase.co") {
