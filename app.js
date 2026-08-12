@@ -1,5 +1,5 @@
 /* ==========================================================================
-   🗽 NY TRIP - 
+   🗽 NY TRIP -  
    ========================================================================== */
 
 // Configuración de Supabase
@@ -62,32 +62,27 @@ async function initApp() {
     // Iniciar relojes en directo y contador de días
     startClocksAndCountdown();
 
-    // Verificar y escuchar estado de la sesión de Supabase
+    // Comprobar autenticación estricta con Supabase
     if (supabase) {
-        // Escuchador dinámico de cambios en la autenticación
+        // Escuchar cambios de estado (Login / Logout)
         supabase.auth.onAuthStateChange((event, session) => {
-            if (session) {
+            if (session && session.user) {
                 handleLoginSuccess(session.user);
-            } else {
+            } else if (event === 'SIGNED_OUT') {
                 showLoginScreen();
             }
         });
 
-        // Verificación inicial de sesión persistente
-        const { data: { session }, error } = await supabase.auth.getSession();
-        if (error) {
-            console.error("Error comprobando sesión:", error.message);
-            showLoginScreen();
-        } else if (session) {
+        // Verificar si ya hay una sesión activa persistente
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session && session.user) {
             handleLoginSuccess(session.user);
         } else {
             showLoginScreen();
         }
     } else {
-        // Modo fallback local si no hay cliente Supabase configurado
-        console.warn("Supabase no configurado. Iniciando en modo offline/local.");
-        hideLoginScreen();
-        loadLocalData();
+        console.error("No se pudo inicializar el cliente de Supabase.");
+        showLoginScreen();
     }
 
     updateWeather();
@@ -95,7 +90,7 @@ async function initApp() {
 }
 
 /* ==========================================================================
-   AUTENTICACIÓN Y SESIÓN (LOGIN ROBUSTO)
+   AUTENTICACIÓN Y SESIÓN (LOGIN CONTRA BBDD)
    ========================================================================== */
 function showLoginScreen() {
     const loginScreen = document.getElementById("login-screen");
@@ -121,73 +116,77 @@ function handleLoginSuccess(user) {
     loadAllData();
 }
 
-// Formulario de Login corregido
-const loginForm = document.getElementById("login-form");
-if (loginForm) {
-    loginForm.addEventListener("submit", async (e) => {
-        e.preventDefault();
-        
-        const emailEl = document.getElementById("login-email");
-        const passwordEl = document.getElementById("login-password");
-        const errorDiv = document.getElementById("login-error");
+// Handler de Formulario de Login Estricto
+document.addEventListener("DOMContentLoaded", () => {
+    const loginForm = document.getElementById("login-form");
+    if (loginForm) {
+        loginForm.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            
+            const emailEl = document.getElementById("login-email");
+            const passwordEl = document.getElementById("login-password");
+            const errorDiv = document.getElementById("login-error");
 
-        const email = emailEl ? emailEl.value.trim() : "";
-        const password = passwordEl ? passwordEl.value.trim() : "";
+            const email = emailEl ? emailEl.value.trim() : "";
+            const password = passwordEl ? passwordEl.value.trim() : "";
 
-        // Ocultar mensaje de error previo
-        if (errorDiv) {
-            errorDiv.hidden = true;
-            errorDiv.textContent = "";
-        }
+            // Ocultar mensaje de error previo
+            if (errorDiv) {
+                errorDiv.hidden = true;
+                errorDiv.textContent = "";
+            }
 
-        if (!supabase) {
-            hideLoginScreen();
-            loadLocalData();
-            return;
-        }
-
-        try {
-            const { data, error } = await supabase.auth.signInWithPassword({ 
-                email: email, 
-                password: password 
-            });
-
-            if (error) {
+            if (!supabase) {
                 if (errorDiv) {
-                    // Traducción/Formateo de errores comunes de Supabase
-                    let msg = error.message;
-                    if (msg.includes("Invalid login credentials")) {
-                        msg = "Usuario o contraseña incorrectos.";
-                    } else if (msg.includes("Email not confirmed")) {
-                        msg = "Debes confirmar tu correo electrónico antes de entrar.";
-                    }
-                    errorDiv.textContent = msg;
+                    errorDiv.textContent = "Error de conexión con la base de datos.";
                     errorDiv.hidden = false;
                 }
-            } else if (data.user) {
-                handleLoginSuccess(data.user);
+                return;
             }
-        } catch (err) {
-            console.error("Error inesperado en login:", err);
-            if (errorDiv) {
-                errorDiv.textContent = "Error inesperado. Comprueba tu conexión.";
-                errorDiv.hidden = false;
-            }
-        }
-    });
-}
 
-// Botón de Logout
-const logoutBtn = document.getElementById("logout-button");
-if (logoutBtn) {
-    logoutBtn.addEventListener("click", async () => {
-        if (supabase) {
-            await supabase.auth.signOut();
-        }
-        state.currentUser = null;
-        showLoginScreen();
-    });
-}
+            try {
+                // Petición de Autenticación a Supabase
+                const { data, error } = await supabase.auth.signInWithPassword({ 
+                    email: email, 
+                    password: password 
+                });
+
+                if (error) {
+                    if (errorDiv) {
+                        let msg = error.message;
+                        if (msg.includes("Invalid login credentials")) {
+                            msg = "Usuario o contraseña incorrectos.";
+                        } else if (msg.includes("Email not confirmed")) {
+                            msg = "Debes confirmar tu correo electrónico antes de entrar.";
+                        }
+                        errorDiv.textContent = msg;
+                        errorDiv.hidden = false;
+                    }
+                } else if (data && data.user) {
+                    handleLoginSuccess(data.user);
+                }
+            } catch (err) {
+                console.error("Error inesperado en login:", err);
+                if (errorDiv) {
+                    errorDiv.textContent = "Error inesperado. Comprueba tu conexión.";
+                    errorDiv.hidden = false;
+                }
+            }
+        });
+    }
+
+    // Botón de Logout
+    const logoutBtn = document.getElementById("logout-button");
+    if (logoutBtn) {
+        logoutBtn.addEventListener("click", async () => {
+            if (supabase) {
+                await supabase.auth.signOut();
+            }
+            state.currentUser = null;
+            showLoginScreen();
+        });
+    }
+});
 
 /* ==========================================================================
    RELOJES DE NUEVA YORK Y MÁLAGA + CONTADOR DE DÍAS
@@ -254,10 +253,7 @@ function updateClocksAndCountdown() {
    ========================================================================== */
 async function loadAllData() {
     updateStatus("● Sincronizando...");
-    if (!supabase) {
-        loadLocalData();
-        return;
-    }
+    if (!supabase) return;
 
     try {
         const [plansRes, resRes, expRes] = await Promise.all([
@@ -274,22 +270,8 @@ async function loadAllData() {
         renderAll();
     } catch (err) {
         console.error("Error al cargar datos:", err);
-        updateStatus("⚠️ Modo Offline");
-        loadLocalData();
+        updateStatus("⚠️ Error de Red");
     }
-}
-
-function loadLocalData() {
-    state.plans = JSON.parse(localStorage.getItem("ny_plans") || "[]");
-    state.reservations = JSON.parse(localStorage.getItem("ny_reservations") || "[]");
-    state.expenses = JSON.parse(localStorage.getItem("ny_expenses") || "[]");
-    renderAll();
-}
-
-function saveLocalData() {
-    localStorage.setItem("ny_plans", JSON.stringify(state.plans));
-    localStorage.setItem("ny_reservations", JSON.stringify(state.reservations));
-    localStorage.setItem("ny_expenses", JSON.stringify(state.expenses));
 }
 
 function updateStatus(text) {
@@ -400,23 +382,14 @@ function setupForms() {
         };
 
         if (id) {
-            if (supabase) {
-                await supabase.from("plans").update(planData).eq("id", id);
-            } else {
-                const idx = state.plans.findIndex(p => p.id == id);
-                if (idx !== -1) state.plans[idx] = { ...state.plans[idx], ...planData };
-            }
+            if (supabase) await supabase.from("plans").update(planData).eq("id", id);
         } else {
             if (supabase) {
                 const { data } = await supabase.from("plans").insert([planData]).select();
                 if (data) state.plans.push(data[0]);
-            } else {
-                planData.id = Date.now().toString();
-                state.plans.push(planData);
             }
         }
 
-        saveLocalData();
         closeModal("plan-modal");
         loadAllData();
     });
@@ -432,14 +405,8 @@ function setupForms() {
             location: document.getElementById("reservation-location").value || null
         };
 
-        if (supabase) {
-            await supabase.from("reservations").insert([resData]);
-        } else {
-            resData.id = Date.now().toString();
-            state.reservations.push(resData);
-        }
+        if (supabase) await supabase.from("reservations").insert([resData]);
 
-        saveLocalData();
         closeModal("reservation-modal");
         loadAllData();
     });
@@ -457,14 +424,8 @@ function setupForms() {
             date: document.getElementById("expense-date").value || new Date().toISOString().split("T")[0]
         };
 
-        if (supabase) {
-            await supabase.from("expenses").insert([expData]);
-        } else {
-            expData.id = Date.now().toString();
-            state.expenses.push(expData);
-        }
+        if (supabase) await supabase.from("expenses").insert([expData]);
 
-        saveLocalData();
         closeModal("expense-modal");
         loadAllData();
     });
@@ -533,8 +494,6 @@ window.deletePlan = async function(id) {
     if (supabase) {
         await supabase.from("plans").delete().eq("id", id);
     }
-    state.plans = state.plans.filter(p => p.id != id);
-    saveLocalData();
     loadAllData();
 };
 
@@ -704,7 +663,7 @@ function renderHotel() {
    MAPA LEAFLET
    ========================================================================== */
 function initOrRefreshMap() {
-    if (typeof L === 'undefined') return; // Asegurar que Leaflet esté cargado en el HTML
+    if (typeof L === 'undefined') return;
     
     if (!state.map) {
         state.map = L.map("map").setView([40.7580, -73.9855], 13);
@@ -726,4 +685,3 @@ function renderMap() {
         .bindPopup(`<b>🏨 ${state.hotel.name}</b><br>${state.hotel.address}`);
     state.markers.push(hotelMarker);
 }
-
