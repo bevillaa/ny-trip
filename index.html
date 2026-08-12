@@ -24,7 +24,7 @@
     <!-- ==========================================
          STYLE (Actualiza v= para forzar recarga)
     =========================================== -->
-    <link rel="stylesheet" href="./style.css?v=20260812-001">
+    <link rel="stylesheet" href="./style.css?v=20260812-002">
 
     <!-- ==========================================
          LIMPIEZA DE CACHÉ / SERVICE WORKERS
@@ -48,7 +48,7 @@
                     await Promise.all(cacheNames.map(cacheName => caches.delete(cacheName)));
                 }
 
-                window.NY_TRIP_VERSION = "20260812-001";
+                window.NY_TRIP_VERSION = "20260812-002";
                 console.log("🧹 NY TRIP: caché limpiada.");
             } catch (error) {
                 console.warn("⚠️ No se pudo limpiar toda la caché:", error);
@@ -100,9 +100,6 @@
                 <p>El tridente en Nueva York 😈😇🤪</p>
             </div>
 
-            <!-- CONTENEDOR PARA LOS RELOJES EN LA CABECERA -->
-            <div id="header-clocks"></div>
-
             <div id="connection-status" class="connection-status">
                 ● Conectando
             </div>
@@ -127,19 +124,24 @@
                     </div>
                 </div>
 
-                <!-- TIEMPO -->
-                <div class="weather-card">
-                    <div class="weather-main">
-                        <span id="weather-icon">🌤️</span>
-                        <div>
-                            <strong id="weather-temperature">--°C</strong>
-                            <span id="weather-description">Cargando tiempo...</span>
+                <!-- TIEMPO Y RELOJES -->
+                <div class="weather-card" style="display: flex; justify-content: space-between; align-items: center; gap: 12px;">
+                    <div>
+                        <div class="weather-main">
+                            <span id="weather-icon">🌤️</span>
+                            <div>
+                                <strong id="weather-temperature">--°C</strong>
+                                <span id="weather-description">Cargando tiempo...</span>
+                            </div>
+                        </div>
+                        <div class="weather-extra">
+                            <span id="weather-wind">Viento --</span>
+                            <span id="weather-update">Actualizando</span>
                         </div>
                     </div>
-                    <div class="weather-extra">
-                        <span id="weather-wind">Viento --</span>
-                        <span id="weather-update">Actualizando</span>
-                    </div>
+
+                    <!-- CONTENEDOR DE RELOJES AL LADO DEL TIEMPO -->
+                    <div id="header-clocks" style="display: flex; flex-direction: column; gap: 6px; text-align: right; font-size: 0.9rem; font-weight: 600;"></div>
                 </div>
 
                 <!-- DIVISAS -->
@@ -339,7 +341,7 @@
                     </button>
                 </div>
 
-                <!-- HOTEL (PINTADO DINÁMICAMENTE POR JS) -->
+                <!-- HOTEL -->
                 <div class="section-heading">
                     <h2>🏨 HOTEL</h2>
                 </div>
@@ -499,7 +501,7 @@
     =========================================== -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="./app.js?v=20260812-001"></script>
+    <script src="./app.js?v=20260812-002"></script>
 
     <!-- FILTROS DE PLANES -->
     <script>
