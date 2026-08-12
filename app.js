@@ -4,7 +4,7 @@
 
 // Configuración de Supabase
 const SUPABASE_URL = "https://rtbrnbyosrtxeayqmvwc.supabase.co";
-const SUPABASE_KEY = "sb_publishable_xvstsFi5T_bbgYb-9qiJ6A_y8OrALEA";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ0YnJuYnlvc3J0eGVheXFtdndjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY0NTUwODQsImV4cCI6MjEwMjAzMTA4NH0.W3mCe1yAehFd0bz_XNVJ83YR-dNz-8VZnnhgj-cQEss";
 
 // Evita la colisión de nombres usando la variable global del navegador
 if (!window.supabaseClient && window.supabase && SUPABASE_URL !== "https://TU-PROYECTO.supabase.co") {
