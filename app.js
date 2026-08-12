@@ -59,7 +59,7 @@ async function initApp() {
     setupModals();
     setupForms();
     setupFilters();
-    setupLocationSearch(); // Habilita la búsqueda gratuita de lugares
+    setupLocationSearch(); // Habilita la búsqueda gratuita de lugares con Photon
 
     // Relojes en directo y contador
     startClocksAndCountdown();
@@ -116,7 +116,7 @@ function handleLoginSuccess(user) {
     loadAllData();
 }
 
-// Handler de Formulario de Login
+// Handler de Formulario de Login y Logout
 document.addEventListener("DOMContentLoaded", () => {
     const loginForm = document.getElementById("login-form");
     if (loginForm) {
@@ -245,66 +245,92 @@ function updateClocksAndCountdown() {
 }
 
 /* ==========================================================================
-   BÚSQUEDA GRATUITA DE LUGARES (OPENSTREETMAP / NOMINATIM)
+   BÚSQUEDA GRATUITA Y AUTOCOMPLETADO DE LUGARES (PHOTON API)
    ========================================================================== */
 function setupLocationSearch() {
-    const planBtn = document.getElementById("search-plan-location");
-    if (planBtn) {
-        planBtn.addEventListener("click", () => {
-            const query = document.getElementById("plan-location")?.value;
-            searchLocationQuery(query, "plan-location-results", "plan-location");
-        });
-    }
-
-    const resBtn = document.getElementById("search-reservation-location");
-    if (resBtn) {
-        resBtn.addEventListener("click", () => {
-            const query = document.getElementById("reservation-location")?.value;
-            searchLocationQuery(query, "reservation-location-results", "reservation-location");
-        });
-    }
+    // Configurar autocompletado en tiempo real para planes y reservas
+    initPhotonAutocomplete("plan-location", "plan-location-results");
+    initPhotonAutocomplete("reservation-location", "reservation-location-results");
 }
 
-async function searchLocationQuery(query, resultsContainerId, inputId) {
-    const container = document.getElementById(resultsContainerId);
-    if (!container) return;
+function initPhotonAutocomplete(inputId, resultsContainerId) {
+    const input = document.getElementById(inputId);
+    if (!input) return;
 
-    if (!query || query.trim() === "") {
-        container.innerHTML = `<div style="padding: 8px; color: #888;">Escribe un lugar antes de buscar.</div>`;
-        return;
+    let container = document.getElementById(resultsContainerId);
+    
+    // Si no existe el contenedor de resultados, lo creamos dinámicamente
+    if (!container) {
+        container = document.createElement("div");
+        container.id = resultsContainerId;
+        container.className = "search-results-dropdown";
+        input.parentNode.style.position = "relative";
+        input.parentNode.appendChild(container);
     }
 
-    container.innerHTML = `<div style="padding: 8px; color: #888;">🔍 Buscando "${query}"...</div>`;
+    let timeout = null;
 
-    try {
-        // Petición gratuita a Nominatim con contexto de Nueva York si no especifica ciudad
-        const searchQuery = query.toLowerCase().includes("york") ? query : `${query}, New York`;
-        const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}&limit=5`;
-        
-        const res = await fetch(url);
-        const data = await res.json();
+    // Evento de escritura en tiempo real con debounce
+    input.addEventListener("input", () => {
+        clearTimeout(timeout);
+        const query = input.value.trim();
 
-        if (!data || data.length === 0) {
-            container.innerHTML = `<div style="padding: 8px; color: #888;">No se encontraron resultados.</div>`;
+        if (query.length < 2) {
+            container.innerHTML = "";
             return;
         }
 
-        container.innerHTML = data.map(item => {
-            const cleanName = item.display_name.replace(/'/g, "\\'");
-            return `
-                <div style="padding: 10px; cursor: pointer; border-bottom: 1px solid rgba(255,255,255,0.1); text-align: left;"
-                     onclick="selectSearchLocation('${cleanName}', '${inputId}', '${resultsContainerId}', ${item.lat}, ${item.lon})">
-                    📍 <strong>${item.display_name}</strong>
-                </div>
-            `;
-        }).join("");
-    } catch (err) {
-        console.error("Error en búsqueda de lugar:", err);
-        container.innerHTML = `<div style="padding: 8px; color: #ff5555;">Error al buscar lugar. Inténtalo de nuevo.</div>`;
-    }
+        timeout = setTimeout(async () => {
+            try {
+                // Petición optimizada a Photon priorizando coordenadas de Nueva York
+                const url = `https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&lat=40.7128&lon=-73.9352&limit=5`;
+                const res = await fetch(url);
+                const data = await res.json();
+
+                container.innerHTML = "";
+
+                if (!data.features || data.features.length === 0) {
+                    container.innerHTML = `<div style="padding: 10px; color: #888; font-size: 13px;">Sin resultados encontrados</div>`;
+                    return;
+                }
+
+                data.features.forEach(feature => {
+                    const props = feature.properties;
+                    const coords = feature.geometry.coordinates; // [lon, lat]
+
+                    const name = props.name || query;
+                    const city = props.city || props.state || "New York";
+                    const street = props.street ? `${props.street}, ` : "";
+                    const fullAddress = `${street}${city}`;
+
+                    const item = document.createElement("div");
+                    item.style.cssText = "padding: 10px; cursor: pointer; border-bottom: 1px solid rgba(255,255,255,0.1); text-align: left;";
+                    item.innerHTML = `
+                        <strong style="display: block; font-size: 14px;">📍 ${escapeHTML(name)}</strong>
+                        <span style="font-size: 11px; color: #aaa; display: block;">${escapeHTML(fullAddress)}</span>
+                    `;
+
+                    item.addEventListener("click", () => {
+                        selectSearchLocation(name, inputId, resultsContainerId, coords[1], coords[0]);
+                    });
+
+                    container.appendChild(item);
+                });
+            } catch (err) {
+                console.error("Error en la búsqueda Photon:", err);
+            }
+        }, 250);
+    });
+
+    // Cerrar el desplegable si el usuario hace clic fuera
+    document.addEventListener("click", (e) => {
+        if (e.target !== input && !container.contains(e.target)) {
+            container.innerHTML = "";
+        }
+    });
 }
 
-window.selectSearchLocation = function(name, inputId, resultsContainerId, lat, lon) {
+function selectSearchLocation(name, inputId, resultsContainerId, lat, lon) {
     const input = document.getElementById(inputId);
     if (input) {
         input.value = name;
@@ -313,7 +339,18 @@ window.selectSearchLocation = function(name, inputId, resultsContainerId, lat, l
     }
     const container = document.getElementById(resultsContainerId);
     if (container) container.innerHTML = "";
-};
+}
+
+// Función auxiliar para sanitizar cadenas de texto contra ataques XSS
+function escapeHTML(str) {
+    if (!str) return "";
+    return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
 
 /* ==========================================================================
    CARGA Y SINCRONIZACIÓN DE DATOS
@@ -554,9 +591,9 @@ function renderPlans() {
                     <span class="badge-category">${cat.icon} ${cat.name}</span>
                     <span class="badge-date ${!plan.date ? 'no-date' : ''}">${dateText}${timeText}</span>
                 </div>
-                <h3>${plan.title}</h3>
-                ${plan.description ? `<p>${plan.description}</p>` : ''}
-                ${plan.location ? `<small>📍 ${plan.location}</small>` : ''}
+                <h3>${escapeHTML(plan.title)}</h3>
+                ${plan.description ? `<p>${escapeHTML(plan.description)}</p>` : ''}
+                ${plan.location ? `<small>📍 ${escapeHTML(plan.location)}</small>` : ''}
                 <div class="card-actions">
                     <button class="icon-button" onclick="editPlan('${plan.id}')" title="Editar">✏️ Editar</button>
                     <button class="icon-button danger" onclick="deletePlan('${plan.id}')" title="Eliminar">🗑️ Borrar</button>
@@ -609,8 +646,8 @@ function renderNextActivity() {
         nextEl.innerHTML = `
             <span>📅</span>
             <div>
-                <strong>${next.title}</strong>
-                <p>${dateText} ${next.time ? 'a las ' + next.time : ''} — ${next.location || 'Nueva York'}</p>
+                <strong>${escapeHTML(next.title)}</strong>
+                <p>${dateText} ${next.time ? 'a las ' + next.time : ''} — ${next.location ? escapeHTML(next.location) : 'Nueva York'}</p>
             </div>
         `;
     } else {
@@ -670,9 +707,9 @@ function renderReservations() {
 
     listEl.innerHTML = state.reservations.map(r => `
         <div class="card">
-            <h3>📋 ${r.title}</h3>
-            ${r.description ? `<p>${r.description}</p>` : ''}
-            <small>${r.date || 'Sin fecha'} ${r.time || ''} ${r.location ? '— ' + r.location : ''}</small>
+            <h3>📋 ${escapeHTML(r.title)}</h3>
+            ${r.description ? `<p>${escapeHTML(r.description)}</p>` : ''}
+            <small>${r.date || 'Sin fecha'} ${r.time || ''} ${r.location ? '— ' + escapeHTML(r.location) : ''}</small>
         </div>
     `).join("");
 }
@@ -705,11 +742,11 @@ function renderExpenses() {
     listEl.innerHTML = state.expenses.map(e => `
         <div class="card">
             <div class="card-header">
-                <strong>${e.title}</strong>
+                <strong>${escapeHTML(e.title)}</strong>
                 <span class="badge-amount">${e.amount} ${e.currency}</span>
             </div>
-            <p>Pagó: <strong>${e.paid_by}</strong></p>
-            <small>Para: ${e.participants ? e.participants.join(", ") : "Todos"}</small>
+            <p>Pagó: <strong>${escapeHTML(e.paid_by)}</strong></p>
+            <small>Para: ${e.participants ? e.participants.map(p => escapeHTML(p)).join(", ") : "Todos"}</small>
         </div>
     `).join("");
 }
@@ -720,10 +757,10 @@ function renderFlights() {
 
     listEl.innerHTML = state.flights.map(f => `
         <div class="card">
-            <h3>✈️ Vuelo de ${f.type}</h3>
-            <strong>${f.route}</strong>
-            <p>📅 ${f.date}</p>
-            <small>${f.details}</small>
+            <h3>✈️ Vuelo de ${escapeHTML(f.type)}</h3>
+            <strong>${escapeHTML(f.route)}</strong>
+            <p>📅 ${escapeHTML(f.date)}</p>
+            <small>${escapeHTML(f.details)}</small>
         </div>
     `).join("");
 }
@@ -735,9 +772,9 @@ function renderHotel() {
     const h = state.hotel;
     container.innerHTML = `
         <div class="card hotel-card">
-            <h3>🏨 ${h.name}</h3>
-            <p>📍 ${h.address}</p>
-            <small>📅 Entrada: ${h.checkIn} | Salida: ${h.checkOut}</small>
+            <h3>🏨 ${escapeHTML(h.name)}</h3>
+            <p>📍 ${escapeHTML(h.address)}</p>
+            <small>📅 Entrada: ${escapeHTML(h.checkIn)} | Salida: ${escapeHTML(h.checkOut)}</small>
         </div>
     `;
 }
@@ -765,7 +802,7 @@ function renderMap() {
 
     const hotelMarker = L.marker([state.hotel.lat, state.hotel.lng])
         .addTo(state.map)
-        .bindPopup(`<b>🏨 ${state.hotel.name}</b><br>${state.hotel.address}`);
+        .bindPopup(`<b>🏨 ${escapeHTML(state.hotel.name)}</b><br>${escapeHTML(state.hotel.address)}`);
     state.markers.push(hotelMarker);
 
     // Renderizar pines en el mapa para planes que tengan latitud y longitud
@@ -773,7 +810,7 @@ function renderMap() {
         if (plan.lat && plan.lng) {
             const marker = L.marker([plan.lat, plan.lng])
                 .addTo(state.map)
-                .bindPopup(`<b>📍 ${plan.title}</b><br>${plan.location || ''}`);
+                .bindPopup(`<b>📍 ${escapeHTML(plan.title)}</b><br>${plan.location ? escapeHTML(plan.location) : ''}`);
             state.markers.push(marker);
         }
     });
