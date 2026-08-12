@@ -36,22 +36,21 @@ const state = {
     activePlanFilter: 'all'
 };
 
-// CATEGORÍAS DE PLANES
+// MAPEO UNIFICADO DE CATEGORÍAS
 const CATEGORIES = {
     food: { name: "Restaurantes", icon: "🍽️" },
+    restaurant: { name: "Restaurantes", icon: "🍽️" },
     sweet: { name: "Dulces", icon: "🍪" },
     activity: { name: "Spots", icon: "📍" },
+    spot: { name: "Spots", icon: "📍" },
     shopping: { name: "Tiendas", icon: "🛍️" },
     sightseeing: { name: "Turisteo", icon: "🗽" },
+    nightlife: { name: "Turisteo", icon: "🗽" },
     other: { name: "Otros", icon: "📌" }
 };
 
-// Función auxiliar para obtener el icono según la categoría
 function getCategoryIcon(category) {
-    if (CATEGORIES[category]) {
-        return CATEGORIES[category].icon;
-    }
-    return "📌";
+    return CATEGORIES[category] ? CATEGORIES[category].icon : "📌";
 }
 
 /* ==========================================================================
@@ -575,19 +574,31 @@ function setupForms() {
 }
 
 /* ==========================================================================
-   RENDERIZADO DE VISTAS DE PLANES (CON BOTONES A LA DERECHA)
+   RENDERIZADO DE VISTAS DE PLANES CON FILTRADO CORREGIDO
    ========================================================================== */
 function renderPlans() {
     const listEl = document.getElementById("plan-list");
     if (!listEl) return;
 
     let filtered = state.plans;
+    
+    // Filtrado estricto por categoría
     if (state.activePlanFilter !== 'all') {
-        filtered = filtered.filter(p => p.category === state.activePlanFilter);
+        filtered = filtered.filter(p => {
+            const cat = p.category ? p.category.toLowerCase() : 'other';
+            const currentFilter = state.activePlanFilter.toLowerCase();
+            
+            // Agrupar variaciones de nombres si existen
+            if (currentFilter === 'food') return cat === 'food' || cat === 'restaurant';
+            if (currentFilter === 'activity') return cat === 'activity' || cat === 'spot';
+            if (currentFilter === 'sightseeing') return cat === 'sightseeing' || cat === 'nightlife';
+            
+            return cat === currentFilter;
+        });
     }
 
     if (!filtered || filtered.length === 0) {
-        listEl.innerHTML = `<div class="empty-state">No hay planes registrados en esta categoría.</div>`;
+        listEl.innerHTML = `<div class="empty-state" style="padding: 20px; text-align: center; color: var(--muted);">No hay planes registrados en esta categoría.</div>`;
         return;
     }
 
@@ -598,7 +609,8 @@ function renderPlans() {
     });
 
     listEl.innerHTML = filtered.map(plan => {
-        const cat = CATEGORIES[plan.category] || CATEGORIES.other;
+        const catKey = plan.category ? plan.category.toLowerCase() : 'other';
+        const cat = CATEGORIES[catKey] || CATEGORIES.other;
         
         let dateText = "Por definir";
         if (plan.date) {
@@ -640,13 +652,13 @@ window.deletePlan = async function(id) {
 };
 
 function setupFilters() {
-    const filterBtns = document.querySelectorAll(".plan-filter");
+    const filterBtns = document.querySelectorAll("[data-plan-filter]");
     filterBtns.forEach(btn => {
         btn.addEventListener("click", () => {
             filterBtns.forEach(b => b.classList.remove("active"));
             btn.classList.add("active");
             state.activePlanFilter = btn.getAttribute("data-plan-filter");
-            renderPlans();
+            renderPlans(); // Vuelve a pintar la lista al instante
         });
     });
 }
@@ -798,7 +810,7 @@ function renderHotel() {
 }
 
 /* ==========================================================================
-   MAPA LEAFLET CON ICONOS PERSONALIZADOS POR CATEGORÍA
+   MAPA LEAFLET
    ========================================================================== */
 function initOrRefreshMap() {
     if (typeof L === 'undefined') return;
@@ -825,7 +837,6 @@ function renderMap() {
 
     const bounds = [];
 
-    // 1. Marcador del Hotel (Icono 🏨)
     if (state.hotel && state.hotel.lat && state.hotel.lng) {
         bounds.push([state.hotel.lat, state.hotel.lng]);
         
@@ -844,13 +855,12 @@ function renderMap() {
         state.markers.push(hotelMarker);
     }
 
-    // 2. Marcadores de Planes (🗽 para Turisteo, 📍 para Spots, etc.)
     state.plans.forEach(plan => {
         const lat = parseFloat(plan.latitude);
         const lng = parseFloat(plan.longitude);
 
         if (!isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0) {
-            const emoji = getCategoryIcon(plan.category);
+            const emoji = getCategoryIcon(plan.category ? plan.category.toLowerCase() : 'other');
 
             const customIcon = L.divIcon({
                 className: 'custom-map-marker',
@@ -873,7 +883,6 @@ function renderMap() {
         }
     });
 
-    // Enmarcar todos los puntos en la pantalla
     if (bounds.length > 0) {
         state.map.fitBounds(bounds, { padding: [40, 40] });
     }
