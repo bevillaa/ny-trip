@@ -100,6 +100,9 @@
                 <p>El tridente en Nueva York 😈😇🤪</p>
             </div>
 
+            <!-- CONTENEDOR PARA LOS RELOJES EN LA CABECERA -->
+            <div id="header-clocks"></div>
+
             <div id="connection-status" class="connection-status">
                 ● Conectando
             </div>
@@ -192,22 +195,6 @@
                     </div>
                     <div class="traveler-card">
                         <span>🤪</span> <strong>Belén</strong>
-                    </div>
-                </div>
-
-                <!-- HOTEL -->
-                <div class="section-heading">
-                    <h2>🏨 HOTEL</h2>
-                </div>
-
-                <div class="info-card">
-                    <span class="info-icon">🏨</span>
-                    <div>
-                        <strong>Courtyard by Marriott New York Manhattan Upper East Side</strong>
-                        <p>Nueva York, Estados Unidos</p>
-                        <a href="https://www.booking.com/hotel/us/manhattan-upper-east-side-courtyard-by-marriott.es.html" target="_blank" rel="noopener noreferrer">
-                            Ver reserva
-                        </a>
                     </div>
                 </div>
 
@@ -352,6 +339,12 @@
                     </button>
                 </div>
 
+                <!-- HOTEL (PINTADO DINÁMICAMENTE POR JS) -->
+                <div class="section-heading">
+                    <h2>🏨 HOTEL</h2>
+                </div>
+                <div id="hotel-container"></div>
+
                 <!-- CUENTA -->
                 <div class="section-heading">
                     <h2>🔐 Cuenta</h2>
@@ -383,6 +376,7 @@
                     <button class="close-modal" data-close="plan-modal" type="button">×</button>
                 </div>
                 <form id="plan-form">
+                    <input type="hidden" id="plan-id">
                     <label>Nombre <input id="plan-title" required placeholder="Ej. Central Park"></label>
                     <label>Categoría
                         <select id="plan-category">
