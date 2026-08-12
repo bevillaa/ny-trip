@@ -1,5 +1,5 @@
 // ==========================================
-// 🗽 NY TRIP — A
+// 🗽 NY TRIP
 // ==========================================
 
 const SUPABASE_URL = "https://rtbrnbyosrtxeayqmvwc.supabase.co";
@@ -27,7 +27,7 @@ const flights = [
 
 const HOTEL = {
     name: "Courtyard by Marriott New York Manhattan Upper East Side",
-    address: "Nueva York, Estados Unidos",
+    address: "410 E 92nd St, New York, NY 10128",
     latitude: 40.7744,
     longitude: -73.9500,
     bookingUrl: "https://www.booking.com/hotel/us/manhattan-upper-east-side-courtyard-by-marriott.es.html"
@@ -39,7 +39,7 @@ let expenses = [];
 let places = [];
 
 let map = null;
-let mapMarkers = [];
+let mapMarkers = {}; // Guardamos referencias por ID para centrar fácilmente
 let selectedPlanLocation = null;
 
 function escapeHTML(value) {
@@ -141,6 +141,7 @@ async function enterApplication(session) {
     
     updateTripDay();
     renderFlights();
+    renderHotel();
     initFreeAutocomplete();
     await loadWeather();
     await loadCurrency();
@@ -192,7 +193,7 @@ document.addEventListener("click", e => {
     if (btn) closeModal(btn.dataset.close);
 });
 
-// BUSCADOR GRATUITO PHOTON API (CON MULTILENGUAJE Y FOCO EN NUEVA YORK)
+// BUSCADOR GRATUITO PHOTON API
 function initFreeAutocomplete() {
     const input = document.getElementById("plan-location");
     if (!input) return;
@@ -263,9 +264,11 @@ function initFreeAutocomplete() {
     });
 }
 
-// BOTONES Y MODALES
+// MODALES Y BOTONES DE APERTURA
 document.getElementById("open-plan-form")?.addEventListener("click", () => {
     document.getElementById("plan-form")?.reset();
+    const idInput = document.getElementById("plan-id");
+    if(idInput) idInput.value = "";
     selectedPlanLocation = null;
     openModal("plan-modal");
 });
@@ -298,7 +301,6 @@ function updateTripDay() {
     }
 }
 
-// OBTENER TIEMPO DE NUEVA YORK (API OPTIMIZADA)
 async function loadWeather() {
     try {
         const res = await fetch("https://api.open-meteo.com/v1/forecast?latitude=40.7128&longitude=-74.0060&current_weather=true");
@@ -313,9 +315,7 @@ async function loadWeather() {
         if (tempEl) tempEl.textContent = `${Math.round(weather.temperature)}°C`;
         if (windEl) windEl.textContent = `Viento ${Math.round(weather.windspeed)} km/h`;
         if (descEl) descEl.textContent = "Nueva York";
-    } catch (e) {
-        console.error("Error al cargar el tiempo:", e);
-    }
+    } catch (e) {}
 }
 
 async function loadCurrency() {
@@ -355,6 +355,7 @@ function renderAll() {
     renderReservations();
     renderExpenses();
     renderFlights();
+    renderHotel();
     renderMap();
 }
 
@@ -371,7 +372,26 @@ function renderNextActivity() {
     element.innerHTML = `<span>📍</span><div><strong>${escapeHTML(next.title)}</strong><p>${formatDate(next.date)} ${next.time ? '· ' + next.time : ''}</p></div>`;
 }
 
-// PLANES
+// RENDEREAR HOTEL SOLO EN PESTAÑA "MÁS"
+function renderHotel() {
+    const container = document.getElementById("hotel-container");
+    if (!container) return;
+    container.innerHTML = `
+        <article class="activity-card">
+            <div class="card-main">
+                <span class="type-badge">🏨 Hotel</span>
+                <strong>${escapeHTML(HOTEL.name)}</strong>
+                <p>📍 ${escapeHTML(HOTEL.address)}</p>
+                <p><a href="${HOTEL.bookingUrl}" target="_blank" rel="noopener noreferrer">Ver Reserva en Booking ↗️</a></p>
+            </div>
+            <div class="card-actions">
+                <button type="button" class="secondary-button" onclick="focusOnMap(${HOTEL.latitude}, ${HOTEL.longitude}, 'hotel')">🗺️ Mapa</button>
+            </div>
+        </article>
+    `;
+}
+
+// PLANES & CATEGORÍAS
 const PLAN_CATEGORIES = {
     rooftop: { label: "RoofTops", icon: "🌇" },
     spot: { label: "Spots", icon: "📍" },
@@ -399,6 +419,8 @@ function renderPlans() {
         const category = PLAN_CATEGORIES[plan.category] || PLAN_CATEGORIES.other;
         const mapsUrl = plan.map_url || (plan.latitude ? `https://www.google.com/maps/search/?api=1&query=${plan.latitude},${plan.longitude}` : (plan.location_name ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(plan.location_name + " New York")}` : null));
 
+        const hasLocation = plan.latitude && plan.longitude;
+
         return `
             <article class="activity-card">
                 <div class="date-badge">
@@ -410,16 +432,58 @@ function renderPlans() {
                     <strong>${escapeHTML(plan.title)}</strong>
                     ${plan.time ? `<p>🕐 ${escapeHTML(plan.time)}</p>` : ""}
                     ${plan.location_name ? `
-                        <p>📍 ${mapsUrl ? `<a href="${escapeHTML(mapsUrl)}" target="_blank" rel="noopener noreferrer"><strong>${escapeHTML(plan.location_name)}</strong> 🗺️</a>` : escapeHTML(plan.location_name)}</p>
+                        <p>📍 ${mapsUrl ? `<a href="${escapeHTML(mapsUrl)}" target="_blank" rel="noopener noreferrer"><strong>${escapeHTML(plan.location_name)}</strong> 🔗</a>` : escapeHTML(plan.location_name)}</p>
                     ` : ""}
                     ${plan.description ? `<p>${escapeHTML(plan.description)}</p>` : ""}
                 </div>
-                <div class="card-actions">
-                    <button type="button" class="danger-button" onclick="deletePlan('${plan.id}')">🗑️</button>
+                <div class="card-actions" style="display:flex; gap: 5px; align-items:center;">
+                    ${hasLocation ? `<button type="button" class="secondary-button" title="Ver en mapa de la app" onclick="focusOnMap(${plan.latitude}, ${plan.longitude}, '${plan.id}')">🗺️ Mapa</button>` : ''}
+                    <button type="button" class="secondary-button" title="Editar plan" onclick="editPlan('${plan.id}')">✏️</button>
+                    <button type="button" class="danger-button" title="Eliminar plan" onclick="deletePlan('${plan.id}')">🗑️</button>
                 </div>
             </article>
         `;
     }).join("");
+}
+
+// VER CUALQUIER PUNTO EN EL MAPA DE LA APP
+function focusOnMap(lat, lon, key) {
+    showScreen("map");
+    setTimeout(() => {
+        if (map) {
+            map.setView([lat, lon], 15);
+            if (mapMarkers[key]) {
+                mapMarkers[key].openPopup();
+            }
+        }
+    }, 200);
+}
+
+// EDITAR PLAN
+function editPlan(id) {
+    const plan = plans.find(p => String(p.id) === String(id));
+    if (!plan) return;
+
+    document.getElementById("plan-id").value = plan.id;
+    document.getElementById("plan-title").value = plan.title || "";
+    document.getElementById("plan-description").value = plan.description || "";
+    document.getElementById("plan-date").value = plan.date || "";
+    document.getElementById("plan-time").value = plan.time || "";
+    document.getElementById("plan-category").value = plan.category || "other";
+    document.getElementById("plan-location").value = plan.location_name || "";
+
+    if (plan.latitude && plan.longitude) {
+        selectedPlanLocation = {
+            name: plan.location_name,
+            lat: plan.latitude,
+            lon: plan.longitude,
+            url: plan.map_url
+        };
+    } else {
+        selectedPlanLocation = null;
+    }
+
+    openModal("plan-modal");
 }
 
 function setupPlanFilters() {
@@ -440,9 +504,10 @@ async function deletePlan(id) {
     await loadData();
 }
 
-// GUARDAR PLAN
+// GUARDAR / ACTUALIZAR PLAN
 document.getElementById("plan-form")?.addEventListener("submit", async e => {
     e.preventDefault();
+    const id = document.getElementById("plan-id")?.value;
     const title = document.getElementById("plan-title").value.trim();
     const description = document.getElementById("plan-description").value.trim();
     const date = document.getElementById("plan-date").value;
@@ -453,7 +518,7 @@ document.getElementById("plan-form")?.addEventListener("submit", async e => {
     const locationName = selectedPlanLocation ? selectedPlanLocation.name : (locationInput || null);
     const mapsUrl = selectedPlanLocation ? selectedPlanLocation.url : (locationInput ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(locationInput + " New York")}` : null);
 
-    const data = {
+    const payload = {
         title,
         description: description || null,
         date: date || null,
@@ -466,11 +531,19 @@ document.getElementById("plan-form")?.addEventListener("submit", async e => {
         created_by: "NY TRIP"
     };
 
-    const { error } = await db.from("plans").insert([data]);
-    
+    let error = null;
+    if (id) {
+        // ACTUALIZAR PLAN EXISTENTE
+        const res = await db.from("plans").update(payload).eq("id", id);
+        error = res.error;
+    } else {
+        // CREAR NUEVO PLAN
+        const res = await db.from("plans").insert([payload]);
+        error = res.error;
+    }
+
     if (error) {
-        console.error("Error Supabase:", error);
-        alert(`Error al guardar: ${error.message} (${error.details || error.hint || 'Revisa Supabase'})`);
+        alert(`Error al guardar: ${error.message}`);
         return;
     }
 
@@ -546,8 +619,8 @@ function renderExpenses() {
 
     const balances = calculateBalances();
     summary.innerHTML = TRAVELERS.map(p => `
-        <div class="balance-card">
-            <span>${TRAVELER_EMOJIS[p]} ${p}</span>
+        <div class="balance-card" onclick="showTravelerSummary('${p}')" style="cursor:pointer;" title="Haz clic para ver resumen">
+            <span>${TRAVELER_EMOJIS[p]} ${p} ℹ️</span>
             <strong class="${balances[p] > 0 ? 'positive' : balances[p] < 0 ? 'negative' : ''}">
                 ${formatMoney(balances[p], "EUR")}
             </strong>
@@ -566,6 +639,20 @@ function renderExpenses() {
             </div>
         </article>
     `).join("");
+}
+
+// MOSTRAR RESUMEN INDIVIDUAL AL HACER CLIC EN CADA VIAJERA
+function showTravelerSummary(name) {
+    const paidByHer = expenses.filter(e => e.paid_by === name);
+    const totalPaid = paidByHer.reduce((sum, e) => sum + Number(e.amount), 0);
+    const participatedIn = expenses.filter(e => Array.isArray(e.participants) && e.participants.includes(name));
+    
+    let msg = `📊 RESUMEN DE ${name.toUpperCase()} ${TRAVELER_EMOJIS[name]}\n\n`;
+    msg += `• Total pagado del bolsillo: ${formatMoney(totalPaid, 'EUR')}\n`;
+    msg += `• Ha pagado ${paidByHer.length} gastos.\n`;
+    msg += `• Participa en ${participatedIn.length} gastos totales del grupo.`;
+
+    alert(msg);
 }
 
 async function deleteExpense(id) {
@@ -592,7 +679,7 @@ document.getElementById("expense-form")?.addEventListener("submit", async e => {
     showScreen("expenses");
 });
 
-// MAPA LEAFLET
+// MAPA CON ICONOS PERSONALIZADOS POR CATEGORÍA
 function initializeMap() {
     if (map) return;
     const mapEl = document.getElementById("map");
@@ -603,19 +690,36 @@ function initializeMap() {
 
 function renderMap() {
     if (!map) return;
-    mapMarkers.forEach(m => map.removeLayer(m));
-    mapMarkers = [];
+    
+    // Limpiamos los marcadores existentes
+    Object.values(mapMarkers).forEach(m => map.removeLayer(m));
+    mapMarkers = {};
 
-    const addM = (lat, lon, title, desc, url) => {
-        if (!lat || !lon) return;
-        const mapsUrl = url || `https://www.google.com/maps/search/?api=1&query=${lat},${lon}`;
-        const m = L.marker([Number(lat), Number(lon)]).addTo(map);
-        m.bindPopup(`<strong>${escapeHTML(title)}</strong><br>${escapeHTML(desc || '')}<br><a href="${mapsUrl}" target="_blank">Abrir Google Maps</a>`);
-        mapMarkers.push(m);
+    const createCustomIcon = (emoji) => {
+        return L.divIcon({
+            html: `<div style="font-size:24px; text-shadow: 0 2px 5px rgba(0,0,0,0.3); transform: translate(-50%, -50%);">${emoji}</div>`,
+            className: 'custom-map-icon',
+            iconSize: [30, 30],
+            iconAnchor: [15, 15]
+        });
     };
 
-    addM(HOTEL.latitude, HOTEL.longitude, "🏨 Hotel", HOTEL.name);
-    plans.forEach(p => addM(p.latitude, p.longitude, `📅 ${p.title}`, p.location_name, p.map_url));
+    const addMarker = (id, lat, lon, title, desc, url, emoji = "📍") => {
+        if (!lat || !lon) return;
+        const mapsUrl = url || `https://www.google.com/maps/search/?api=1&query=${lat},${lon}`;
+        const marker = L.marker([Number(lat), Number(lon)], { icon: createCustomIcon(emoji) }).addTo(map);
+        marker.bindPopup(`<strong>${escapeHTML(title)}</strong><br>${escapeHTML(desc || '')}<br><br><a href="${mapsUrl}" target="_blank">Abrir en Google Maps 🗺️</a>`);
+        mapMarkers[id] = marker;
+    };
+
+    // Añadir hotel
+    addMarker("hotel", HOTEL.latitude, HOTEL.longitude, "🏨 Hotel", HOTEL.name, HOTEL.bookingUrl, "🏨");
+
+    // Añadir planes
+    plans.forEach(p => {
+        const cat = PLAN_CATEGORIES[p.category] || PLAN_CATEGORIES.other;
+        addMarker(p.id, p.latitude, p.longitude, `${cat.icon} ${p.title}`, p.location_name, p.map_url, cat.icon);
+    });
 }
 
 function renderFlights() {
