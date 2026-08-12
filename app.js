@@ -270,6 +270,10 @@ function initPhotonAutocomplete(inputId, resultsContainerId) {
 
     input.addEventListener("input", () => {
         clearTimeout(timeout);
+        // Al escribir manualmente, reseteamos las coordenadas data-attributes
+        delete input.dataset.lat;
+        delete input.dataset.lng;
+
         const query = input.value.trim();
 
         if (query.length < 2) {
@@ -334,6 +338,22 @@ function selectSearchLocation(name, inputId, resultsContainerId, lat, lon) {
     }
     const container = document.getElementById(resultsContainerId);
     if (container) container.innerHTML = "";
+}
+
+// Función auxiliar para geocodificar al vuelo si el usuario solo escribió texto sin seleccionar sugerencia
+async function geocodeAddress(query) {
+    try {
+        const url = `https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&lat=40.7128&lon=-73.9352&limit=1`;
+        const res = await fetch(url);
+        const data = await res.json();
+        if (data && data.features && data.features.length > 0) {
+            const coords = data.features[0].geometry.coordinates;
+            return { lat: coords[1], lng: coords[0] };
+        }
+    } catch (e) {
+        console.warn("No se pudo geocodificar la dirección:", query, e);
+    }
+    return null;
 }
 
 function escapeHTML(str) {
@@ -487,22 +507,32 @@ function setupForms() {
         const id = document.getElementById("plan-id").value;
         const dateValue = document.getElementById("plan-date").value;
         const locInput = document.getElementById("plan-location");
+        const locationText = locInput ? locInput.value.trim() : "";
 
-        // Objeto con las columnas EXACTAS de tu esquema de Supabase
+        let lat = locInput && locInput.dataset.lat ? parseFloat(locInput.dataset.lat) : null;
+        let lng = locInput && locInput.dataset.lng ? parseFloat(locInput.dataset.lng) : null;
+
+        // Si hay texto escrito en ubicación pero no hay coordenadas guardadas (por no haber hecho clic en el autocompletado)
+        if (locationText && (!lat || !lng)) {
+            const coords = await geocodeAddress(locationText);
+            if (coords) {
+                lat = coords.lat;
+                lng = coords.lng;
+            }
+        }
+
+        // Objeto alineado con Supabase
         const planData = {
             title: document.getElementById("plan-title").value,
             category: document.getElementById("plan-category").value || null,
             description: document.getElementById("plan-description").value || null,
             date: dateValue ? dateValue : null,
             time: document.getElementById("plan-time").value || null,
-            location_name: locInput ? locInput.value : null,
+            location_name: locationText || null,
+            latitude: lat,
+            longitude: lng,
             created_by: state.currentUser ? (state.currentUser.email || state.currentUser.id) : null
         };
-
-        if (locInput && locInput.dataset.lat) {
-            planData.latitude = parseFloat(locInput.dataset.lat);
-            planData.longitude = parseFloat(locInput.dataset.lng);
-        }
 
         try {
             if (!supabaseApp) throw new Error("Cliente de Supabase no inicializado");
@@ -815,18 +845,32 @@ function renderMap() {
     state.markers.forEach(m => state.map.removeLayer(m));
     state.markers = [];
 
+    // Marcador del hotel
     const hotelMarker = L.marker([state.hotel.lat, state.hotel.lng])
         .addTo(state.map)
         .bindPopup(`<b>🏨 ${escapeHTML(state.hotel.name)}</b><br>${escapeHTML(state.hotel.address)}`);
     state.markers.push(hotelMarker);
 
-    // Renderizar pines leyendo latitude/longitude y location_name
+    // Dibuja los pines de los planes que tengan latitud y longitud válidos
+    const bounds = [ [state.hotel.lat, state.hotel.lng] ];
+
     state.plans.forEach(plan => {
         if (plan.latitude && plan.longitude) {
+            const cat = CATEGORIES[plan.category] || CATEGORIES.other;
             const marker = L.marker([plan.latitude, plan.longitude])
                 .addTo(state.map)
-                .bindPopup(`<b>📍 ${escapeHTML(plan.title)}</b><br>${plan.location_name ? escapeHTML(plan.location_name) : ''}`);
+                .bindPopup(`
+                    <b>${cat.icon} ${escapeHTML(plan.title)}</b><br>
+                    ${plan.location_name ? '📍 ' + escapeHTML(plan.location_name) : ''}<br>
+                    ${plan.description ? '<small>' + escapeHTML(plan.description) + '</small>' : ''}
+                `);
             state.markers.push(marker);
+            bounds.push([plan.latitude, plan.longitude]);
         }
     });
+
+    // Ajusta la vista del mapa para encuadrar todos los pines existentes
+    if (bounds.length > 1) {
+        state.map.fitBounds(bounds, { padding: [30, 30] });
+    }
 }
