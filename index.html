@@ -20,10 +20,6 @@
     <!-- STYLE -->
     <link rel="stylesheet" href="./style.css?v=20260811-003">
 
-    <!-- GOOGLE MAPS PLACES API -->
-    <!-- Sustituye YOUR_API_KEY por tu clave de Google Cloud Console si dispones de una -->
-    <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&libraries=places"></script>
-
     <!-- LIMPIEZA DE CACHÉ -->
     <script>
         (async function clearOldCache() {
@@ -150,21 +146,9 @@
                     <h2>El Equipo</h2>
                 </div>
                 <div class="travelers-grid">
-                    <div class="traveler-card"><span>😈</span><strong>Sara</strong></div>
-                    <div class="traveler-card"><span>😇</span><strong>Laura</strong></div>
+                    <div class="traveler-card"><span>😈</span><strong>Laura</strong></div>
+                    <div class="traveler-card"><span>😇</span><strong>Sara</strong></div>
                     <div class="traveler-card"><span>🤪</span><strong>Belén</strong></div>
-                </div>
-
-                <div class="section-heading">
-                    <h2>🏨 HOTEL</h2>
-                </div>
-                <div class="info-card">
-                    <span class="info-icon">🏨</span>
-                    <div>
-                        <strong>Courtyard by Marriott New York Manhattan Upper East Side</strong>
-                        <p>Nueva York, Estados Unidos</p>
-                        <a href="https://www.booking.com/hotel/us/manhattan-upper-east-side-courtyard-by-marriott.es.html" target="_blank" rel="noopener noreferrer">Ver reserva</a>
-                    </div>
                 </div>
             </section>
 
@@ -205,7 +189,6 @@
                             <p>Planes y reservas.</p>
                         </div>
                     </div>
-                    <button class="primary-button" id="center-map" type="button">📍 Mi posición</button>
                 </div>
                 <div id="map"></div>
                 <div id="map-list" class="map-list"></div>
@@ -224,10 +207,7 @@
                     <button class="primary-button" id="open-expense-form" type="button">+ Gasto</button>
                 </div>
                 <div id="expense-summary" class="expense-summary"></div>
-                <div class="section-heading compact">
-                    <h2>💸 ¿Quién debe a quién?</h2>
-                </div>
-                <div id="debts" class="debts"></div>
+                
                 <div class="section-heading compact">
                     <h2>🧾 Gastos</h2>
                 </div>
@@ -274,12 +254,20 @@
                         </div>
                     </div>
                 </div>
+                
                 <div class="more-grid">
                     <button class="more-card" data-screen="flights" type="button">✈️ <strong>Vuelos</strong><span>Horarios y trayectos</span></button>
                     <button class="more-card" data-screen="reservations" type="button">📋 <strong>Reservas</strong><span>Hotel, restaurantes y entradas</span></button>
                     <button class="more-card" data-screen="expenses" type="button">💰 <strong>Tricount</strong><span>Gastos y deudas</span></button>
                     <button class="more-card" data-screen="plan" type="button">📅 <strong>Plan</strong><span>Actividades</span></button>
                 </div>
+
+                <div class="section-heading">
+                    <h2>🏨 HOTEL</h2>
+                </div>
+                <!-- Contenedor del hotel renderizado por app.js -->
+                <div id="hotel-container"></div>
+
                 <div class="section-heading">
                     <h2>🔐 Cuenta</h2>
                 </div>
@@ -295,14 +283,17 @@
 
         </main>
 
-        <!-- MODAL PLAN -->
+        <!-- MODAL PLAN (CREAR/EDITAR) -->
         <div id="plan-modal" class="modal hidden">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h2>📅 Añadir plan</h2>
+                    <h2>📅 Gestionar Plan</h2>
                     <button class="close-modal" data-close="plan-modal" type="button">×</button>
                 </div>
                 <form id="plan-form">
+                    <!-- CAMPO OCULTO PARA EDICIÓN -->
+                    <input type="hidden" id="plan-id" value="">
+
                     <label>
                         Nombre
                         <input id="plan-title" required placeholder="Ej. Central Park">
@@ -337,10 +328,10 @@
                         </label>
                     </div>
 
-                    <!-- BÚSQUEDA GOOGLE MAPS -->
+                    <!-- BÚSQUEDA DE LUGAR -->
                     <label>
-                        Lugar en Google Maps
-                        <input id="plan-location" placeholder="Buscar lugar en Google Maps..." autocomplete="off">
+                        Lugar en Mapa
+                        <input id="plan-location" placeholder="Escribe y selecciona un lugar..." autocomplete="off">
                     </label>
 
                     <button class="primary-button full" type="submit">Guardar plan</button>
@@ -387,12 +378,6 @@
                     <label>
                         Lugar
                         <input id="reservation-location" placeholder="Ej. Times Square">
-                    </label>
-                    <button type="button" class="secondary-button" id="search-reservation-location">📍 Buscar lugar</button>
-                    <div id="reservation-location-results" class="search-results"></div>
-                    <label>
-                        Enlace de reserva
-                        <input id="reservation-url" type="url" placeholder="https://...">
                     </label>
                     <button class="primary-button full" type="submit">Guardar reserva</button>
                 </form>
@@ -444,10 +429,6 @@
                             <input id="expense-date" type="date">
                         </label>
                     </div>
-                    <label>
-                        Notas
-                        <textarea id="expense-notes" placeholder="Opcional"></textarea>
-                    </label>
                     <button class="primary-button full" type="submit">Guardar gasto</button>
                 </form>
             </div>
