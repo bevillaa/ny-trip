@@ -1,352 +1,179 @@
-// ==========================================
-// 🗽 NY TRIP
-// ==========================================
+/* ==========================================================================
+   🗽 NY TRIP
+   ========================================================================== */
 
-const SUPABASE_URL = "https://rtbrnbyosrtxeayqmvwc.supabase.co";
-const SUPABASE_KEY = "sb_publishable_xvstsFi5T_bbgYb-9qiJ6A_y8OrALEA";
+// Configuración de Supabase (Sustituye si es necesario)
+const SUPABASE_URL = "https://TU-PROYECTO.supabase.co";
+const SUPABASE_KEY = "TU-ANON-KEY";
+const supabase = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
 
-const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
-    auth: {
-        persistSession: true,
-        autoRefreshToken: true,
-        detectSessionInUrl: true
-    }
-});
-
-const TRAVELERS = ["Laura", "Sara", "Belén"];
-const TRAVELER_EMOJIS = { Laura: "😈", Sara: "😇", Belén: "🤪" };
-const TRIP_START = new Date("2026-12-26T00:00:00");
-const TRIP_END = new Date("2027-01-04T23:59:59");
-
-const flights = [
-    { flightNumber: "EI583", airline: "Aer Lingus", from: "AGP", to: "DUB", date: "2026-12-26", departure: "12:30", arrival: "14:45", duration: "3h 15m" },
-    { flightNumber: "EI107", airline: "Aer Lingus", from: "DUB", to: "JFK", date: "2026-12-26", departure: "16:45", arrival: "19:25", duration: "7h 40m" },
-    { flightNumber: "EI104", airline: "Aer Lingus", from: "JFK", to: "DUB", date: "2027-01-04", departure: "17:00", arrival: "04:20", duration: "6h 20m" },
-    { flightNumber: "EI582", airline: "Aer Lingus", from: "DUB", to: "AGP", date: "2027-01-05", departure: "07:10", arrival: "11:20", duration: "3h 10m" }
-];
-
-const HOTEL = {
-    name: "Courtyard by Marriott New York Manhattan Upper East Side",
-    address: "410 E 92nd St, New York, NY 10128",
-    latitude: 40.7744,
-    longitude: -73.9500,
-    bookingUrl: "https://www.booking.com/hotel/us/manhattan-upper-east-side-courtyard-by-marriott.es.html"
+// ESTADO GLOBAL
+const state = {
+    currentUser: null,
+    currentScreen: 'home',
+    plans: [],
+    reservations: [],
+    expenses: [],
+    hotel: {
+        name: "Hotel Pod Times Square",
+        address: "400 W 42nd St, New York, NY 10036",
+        lat: 40.7580,
+        lng: -73.9922,
+        checkIn: "2026-12-26",
+        checkOut: "2027-01-04"
+    },
+    flights: [
+        { type: "Ida", route: "MAD → JFK", date: "26 Dic 2026", details: "Salida: 10:00 - Llegada: 12:30 (Directo)" },
+        { type: "Vuelta", route: "JFK → MAD", date: "04 Ene 2027", details: "Salida: 19:30 - Llegada: 08:50 (+1 día)" }
+    ],
+    map: null,
+    markers: [],
+    activePlanFilter: 'all'
 };
 
-let plans = [];
-let reservations = [];
-let expenses = [];
-let places = [];
+// CATEGORÍAS DE PLANES (Iconos y etiquetas)
+const CATEGORIES = {
+    rooftop: { name: "RoofTops", icon: "🌇" },
+    spot: { name: "Spots", icon: "📍" },
+    restaurant: { name: "Restaurantes", icon: "🍽️" },
+    sweet: { name: "Dulces", icon: "🍰" },
+    sightseeing: { name: "Turisteo", icon: "🗽" },
+    shopping: { name: "Tiendas", icon: "🛍️" },
+    other: { name: "Otros", icon: "📌" }
+};
 
-let map = null;
-let mapMarkers = {}; // Guardamos referencias por ID para centrar fácilmente
-let selectedPlanLocation = null;
+/* ==========================================================================
+   INICIALIZACIÓN
+   ========================================================================== */
+document.addEventListener("DOMContentLoaded", () => {
+    initApp();
+});
 
-function escapeHTML(value) {
-    if (value === null || value === undefined) return "";
-    return String(value)
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&#039;");
-}
+async function initApp() {
+    setupNavigation();
+    setupModals();
+    setupForms();
+    setupFilters();
 
-function formatMoney(amount, currency) {
-    return new Intl.NumberFormat("es-ES", {
-        style: "currency",
-        currency: currency || "EUR"
-    }).format(Number(amount) || 0);
-}
-
-function formatDate(date) {
-    if (!date) return "";
-    return new Intl.DateTimeFormat("es-ES", {
-        day: "2-digit",
-        month: "short",
-        year: "numeric"
-    }).format(new Date(`${date}T00:00:00`));
-}
-
-function getDateTimestamp(date, time) {
-    if (!date) return Number.MAX_SAFE_INTEGER;
-    return new Date(`${date}T${time || "00:00"}:00`).getTime();
-}
-
-// LOGIN
-function showLogin() {
-    document.getElementById("login-screen")?.removeAttribute("hidden");
-    document.getElementById("app")?.setAttribute("hidden", "true");
-}
-
-function showApp() {
-    document.getElementById("login-screen")?.setAttribute("hidden", "true");
-    document.getElementById("app")?.removeAttribute("hidden");
-}
-
-function setLoginError(message) {
-    const el = document.getElementById("login-error");
-    if (!el) return;
-    el.textContent = message || "";
-    el.hidden = !message;
-}
-
-function setLoginLoading(loading) {
-    const btn = document.getElementById("login-button");
-    if (!btn) return;
-    btn.disabled = loading;
-    btn.textContent = loading ? "Entrando..." : "Entrar";
-}
-
-async function loginUser(email, password) {
-    setLoginError("");
-    setLoginLoading(true);
-    try {
-        const { data, error } = await db.auth.signInWithPassword({ email, password });
-        if (error) throw error;
-        await enterApplication(data.session);
-    } catch (error) {
-        setLoginError(error.message || "Error al iniciar sesión.");
-    } finally {
-        setLoginLoading(false);
-    }
-}
-
-async function logoutUser() {
-    try {
-        await db.auth.signOut();
-        plans = []; reservations = []; expenses = []; places = [];
-        showLogin();
-    } catch (error) {
-        alert("No se pudo cerrar sesión");
-    }
-}
-
-async function checkAuthentication() {
-    try {
-        const { data } = await db.auth.getSession();
-        if (data?.session) {
-            await enterApplication(data.session);
-            return true;
+    // Comprobar sesión de usuario
+    if (supabase) {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+            handleLoginSuccess(session.user);
+        } else {
+            showLoginScreen();
         }
-    } catch (e) {}
-    showLogin();
-    return false;
+    } else {
+        // Modo fallback local si no hay Supabase configurado
+        hideLoginScreen();
+        loadLocalData();
+    }
+
+    updateHeaderWidget();
+    updateWeather();
+    updateCurrency();
 }
 
-async function enterApplication(session) {
-    showApp();
-    const userElement = document.getElementById("current-user-email");
-    if (userElement) userElement.textContent = session.user?.email || "Usuario";
-    
-    updateTripDay();
-    renderFlights();
-    renderHotel();
-    initFreeAutocomplete();
-    await loadWeather();
-    await loadCurrency();
-    await loadData();
+/* ==========================================================================
+   AUTENTICACIÓN Y SESIÓN
+   ========================================================================== */
+function showLoginScreen() {
+    document.getElementById("login-screen").hidden = false;
+    document.getElementById("app").hidden = true;
 }
 
-function setupAuthentication() {
-    document.getElementById("login-form")?.addEventListener("submit", async e => {
+function hideLoginScreen() {
+    document.getElementById("login-screen").hidden = true;
+    document.getElementById("app").hidden = false;
+}
+
+function handleLoginSuccess(user) {
+    state.currentUser = user;
+    document.getElementById("current-user-email").textContent = user.email || "Viajero";
+    hideLoginScreen();
+    loadAllData();
+}
+
+// Formulario Login
+const loginForm = document.getElementById("login-form");
+if (loginForm) {
+    loginForm.addEventListener("submit", async (e) => {
         e.preventDefault();
-        const email = document.getElementById("login-email").value.trim();
+        const email = document.getElementById("login-email").value;
         const password = document.getElementById("login-password").value;
-        if (email && password) await loginUser(email, password);
-    });
-    document.getElementById("logout-button")?.addEventListener("click", logoutUser);
-}
+        const errorDiv = document.getElementById("login-error");
 
-function setConnectionStatus(text, state = "") {
-    const el = document.getElementById("connection-status");
-    if (el) {
-        el.textContent = text;
-        el.className = "connection-status " + state;
-    }
-}
-
-function showScreen(name) {
-    document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
-    document.getElementById(`screen-${name}`)?.classList.add("active");
-    document.querySelectorAll(".nav-button").forEach(b => b.classList.toggle("active", b.dataset.screen === name));
-
-    if (name === "map") {
-        setTimeout(() => {
-            initializeMap();
-            if (map) { map.invalidateSize(); renderMap(); }
-        }, 100);
-    }
-    window.scrollTo({ top: 0, behavior: "smooth" });
-}
-
-document.addEventListener("click", e => {
-    const btn = e.target.closest("[data-screen]");
-    if (btn) showScreen(btn.dataset.screen);
-});
-
-function openModal(id) { document.getElementById(id)?.classList.remove("hidden"); }
-function closeModal(id) { document.getElementById(id)?.classList.add("hidden"); }
-
-document.addEventListener("click", e => {
-    const btn = e.target.closest("[data-close]");
-    if (btn) closeModal(btn.dataset.close);
-});
-
-// BUSCADOR GRATUITO PHOTON API
-function initFreeAutocomplete() {
-    const input = document.getElementById("plan-location");
-    if (!input) return;
-
-    let dropdown = document.getElementById("nominatim-suggestions");
-    if (!dropdown) {
-        dropdown = document.createElement("div");
-        dropdown.id = "nominatim-suggestions";
-        dropdown.className = "search-results";
-        input.parentNode.style.position = "relative";
-        input.parentNode.appendChild(dropdown);
-    }
-
-    let timeout = null;
-
-    input.addEventListener("input", () => {
-        clearTimeout(timeout);
-        const query = input.value.trim();
-
-        if (query.length < 2) {
-            dropdown.innerHTML = "";
+        if (!supabase) {
+            hideLoginScreen();
             return;
         }
 
-        timeout = setTimeout(async () => {
-            try {
-                const res = await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&lat=40.7128&lon=-73.9352&limit=5`);
-                const data = await res.json();
-
-                dropdown.innerHTML = "";
-                if (!data.features || data.features.length === 0) return;
-
-                data.features.forEach(feature => {
-                    const props = feature.properties;
-                    const coords = feature.geometry.coordinates;
-
-                    const name = props.name || query;
-                    const city = props.city || props.state || "New York";
-                    const street = props.street ? `${props.street}, ` : "";
-
-                    const item = document.createElement("div");
-                    item.className = "suggestion-item";
-                    item.innerHTML = `<strong>📍 ${escapeHTML(name)}</strong><span style="font-size:11px; color:#6b7280; display:block;">${escapeHTML(street + city)}</span>`;
-                    
-                    item.addEventListener("click", () => {
-                        input.value = name;
-                        selectedPlanLocation = {
-                            name: name,
-                            address: `${name}, ${street}${city}`,
-                            lat: coords[1],
-                            lon: coords[0],
-                            url: `https://www.google.com/maps/search/?api=1&query=${coords[1]},${coords[0]}`
-                        };
-                        dropdown.innerHTML = "";
-                    });
-                    dropdown.appendChild(item);
-                });
-            } catch (err) {
-                console.error("Error en la búsqueda:", err);
-            }
-        }, 250);
-    });
-
-    document.addEventListener("click", (e) => {
-        if (e.target !== input && !dropdown.contains(e.target)) {
-            dropdown.innerHTML = "";
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) {
+            errorDiv.textContent = "Error al iniciar sesión: " + error.message;
+            errorDiv.hidden = false;
+        } else {
+            errorDiv.hidden = true;
+            handleLoginSuccess(data.user);
         }
     });
 }
 
-// MODALES Y BOTONES DE APERTURA
-document.getElementById("open-plan-form")?.addEventListener("click", () => {
-    document.getElementById("plan-form")?.reset();
-    const idInput = document.getElementById("plan-id");
-    if(idInput) idInput.value = "";
-    selectedPlanLocation = null;
-    openModal("plan-modal");
-});
+// Logout
+const logoutBtn = document.getElementById("logout-button");
+if (logoutBtn) {
+    logoutBtn.addEventListener("click", async () => {
+        if (supabase) await supabase.auth.signOut();
+        state.currentUser = null;
+        showLoginScreen();
+    });
+}
 
-document.getElementById("open-reservation-form")?.addEventListener("click", () => {
-    document.getElementById("reservation-form")?.reset();
-    openModal("reservation-modal");
-});
-
-document.getElementById("open-expense-form")?.addEventListener("click", () => {
-    document.getElementById("expense-form")?.reset();
-    document.querySelectorAll('input[name="participant"]').forEach(i => i.checked = true);
-    openModal("expense-modal");
-});
-
-function updateTripDay() {
-    const el = document.getElementById("trip-day");
-    if (!el) return;
-    const today = new Date();
-    today.setHours(0,0,0,0);
-
-    if (today < TRIP_START) {
-        const diff = Math.ceil((TRIP_START - today) / (1000 * 60 * 60 * 24));
-        el.textContent = `FALTAN ${diff} DÍAS`;
-    } else if (today <= TRIP_END) {
-        const day = Math.floor((today - TRIP_START) / (1000 * 60 * 60 * 24)) + 1;
-        el.textContent = `DÍA ${day}`;
-    } else {
-        el.textContent = "VIAJE FINALIZADO";
+/* ==========================================================================
+   CARGA Y SINCRONIZACIÓN DE DATOS
+   ========================================================================== */
+async function loadAllData() {
+    updateStatus("● Sincronizando...");
+    if (!supabase) {
+        loadLocalData();
+        return;
     }
-}
 
-async function loadWeather() {
     try {
-        const res = await fetch("https://api.open-meteo.com/v1/forecast?latitude=40.7128&longitude=-74.0060&current_weather=true");
-        if (!res.ok) return;
-        const data = await res.json();
-        const weather = data.current_weather;
-        
-        const tempEl = document.getElementById("weather-temperature");
-        const windEl = document.getElementById("weather-wind");
-        const descEl = document.getElementById("weather-description");
-
-        if (tempEl) tempEl.textContent = `${Math.round(weather.temperature)}°C`;
-        if (windEl) windEl.textContent = `Viento ${Math.round(weather.windspeed)} km/h`;
-        if (descEl) descEl.textContent = "Nueva York";
-    } catch (e) {}
-}
-
-async function loadCurrency() {
-    try {
-        const res = await fetch("https://api.frankfurter.app/latest?from=EUR&to=USD");
-        if (!res.ok) return;
-        const data = await res.json();
-        document.getElementById("currency-value").textContent = `${data.rates.USD.toFixed(4)} $`;
-    } catch (e) {}
-}
-
-async function loadData() {
-    setConnectionStatus("● Sincronizando...");
-    try {
-        const [p, r, e, pl] = await Promise.all([
-            db.from("plans").select("*").order("date", { ascending: true }),
-            db.from("reservations").select("*").order("date", { ascending: true }),
-            db.from("expenses").select("*").order("date", { ascending: false }),
-            db.from("places").select("*")
+        const [plansRes, resRes, expRes] = await Promise.all([
+            supabase.from("plans").select("*"),
+            supabase.from("reservations").select("*"),
+            supabase.from("expenses").select("*")
         ]);
 
-        plans = p.data || [];
-        reservations = r.data || [];
-        expenses = e.data || [];
-        places = pl.data || [];
+        if (plansRes.data) state.plans = plansRes.data;
+        if (resRes.data) state.reservations = resRes.data;
+        if (expRes.data) state.expenses = expRes.data;
 
-        setConnectionStatus("● Conectada", "ok");
+        updateStatus("● Conectado");
         renderAll();
-    } catch (error) {
-        setConnectionStatus("● Error de conexión", "error");
+    } catch (err) {
+        console.error("Error al cargar datos:", err);
+        updateStatus("⚠️ Modo Offline");
     }
+}
+
+function loadLocalData() {
+    state.plans = JSON.parse(localStorage.getItem("ny_plans") || "[]");
+    state.reservations = JSON.parse(localStorage.getItem("ny_reservations") || "[]");
+    state.expenses = JSON.parse(localStorage.getItem("ny_expenses") || "[]");
+    renderAll();
+}
+
+function saveLocalData() {
+    localStorage.setItem("ny_plans", JSON.stringify(state.plans));
+    localStorage.setItem("ny_reservations", JSON.stringify(state.reservations));
+    localStorage.setItem("ny_expenses", JSON.stringify(state.expenses));
+}
+
+function updateStatus(text) {
+    const el = document.getElementById("connection-status");
+    if (el) el.textContent = text;
 }
 
 function renderAll() {
@@ -356,389 +183,458 @@ function renderAll() {
     renderExpenses();
     renderFlights();
     renderHotel();
-    renderMap();
+    if (state.currentScreen === 'map') renderMap();
 }
 
-function renderNextActivity() {
-    const element = document.getElementById("next-activity");
-    if (!element) return;
-    const all = [...plans, ...reservations].filter(i => i.date).sort((a,b) => getDateTimestamp(a.date, a.time) - getDateTimestamp(b.date, b.time));
-    
-    if (!all.length) {
-        element.innerHTML = `<span>📅</span><div><strong>Aún no hay actividades</strong><p>Añade vuestro primer plan.</p></div>`;
-        return;
+/* ==========================================================================
+   NAVEGACIÓN DE PANTALLAS
+   ========================================================================== */
+function setupNavigation() {
+    const buttons = document.querySelectorAll("[data-screen]");
+    buttons.forEach(btn => {
+        btn.addEventListener("click", () => {
+            const screen = btn.getAttribute("data-screen");
+            switchScreen(screen);
+        });
+    });
+}
+
+function switchScreen(screenName) {
+    state.currentScreen = screenName;
+    document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+    document.querySelectorAll(".nav-button").forEach(b => b.classList.remove("active"));
+
+    const targetScreen = document.getElementById(`screen-${screenName}`);
+    if (targetScreen) targetScreen.classList.add("active");
+
+    const activeNav = document.querySelector(`.bottom-nav .nav-button[data-screen="${screenName}"]`);
+    if (activeNav) activeNav.classList.add("active");
+
+    if (screenName === "map") {
+        setTimeout(initOrRefreshMap, 100);
     }
-    const next = all[0];
-    element.innerHTML = `<span>📍</span><div><strong>${escapeHTML(next.title)}</strong><p>${formatDate(next.date)} ${next.time ? '· ' + next.time : ''}</p></div>`;
 }
 
-// RENDEREAR HOTEL SOLO EN PESTAÑA "MÁS"
-function renderHotel() {
-    const container = document.getElementById("hotel-container");
-    if (!container) return;
-    container.innerHTML = `
-        <article class="activity-card">
-            <div class="card-main">
-                <span class="type-badge">🏨 Hotel</span>
-                <strong>${escapeHTML(HOTEL.name)}</strong>
-                <p>📍 ${escapeHTML(HOTEL.address)}</p>
-                <p><a href="${HOTEL.bookingUrl}" target="_blank" rel="noopener noreferrer">Ver Reserva en Booking ↗️</a></p>
-            </div>
-            <div class="card-actions">
-                <button type="button" class="secondary-button" onclick="focusOnMap(${HOTEL.latitude}, ${HOTEL.longitude}, 'hotel')">🗺️ Mapa</button>
-            </div>
-        </article>
-    `;
+/* ==========================================================================
+   GESTIÓN DE MODALES
+   ========================================================================== */
+function setupModals() {
+    // Abrir Modales
+    document.getElementById("open-plan-form")?.addEventListener("click", () => openPlanModal());
+    document.getElementById("open-reservation-form")?.addEventListener("click", () => openModal("reservation-modal"));
+    document.getElementById("open-expense-form")?.addEventListener("click", () => openModal("expense-modal"));
+
+    // Cerrar Modales
+    document.querySelectorAll("[data-close]").forEach(btn => {
+        btn.addEventListener("click", () => {
+            const modalId = btn.getAttribute("data-close");
+            closeModal(modalId);
+        });
+    });
 }
 
-// PLANES & CATEGORÍAS
-const PLAN_CATEGORIES = {
-    rooftop: { label: "RoofTops", icon: "🌇" },
-    spot: { label: "Spots", icon: "📍" },
-    restaurant: { label: "Restaurantes", icon: "🍽️" },
-    sweet: { label: "Dulces", icon: "🍰" },
-    sightseeing: { label: "Turisteo", icon: "🗽" },
-    shopping: { label: "Tiendas", icon: "🛍️" },
-    other: { label: "Otros", icon: "📌" }
-};
-
-let activePlanFilter = "all";
-
-function renderPlans() {
-    const container = document.getElementById("plan-list");
-    if (!container) return;
-
-    let visiblePlans = activePlanFilter === "all" ? plans : plans.filter(p => (p.category || "other") === activePlanFilter);
-
-    if (!visiblePlans.length) {
-        container.innerHTML = `<div class="empty">No hay planes registrados.</div>`;
-        return;
-    }
-
-    container.innerHTML = visiblePlans.map(plan => {
-        const category = PLAN_CATEGORIES[plan.category] || PLAN_CATEGORIES.other;
-        const mapsUrl = plan.map_url || (plan.latitude ? `https://www.google.com/maps/search/?api=1&query=${plan.latitude},${plan.longitude}` : (plan.location_name ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(plan.location_name + " New York")}` : null));
-
-        const hasLocation = plan.latitude && plan.longitude;
-
-        return `
-            <article class="activity-card">
-                <div class="date-badge">
-                    <strong>${plan.date ? new Date(`${plan.date}T00:00:00`).getDate() : '-'}</strong>
-                    <span>${plan.date ? new Intl.DateTimeFormat("es-ES", { month: "short" }).format(new Date(`${plan.date}T00:00:00`)) : ''}</span>
-                </div>
-                <div class="card-main">
-                    <span class="type-badge">${category.icon} ${category.label}</span>
-                    <strong>${escapeHTML(plan.title)}</strong>
-                    ${plan.time ? `<p>🕐 ${escapeHTML(plan.time)}</p>` : ""}
-                    ${plan.location_name ? `
-                        <p>📍 ${mapsUrl ? `<a href="${escapeHTML(mapsUrl)}" target="_blank" rel="noopener noreferrer"><strong>${escapeHTML(plan.location_name)}</strong> 🔗</a>` : escapeHTML(plan.location_name)}</p>
-                    ` : ""}
-                    ${plan.description ? `<p>${escapeHTML(plan.description)}</p>` : ""}
-                </div>
-                <div class="card-actions" style="display:flex; gap: 5px; align-items:center;">
-                    ${hasLocation ? `<button type="button" class="secondary-button" title="Ver en mapa de la app" onclick="focusOnMap(${plan.latitude}, ${plan.longitude}, '${plan.id}')">🗺️ Mapa</button>` : ''}
-                    <button type="button" class="secondary-button" title="Editar plan" onclick="editPlan('${plan.id}')">✏️</button>
-                    <button type="button" class="danger-button" title="Eliminar plan" onclick="deletePlan('${plan.id}')">🗑️</button>
-                </div>
-            </article>
-        `;
-    }).join("");
+function openModal(id) {
+    document.getElementById(id)?.classList.remove("hidden");
 }
 
-// VER CUALQUIER PUNTO EN EL MAPA DE LA APP
-function focusOnMap(lat, lon, key) {
-    showScreen("map");
-    setTimeout(() => {
-        if (map) {
-            map.setView([lat, lon], 15);
-            if (mapMarkers[key]) {
-                mapMarkers[key].openPopup();
-            }
-        }
-    }, 200);
+function closeModal(id) {
+    document.getElementById(id)?.classList.add("hidden");
 }
 
-// EDITAR PLAN
-function editPlan(id) {
-    const plan = plans.find(p => String(p.id) === String(id));
-    if (!plan) return;
+function openPlanModal(planToEdit = null) {
+    const form = document.getElementById("plan-form");
+    form.reset();
 
-    document.getElementById("plan-id").value = plan.id;
-    document.getElementById("plan-title").value = plan.title || "";
-    document.getElementById("plan-description").value = plan.description || "";
-    document.getElementById("plan-date").value = plan.date || "";
-    document.getElementById("plan-time").value = plan.time || "";
-    document.getElementById("plan-category").value = plan.category || "other";
-    document.getElementById("plan-location").value = plan.location_name || "";
-
-    if (plan.latitude && plan.longitude) {
-        selectedPlanLocation = {
-            name: plan.location_name,
-            lat: plan.latitude,
-            lon: plan.longitude,
-            url: plan.map_url
-        };
+    if (planToEdit) {
+        document.getElementById("plan-id").value = planToEdit.id;
+        document.getElementById("plan-title").value = planToEdit.title || "";
+        document.getElementById("plan-category").value = planToEdit.category || "other";
+        document.getElementById("plan-description").value = planToEdit.description || "";
+        document.getElementById("plan-date").value = planToEdit.date || ""; // Si es null queda vacío
+        document.getElementById("plan-time").value = planToEdit.time || "";
+        document.getElementById("plan-location").value = planToEdit.location || "";
     } else {
-        selectedPlanLocation = null;
+        document.getElementById("plan-id").value = "";
     }
 
     openModal("plan-modal");
 }
 
-function setupPlanFilters() {
-    const filterContainer = document.getElementById("plan-filters");
-    if (!filterContainer) return;
-    filterContainer.querySelectorAll("[data-plan-filter]").forEach(btn => {
+/* ==========================================================================
+   GESTIÓN DE PLANES (FECHAS OPCIONALES Y EDICIÓN)
+   ========================================================================== */
+function setupForms() {
+    // FORMULARIO PLANES
+    document.getElementById("plan-form")?.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        
+        const id = document.getElementById("plan-id").value;
+        const dateValue = document.getElementById("plan-date").value; // Puede estar vacío
+
+        const planData = {
+            title: document.getElementById("plan-title").value,
+            category: document.getElementById("plan-category").value,
+            description: document.getElementById("plan-description").value,
+            date: dateValue ? dateValue : null, // FECHA OPCIONAL (null si está vacía)
+            time: document.getElementById("plan-time").value || null,
+            location: document.getElementById("plan-location").value || null
+        };
+
+        if (id) {
+            // EDITAR
+            if (supabase) {
+                await supabase.from("plans").update(planData).eq("id", id);
+            } else {
+                const idx = state.plans.findIndex(p => p.id == id);
+                if (idx !== -1) state.plans[idx] = { ...state.plans[idx], ...planData };
+            }
+        } else {
+            // CREAR NUEVO
+            if (supabase) {
+                const { data } = await supabase.from("plans").insert([planData]).select();
+                if (data) state.plans.push(data[0]);
+            } else {
+                planData.id = Date.now().toString();
+                state.plans.push(planData);
+            }
+        }
+
+        saveLocalData();
+        closeModal("plan-modal");
+        loadAllData();
+    });
+
+    // FORMULARIO RESERVAS
+    document.getElementById("reservation-form")?.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const resData = {
+            type: document.getElementById("reservation-type").value,
+            title: document.getElementById("reservation-title").value,
+            description: document.getElementById("reservation-description").value,
+            date: document.getElementById("reservation-date").value || null,
+            time: document.getElementById("reservation-time").value || null,
+            location: document.getElementById("reservation-location").value || null
+        };
+
+        if (supabase) {
+            await supabase.from("reservations").insert([resData]);
+        } else {
+            resData.id = Date.now().toString();
+            state.reservations.push(resData);
+        }
+
+        saveLocalData();
+        closeModal("reservation-modal");
+        loadAllData();
+    });
+
+    // FORMULARIO GASTOS
+    document.getElementById("expense-form")?.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const participants = Array.from(document.querySelectorAll("input[name='participant']:checked")).map(cb => cb.value);
+        
+        const expData = {
+            title: document.getElementById("expense-title").value,
+            amount: parseFloat(document.getElementById("expense-amount").value),
+            currency: document.getElementById("expense-currency").value,
+            paid_by: document.getElementById("expense-paid-by").value,
+            participants: participants,
+            date: document.getElementById("expense-date").value || new Date().toISOString().split("T")[0]
+        };
+
+        if (supabase) {
+            await supabase.from("expenses").insert([expData]);
+        } else {
+            expData.id = Date.now().toString();
+            state.expenses.push(expData);
+        }
+
+        saveLocalData();
+        closeModal("expense-modal");
+        loadAllData();
+    });
+}
+
+// RENDERIZAR LISTA DE PLANES
+function renderPlans() {
+    const listEl = document.getElementById("plan-list");
+    if (!listEl) return;
+
+    // Filtrado por categoría
+    let filtered = state.plans;
+    if (state.activePlanFilter !== 'all') {
+        filtered = filtered.filter(p => p.category === state.activePlanFilter);
+    }
+
+    if (filtered.length === 0) {
+        listEl.innerHTML = `<div class="empty-state">No hay planes en esta categoría.</div>`;
+        return;
+    }
+
+    // Ordenar: Los que tienen fecha van primero (de más cercana a más lejana); los SIN fecha van al final.
+    filtered.sort((a, b) => {
+        if (!a.date) return 1;
+        if (!b.date) return -1;
+        return new Date(a.date) - new Date(b.date);
+    });
+
+    listEl.innerHTML = filtered.map(plan => {
+        const cat = CATEGORIES[plan.category] || CATEGORIES.other;
+        
+        // Formatear fecha si existe
+        let dateText = "📌 Por definir";
+        if (plan.date) {
+            const dateObj = new Date(plan.date + "T00:00:00");
+            dateText = dateObj.toLocaleDateString("es-ES", { day: "numeric", month: "short" });
+        }
+
+        const timeText = plan.time ? ` ⏰ ${plan.time}` : "";
+
+        return `
+            <div class="card plan-card">
+                <div class="card-header">
+                    <span class="badge-category">${cat.icon} ${cat.name}</span>
+                    <span class="badge-date ${!plan.date ? 'no-date' : ''}">${dateText}${timeText}</span>
+                </div>
+                <h3>${plan.title}</h3>
+                ${plan.description ? `<p>${plan.description}</p>` : ''}
+                ${plan.location ? `<small>📍 ${plan.location}</small>` : ''}
+                <div class="card-actions">
+                    <button class="icon-button" onclick="editPlan('${plan.id}')" title="Editar">✏️ Editar</button>
+                    <button class="icon-button danger" onclick="deletePlan('${plan.id}')" title="Eliminar">🗑️ Borrar</button>
+                </div>
+            </div>
+        `;
+    }).join("");
+}
+
+// EDITAR PLAN
+window.editPlan = function(id) {
+    const plan = state.plans.find(p => p.id == id);
+    if (plan) openPlanModal(plan);
+};
+
+// ELIMINAR PLAN
+window.deletePlan = async function(id) {
+    if (!confirm("¿Seguro que deseas eliminar este plan?")) return;
+
+    if (supabase) {
+        await supabase.from("plans").delete().eq("id", id);
+    }
+    state.plans = state.plans.filter(p => p.id != id);
+    saveLocalData();
+    loadAllData();
+};
+
+// FILTROS DE PLANES
+function setupFilters() {
+    const filterBtns = document.querySelectorAll(".plan-filter");
+    filterBtns.forEach(btn => {
         btn.addEventListener("click", () => {
-            activePlanFilter = btn.dataset.planFilter || "all";
-            filterContainer.querySelectorAll("[data-plan-filter]").forEach(b => b.classList.toggle("active", b === btn));
+            filterBtns.forEach(b => b.classList.remove("active"));
+            btn.classList.add("active");
+            state.activePlanFilter = btn.getAttribute("data-plan-filter");
             renderPlans();
         });
     });
 }
 
-async function deletePlan(id) {
-    if (!confirm("¿Eliminar este plan?")) return;
-    await db.from("plans").delete().eq("id", id);
-    await loadData();
-}
+/* ==========================================================================
+   WIDGETS Y HOME (¿Qué hacemos ahora?)
+   ========================================================================== */
+function renderNextActivity() {
+    const nextEl = document.getElementById("next-activity");
+    if (!nextEl) return;
 
-// GUARDAR / ACTUALIZAR PLAN
-document.getElementById("plan-form")?.addEventListener("submit", async e => {
-    e.preventDefault();
-    const id = document.getElementById("plan-id")?.value;
-    const title = document.getElementById("plan-title").value.trim();
-    const description = document.getElementById("plan-description").value.trim();
-    const date = document.getElementById("plan-date").value;
-    const time = document.getElementById("plan-time").value;
-    const category = document.getElementById("plan-category").value;
-    const locationInput = document.getElementById("plan-location").value.trim();
+    // Solo considerar actividades con fecha igual o futura
+    const today = new Date().toISOString().split("T")[0];
+    const upcoming = state.plans
+        .filter(p => p.date && p.date >= today)
+        .sort((a, b) => new Date(a.date) - new Date(b.date));
 
-    const locationName = selectedPlanLocation ? selectedPlanLocation.name : (locationInput || null);
-    const mapsUrl = selectedPlanLocation ? selectedPlanLocation.url : (locationInput ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(locationInput + " New York")}` : null);
+    if (upcoming.length > 0) {
+        const next = upcoming[0];
+        const dateObj = new Date(next.date + "T00:00:00");
+        const dateText = dateObj.toLocaleDateString("es-ES", { weekday: 'short', day: 'numeric', month: 'short' });
 
-    const payload = {
-        title,
-        description: description || null,
-        date: date || null,
-        time: time || null,
-        category: category || "other",
-        location_name: locationName,
-        latitude: selectedPlanLocation ? selectedPlanLocation.lat : null,
-        longitude: selectedPlanLocation ? selectedPlanLocation.lon : null,
-        map_url: mapsUrl,
-        created_by: "NY TRIP"
-    };
-
-    let error = null;
-    if (id) {
-        // ACTUALIZAR PLAN EXISTENTE
-        const res = await db.from("plans").update(payload).eq("id", id);
-        error = res.error;
+        nextEl.innerHTML = `
+            <span>📅</span>
+            <div>
+                <strong>${next.title}</strong>
+                <p>${dateText} ${next.time ? 'a las ' + next.time : ''} — ${next.location || 'Nueva York'}</p>
+            </div>
+        `;
     } else {
-        // CREAR NUEVO PLAN
-        const res = await db.from("plans").insert([payload]);
-        error = res.error;
+        nextEl.innerHTML = `
+            <span>🗽</span>
+            <div>
+                <strong>¡Sin planes próximos!</strong>
+                <p>Añade actividades o explora la lista de ideas.</p>
+            </div>
+        `;
     }
+}
 
-    if (error) {
-        alert(`Error al guardar: ${error.message}`);
-        return;
+function updateHeaderWidget() {
+    const dayEl = document.getElementById("trip-day");
+    if (!dayEl) return;
+
+    const startDate = new Date("2026-12-26T00:00:00");
+    const today = new Date();
+    const diffTime = startDate - today;
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays > 0) {
+        dayEl.textContent = `Faltan ${diffDays} días`;
+    } else if (diffDays >= -9) {
+        dayEl.textContent = `¡Día ${Math.abs(diffDays) + 1} en NY! 🗽`;
+    } else {
+        dayEl.textContent = "Viaje Finalizado ❤️";
     }
+}
 
-    closeModal("plan-modal");
-    selectedPlanLocation = null;
-    await loadData();
-    showScreen("plan");
-});
+/* ==========================================================================
+   TIEMPO Y CAMBIO DE MONEDA
+   ========================================================================== */
+async function updateWeather() {
+    try {
+        const res = await fetch("https://api.open-meteo.com/v1/forecast?latitude=40.7143&longitude=-74.006&current_weather=true");
+        const data = await res.json();
+        if (data.current_weather) {
+            document.getElementById("weather-temperature").textContent = `${Math.round(data.current_weather.temperature)}°C`;
+            document.getElementById("weather-description").textContent = "Nueva York";
+            document.getElementById("weather-wind").textContent = `Viento: ${Math.round(data.current_weather.windspeed)} km/h`;
+            document.getElementById("weather-update").textContent = "Actualizado";
+        }
+    } catch (e) {
+        console.warn("Error obteniendo tiempo:", e);
+    }
+}
 
-// RESERVAS
+async function updateCurrency() {
+    try {
+        const res = await fetch("https://open.er-api.com/v6/latest/EUR");
+        const data = await res.json();
+        if (data && data.rates && data.rates.USD) {
+            const rate = data.rates.USD.toFixed(2);
+            document.getElementById("currency-value").textContent = `1 € = ${rate} $`;
+            document.getElementById("currency-update").textContent = "Tiempo real";
+        }
+    } catch (e) {
+        console.warn("Error obteniendo divisas:", e);
+    }
+}
+
+/* ==========================================================================
+   RESERVAS, GASTOS, VUELOS Y HOTEL
+   ========================================================================== */
 function renderReservations() {
-    const container = document.getElementById("reservation-list");
-    if (!container || !reservations.length) {
-        if(container) container.innerHTML = `<div class="empty">📋 Todavía no hay reservas.</div>`;
+    const listEl = document.getElementById("reservation-list");
+    if (!listEl) return;
+
+    if (state.reservations.length === 0) {
+        listEl.innerHTML = `<div class="empty-state">No hay reservas registradas.</div>`;
         return;
     }
-    container.innerHTML = reservations.map(r => `
-        <article class="reservation-card">
-            <div class="card-main">
-                <span class="type-badge">📋 Reserva</span>
-                <strong>${escapeHTML(r.title)}</strong>
-                ${r.date ? `<p>📅 ${formatDate(r.date)}</p>` : ""}
-                ${r.location_name ? `<p>📍 ${escapeHTML(r.location_name)}</p>` : ""}
-            </div>
-            <div class="card-actions">
-                <button class="danger-button" onclick="deleteReservation('${r.id}')">🗑️</button>
-            </div>
-        </article>
+
+    listEl.innerHTML = state.reservations.map(r => `
+        <div class="card">
+            <h3>📋 ${r.title}</h3>
+            ${r.description ? `<p>${r.description}</p>` : ''}
+            <small>${r.date || 'Sin fecha'} ${r.time || ''} ${r.location ? '— ' + r.location : ''}</small>
+        </div>
     `).join("");
-}
-
-async function deleteReservation(id) {
-    if (!confirm("¿Eliminar reserva?")) return;
-    await db.from("reservations").delete().eq("id", id);
-    await loadData();
-}
-
-document.getElementById("reservation-form")?.addEventListener("submit", async e => {
-    e.preventDefault();
-    const data = {
-        title: document.getElementById("reservation-title").value.trim(),
-        description: document.getElementById("reservation-description").value.trim(),
-        date: document.getElementById("reservation-date").value || null,
-        time: document.getElementById("reservation-time").value || null,
-        location_name: document.getElementById("reservation-location").value.trim() || null,
-        created_by: "NY TRIP"
-    };
-    await db.from("reservations").insert(data);
-    closeModal("reservation-modal");
-    await loadData();
-    showScreen("reservations");
-});
-
-// TRICOUNT / GASTOS
-function calculateBalances() {
-    const balances = { Laura: 0, Sara: 0, Belén: 0 };
-    expenses.forEach(e => {
-        const amt = Number(e.amount);
-        const payer = e.paid_by;
-        const parts = Array.isArray(e.participants) ? e.participants : [];
-        if (!parts.length) return;
-        const share = amt / parts.length;
-        if (balances[payer] !== undefined) balances[payer] += amt;
-        parts.forEach(p => { if (balances[p] !== undefined) balances[p] -= share; });
-    });
-    return balances;
 }
 
 function renderExpenses() {
-    const container = document.getElementById("expense-list");
-    const summary = document.getElementById("expense-summary");
-    if (!container || !summary) return;
+    const listEl = document.getElementById("expense-list");
+    const summaryEl = document.getElementById("expense-summary");
+    if (!listEl) return;
 
-    const balances = calculateBalances();
-    summary.innerHTML = TRAVELERS.map(p => `
-        <div class="balance-card" onclick="showTravelerSummary('${p}')" style="cursor:pointer;" title="Haz clic para ver resumen">
-            <span>${TRAVELER_EMOJIS[p]} ${p} ℹ️</span>
-            <strong class="${balances[p] > 0 ? 'positive' : balances[p] < 0 ? 'negative' : ''}">
-                ${formatMoney(balances[p], "EUR")}
-            </strong>
+    if (state.expenses.length === 0) {
+        listEl.innerHTML = `<div class="empty-state">No hay gastos registrados.</div>`;
+        if (summaryEl) summaryEl.innerHTML = "";
+        return;
+    }
+
+    // Cálculo básico de Tricount
+    let totalUSD = 0;
+    state.expenses.forEach(e => {
+        totalUSD += e.currency === 'EUR' ? e.amount * 1.08 : e.amount;
+    });
+
+    if (summaryEl) {
+        summaryEl.innerHTML = `
+            <div class="info-card">
+                <strong>Gasto Total Aprox:</strong> $${totalUSD.toFixed(2)} USD
+                <small>(${state.expenses.length} pagos realizados)</small>
+            </div>
+        `;
+    }
+
+    listEl.innerHTML = state.expenses.map(e => `
+        <div class="card">
+            <div class="card-header">
+                <strong>${e.title}</strong>
+                <span class="badge-amount">${e.amount} ${e.currency}</span>
+            </div>
+            <p>Pagó: <strong>${e.paid_by}</strong></p>
+            <small>Para: ${e.participants ? e.participants.join(", ") : "Todos"}</small>
         </div>
     `).join("");
-
-    container.innerHTML = expenses.map(e => `
-        <article class="expense-card">
-            <div class="card-main">
-                <strong>${escapeHTML(e.title)}</strong>
-                <p>Pagó ${escapeHTML(e.paid_by)}</p>
-            </div>
-            <div class="card-actions">
-                <strong>${formatMoney(e.amount, e.currency)}</strong>
-                <button class="danger-button" onclick="deleteExpense('${e.id}')">🗑️</button>
-            </div>
-        </article>
-    `).join("");
-}
-
-// MOSTRAR RESUMEN INDIVIDUAL AL HACER CLIC EN CADA VIAJERA
-function showTravelerSummary(name) {
-    const paidByHer = expenses.filter(e => e.paid_by === name);
-    const totalPaid = paidByHer.reduce((sum, e) => sum + Number(e.amount), 0);
-    const participatedIn = expenses.filter(e => Array.isArray(e.participants) && e.participants.includes(name));
-    
-    let msg = `📊 RESUMEN DE ${name.toUpperCase()} ${TRAVELER_EMOJIS[name]}\n\n`;
-    msg += `• Total pagado del bolsillo: ${formatMoney(totalPaid, 'EUR')}\n`;
-    msg += `• Ha pagado ${paidByHer.length} gastos.\n`;
-    msg += `• Participa en ${participatedIn.length} gastos totales del grupo.`;
-
-    alert(msg);
-}
-
-async function deleteExpense(id) {
-    if (!confirm("¿Eliminar gasto?")) return;
-    await db.from("expenses").delete().eq("id", id);
-    await loadData();
-}
-
-document.getElementById("expense-form")?.addEventListener("submit", async e => {
-    e.preventDefault();
-    const participants = Array.from(document.querySelectorAll('input[name="participant"]:checked')).map(i => i.value);
-    const data = {
-        title: document.getElementById("expense-title").value.trim(),
-        amount: Number(document.getElementById("expense-amount").value),
-        currency: document.getElementById("expense-currency").value,
-        paid_by: document.getElementById("expense-paid-by").value,
-        participants,
-        date: document.getElementById("expense-date").value || null,
-        created_by: "NY TRIP"
-    };
-    await db.from("expenses").insert(data);
-    closeModal("expense-modal");
-    await loadData();
-    showScreen("expenses");
-});
-
-// MAPA CON ICONOS PERSONALIZADOS POR CATEGORÍA
-function initializeMap() {
-    if (map) return;
-    const mapEl = document.getElementById("map");
-    if (!mapEl) return;
-    map = L.map(mapEl).setView([40.7128, -74.0060], 12);
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19 }).addTo(map);
-}
-
-function renderMap() {
-    if (!map) return;
-    
-    // Limpiamos los marcadores existentes
-    Object.values(mapMarkers).forEach(m => map.removeLayer(m));
-    mapMarkers = {};
-
-    const createCustomIcon = (emoji) => {
-        return L.divIcon({
-            html: `<div style="font-size:24px; text-shadow: 0 2px 5px rgba(0,0,0,0.3); transform: translate(-50%, -50%);">${emoji}</div>`,
-            className: 'custom-map-icon',
-            iconSize: [30, 30],
-            iconAnchor: [15, 15]
-        });
-    };
-
-    const addMarker = (id, lat, lon, title, desc, url, emoji = "📍") => {
-        if (!lat || !lon) return;
-        const mapsUrl = url || `https://www.google.com/maps/search/?api=1&query=${lat},${lon}`;
-        const marker = L.marker([Number(lat), Number(lon)], { icon: createCustomIcon(emoji) }).addTo(map);
-        marker.bindPopup(`<strong>${escapeHTML(title)}</strong><br>${escapeHTML(desc || '')}<br><br><a href="${mapsUrl}" target="_blank">Abrir en Google Maps 🗺️</a>`);
-        mapMarkers[id] = marker;
-    };
-
-    // Añadir hotel
-    addMarker("hotel", HOTEL.latitude, HOTEL.longitude, "🏨 Hotel", HOTEL.name, HOTEL.bookingUrl, "🏨");
-
-    // Añadir planes
-    plans.forEach(p => {
-        const cat = PLAN_CATEGORIES[p.category] || PLAN_CATEGORIES.other;
-        addMarker(p.id, p.latitude, p.longitude, `${cat.icon} ${p.title}`, p.location_name, p.map_url, cat.icon);
-    });
 }
 
 function renderFlights() {
-    const container = document.getElementById("flight-list");
-    if (!container) return;
-    container.innerHTML = flights.map(f => `
-        <article class="flight-card">
-            <div class="card-main">
-                <strong>${f.airline} (${f.flightNumber})</strong>
-                <p>${f.from} ➔ ${f.to} | ${f.date}</p>
-                <p>Salida: ${f.departure} - Llegada: ${f.arrival}</p>
-            </div>
-        </article>
+    const listEl = document.getElementById("flight-list");
+    if (!listEl) return;
+
+    listEl.innerHTML = state.flights.map(f => `
+        <div class="card">
+            <h3>✈️ Vuelo de ${f.type}</h3>
+            <strong>${f.route}</strong>
+            <p>📅 ${f.date}</p>
+            <small>${f.details}</small>
+        </div>
     `).join("");
 }
 
-// INICIALIZACIÓN
-document.addEventListener("DOMContentLoaded", () => {
-    setupAuthentication();
-    setupPlanFilters();
-    checkAuthentication();
-});
+function renderHotel() {
+    const container = document.getElementById("hotel-container");
+    if (!container) return;
+
+    const h = state.hotel;
+    container.innerHTML = `
+        <div class="card hotel-card">
+            <h3>🏨 ${h.name}</h3>
+            <p>📍 ${h.address}</p>
+            <small>📅 Entrada: ${h.checkIn} | Salida: ${h.checkOut}</small>
+        </div>
+    `;
+}
+
+/* ==========================================================================
+   MAPA LEAFLET
+   ========================================================================== */
+function initOrRefreshMap() {
+    if (!state.map) {
+        state.map = L.map("map").setView([40.7580, -73.9855], 13);
+        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+            attribution: "© OpenStreetMap"
+        }).addTo(state.map);
+    }
+    renderMap();
+}
+
+function renderMap() {
+    if (!state.map) return;
+
+    // Limpiar marcadores antiguos
+    state.markers.forEach(m => state.map.removeLayer(m));
+    state.markers = [];
+
+    // Añadir hotel al mapa
+    const hotelMarker = L.marker([state.hotel.lat, state.hotel.lng])
+        .addTo(state.map)
+        .bindPopup(`<b>🏨 ${state.hotel.name}</b><br>${state.hotel.address}`);
+    state.markers.push(hotelMarker);
+}
