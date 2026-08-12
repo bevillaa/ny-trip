@@ -1061,6 +1061,64 @@ fieldset {
 }
 
 /* ==========================================
+   BOTONES TARJETA Y PINES DEL MAPA
+=========================================== */
+
+/* Posicionamiento relativo para la tarjeta y margen derecho para no pisar el texto */
+.plan-card {
+    position: relative;
+    padding-right: 90px;
+}
+
+/* Contenedor de botones flotantes a la derecha */
+.card-actions {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    display: flex;
+    gap: 6px;
+}
+
+/* Estilo moderno y limpio para los botones de las tarjetas */
+.card-actions .icon-button {
+    background: #f1f5f9;
+    border: none;
+    border-radius: 10px;
+    padding: 6px 10px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #475569;
+}
+
+.card-actions .icon-button:hover {
+    background: #e2e8f0;
+    transform: translateY(-1px);
+}
+
+.card-actions .icon-button.danger:hover {
+    background: #fee2e2;
+    color: #ef4444;
+}
+
+/* Burbujas blancas con sombra para los iconos en el mapa */
+.custom-map-marker .marker-pin {
+    width: 36px;
+    height: 36px;
+    background: #ffffff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
+    border: 2px solid #ffffff;
+}
+
+/* ==========================================
     MÓVIL
 ========================================== */
 
