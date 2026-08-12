@@ -1,16 +1,17 @@
 /* ==========================================================================
-   🗽 NY TRIP -  
+   🗽 NY TRIP - APP.JS
    ========================================================================== */
 
 // Configuración de Supabase
 const SUPABASE_URL = "https://rtbrnbyosrtxeayqmvwc.supabase.co";
 const SUPABASE_KEY = "sb_publishable_xvstsFi5T_bbgYb-9qiJ6A_y8OrAL";
 
-// Inicialización segura sin colisión de nombres
+// Evita la colisión de nombres usando la variable global del navegador
 if (!window.supabaseClient && window.supabase && SUPABASE_URL !== "https://TU-PROYECTO.supabase.co") {
     window.supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 }
-var supabase = window.supabaseClient || null;
+// Asignamos el cliente a una variable local sin volver a re-declarar 'supabase'
+var supabaseApp = window.supabaseClient || null;
 
 // ESTADO GLOBAL
 const state = {
@@ -36,7 +37,7 @@ const state = {
     activePlanFilter: 'all'
 };
 
-// CATEGORÍAS DE PLANES (Iconos y etiquetas)
+// CATEGORÍAS DE PLANES
 const CATEGORIES = {
     rooftop: { name: "RoofTops", icon: "🌇" },
     spot: { name: "Spots", icon: "📍" },
@@ -60,13 +61,13 @@ async function initApp() {
     setupForms();
     setupFilters();
 
-    // Iniciar relojes en directo y contador de días
+    // Relojes en directo y contador
     startClocksAndCountdown();
 
-    // Comprobar autenticación estricta con Supabase
-    if (supabase) {
+    // Comprobar autenticación con Supabase
+    if (supabaseApp) {
         // Escuchar cambios de estado (Login / Logout)
-        supabase.auth.onAuthStateChange((event, session) => {
+        supabaseApp.auth.onAuthStateChange((event, session) => {
             if (session && session.user) {
                 handleLoginSuccess(session.user);
             } else if (event === 'SIGNED_OUT') {
@@ -74,8 +75,8 @@ async function initApp() {
             }
         });
 
-        // Verificar si ya hay una sesión activa persistente
-        const { data: { session } } = await supabase.auth.getSession();
+        // Verificar si ya hay una sesión activa
+        const { data: { session } } = await supabaseApp.auth.getSession();
         if (session && session.user) {
             handleLoginSuccess(session.user);
         } else {
@@ -117,7 +118,7 @@ function handleLoginSuccess(user) {
     loadAllData();
 }
 
-// Handler de Formulario de Login Estricto
+// Handler de Formulario de Login
 document.addEventListener("DOMContentLoaded", () => {
     const loginForm = document.getElementById("login-form");
     if (loginForm) {
@@ -131,13 +132,12 @@ document.addEventListener("DOMContentLoaded", () => {
             const email = emailEl ? emailEl.value.trim() : "";
             const password = passwordEl ? passwordEl.value.trim() : "";
 
-            // Ocultar mensaje de error previo
             if (errorDiv) {
                 errorDiv.hidden = true;
                 errorDiv.textContent = "";
             }
 
-            if (!supabase) {
+            if (!supabaseApp) {
                 if (errorDiv) {
                     errorDiv.textContent = "Error de conexión con la base de datos.";
                     errorDiv.hidden = false;
@@ -146,8 +146,7 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             try {
-                // Petición de Autenticación a Supabase
-                const { data, error } = await supabase.auth.signInWithPassword({ 
+                const { data, error } = await supabaseApp.auth.signInWithPassword({ 
                     email: email, 
                     password: password 
                 });
@@ -180,8 +179,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const logoutBtn = document.getElementById("logout-button");
     if (logoutBtn) {
         logoutBtn.addEventListener("click", async () => {
-            if (supabase) {
-                await supabase.auth.signOut();
+            if (supabaseApp) {
+                await supabaseApp.auth.signOut();
             }
             state.currentUser = null;
             showLoginScreen();
@@ -190,7 +189,7 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 /* ==========================================================================
-   RELOJES DE NUEVA YORK Y MÁLAGA + CONTADOR DE DÍAS
+   RELOJES Y CONTADOR DE DÍAS
    ========================================================================== */
 function startClocksAndCountdown() {
     updateClocksAndCountdown();
@@ -200,7 +199,6 @@ function startClocksAndCountdown() {
 function updateClocksAndCountdown() {
     const now = new Date();
 
-    // 1. Hora de Málaga (Europe/Madrid)
     const malagaTimeStr = now.toLocaleTimeString('es-ES', {
         timeZone: 'Europe/Madrid',
         hour: '2-digit',
@@ -209,7 +207,6 @@ function updateClocksAndCountdown() {
         hour12: false
     });
 
-    // 2. Hora de Nueva York (America/New_York)
     const nyTimeStr = now.toLocaleTimeString('es-ES', {
         timeZone: 'America/New_York',
         hour: '2-digit',
@@ -218,7 +215,6 @@ function updateClocksAndCountdown() {
         hour12: false
     });
 
-    // Renderizar horas en la cabecera
     const clocksEl = document.getElementById("header-clocks");
     if (clocksEl) {
         clocksEl.innerHTML = `
@@ -227,11 +223,10 @@ function updateClocksAndCountdown() {
         `;
     }
 
-    // 3. Contador de Días Exacto
     const dayEl = document.getElementById("trip-day");
     if (dayEl) {
-        const startDate = new Date(2026, 11, 26); // 26 Dic 2026
-        const endDate = new Date(2027, 0, 4);     // 04 Ene 2027
+        const startDate = new Date(2026, 11, 26);
+        const endDate = new Date(2027, 0, 4);
 
         const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
@@ -254,13 +249,13 @@ function updateClocksAndCountdown() {
    ========================================================================== */
 async function loadAllData() {
     updateStatus("● Sincronizando...");
-    if (!supabase) return;
+    if (!supabaseApp) return;
 
     try {
         const [plansRes, resRes, expRes] = await Promise.all([
-            supabase.from("plans").select("*"),
-            supabase.from("reservations").select("*"),
-            supabase.from("expenses").select("*")
+            supabaseApp.from("plans").select("*"),
+            supabaseApp.from("reservations").select("*"),
+            supabaseApp.from("expenses").select("*")
         ]);
 
         if (plansRes.data) state.plans = plansRes.data;
@@ -364,7 +359,7 @@ function openPlanModal(planToEdit = null) {
 }
 
 /* ==========================================================================
-   FORMULARIO DE DATOS (PLANES, RESERVAS, GASTOS)
+   FORMULARIO DE DATOS
    ========================================================================== */
 function setupForms() {
     document.getElementById("plan-form")?.addEventListener("submit", async (e) => {
@@ -383,10 +378,10 @@ function setupForms() {
         };
 
         if (id) {
-            if (supabase) await supabase.from("plans").update(planData).eq("id", id);
+            if (supabaseApp) await supabaseApp.from("plans").update(planData).eq("id", id);
         } else {
-            if (supabase) {
-                const { data } = await supabase.from("plans").insert([planData]).select();
+            if (supabaseApp) {
+                const { data } = await supabaseApp.from("plans").insert([planData]).select();
                 if (data) state.plans.push(data[0]);
             }
         }
@@ -406,7 +401,7 @@ function setupForms() {
             location: document.getElementById("reservation-location").value || null
         };
 
-        if (supabase) await supabase.from("reservations").insert([resData]);
+        if (supabaseApp) await supabaseApp.from("reservations").insert([resData]);
 
         closeModal("reservation-modal");
         loadAllData();
@@ -425,7 +420,7 @@ function setupForms() {
             date: document.getElementById("expense-date").value || new Date().toISOString().split("T")[0]
         };
 
-        if (supabase) await supabase.from("expenses").insert([expData]);
+        if (supabaseApp) await supabaseApp.from("expenses").insert([expData]);
 
         closeModal("expense-modal");
         loadAllData();
@@ -492,8 +487,8 @@ window.editPlan = function(id) {
 window.deletePlan = async function(id) {
     if (!confirm("¿Seguro que deseas eliminar este plan?")) return;
 
-    if (supabase) {
-        await supabase.from("plans").delete().eq("id", id);
+    if (supabaseApp) {
+        await supabaseApp.from("plans").delete().eq("id", id);
     }
     loadAllData();
 };
@@ -543,7 +538,7 @@ function renderNextActivity() {
 }
 
 /* ==========================================================================
-   TIEMPO Y CAMBIO DE MONEDA
+   TIEMPO Y DIVISAS
    ========================================================================== */
 async function updateWeather() {
     try {
