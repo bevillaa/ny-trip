@@ -726,16 +726,4 @@ function renderMap() {
         .bindPopup(`<b>🏨 ${state.hotel.name}</b><br>${state.hotel.address}`);
     state.markers.push(hotelMarker);
 }
-async function probandoConexion() {
-    console.log("--- PROBANDO SUPABASE ---");
-    if (!supabase) {
-        console.error("El cliente Supabase no está inicializado.");
-        return;
-    }
-    const { data, error } = await supabase.auth.getSession();
-    if (error) {
-        console.error("Error al conectar con Supabase:", error.message);
-    } else {
-        console.log("Conexión con Supabase correcta. Sesión actual:", data);
-    }
-}
+
