@@ -1,11 +1,15 @@
 /* ==========================================================================
-   🗽 NY TRIP
+   🗽 NY TRIP - 
    ========================================================================== */
 
-// Configuración de Supabase (Sustituye si es necesario)
+// Configuración de Supabase (Sustituye las comillas por tus datos reales si es necesario)
 const SUPABASE_URL = "https://TU-PROYECTO.supabase.co";
 const SUPABASE_KEY = "TU-ANON-KEY";
-const supabase = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
+
+// Inicialización segura del cliente Supabase
+const supabase = (window.supabase && SUPABASE_URL !== "https://TU-PROYECTO.supabase.co")
+    ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) 
+    : null;
 
 // ESTADO GLOBAL
 const state = {
@@ -43,7 +47,7 @@ const CATEGORIES = {
 };
 
 /* ==========================================================================
-   INICIALIZACIÓN
+   INICIALIZACIÓN Y CONTROL DE AUTENTICACIÓN
    ========================================================================== */
 document.addEventListener("DOMContentLoaded", () => {
     initApp();
@@ -58,16 +62,30 @@ async function initApp() {
     // Iniciar relojes en directo y contador de días
     startClocksAndCountdown();
 
-    // Comprobar sesión de usuario
+    // Verificar y escuchar estado de la sesión de Supabase
     if (supabase) {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session) {
+        // Escuchador dinámico de cambios en la autenticación
+        supabase.auth.onAuthStateChange((event, session) => {
+            if (session) {
+                handleLoginSuccess(session.user);
+            } else {
+                showLoginScreen();
+            }
+        });
+
+        // Verificación inicial de sesión persistente
+        const { data: { session }, error } = await supabase.auth.getSession();
+        if (error) {
+            console.error("Error comprobando sesión:", error.message);
+            showLoginScreen();
+        } else if (session) {
             handleLoginSuccess(session.user);
         } else {
             showLoginScreen();
         }
     } else {
-        // Modo fallback local si no hay Supabase configurado
+        // Modo fallback local si no hay cliente Supabase configurado
+        console.warn("Supabase no configurado. Iniciando en modo offline/local.");
         hideLoginScreen();
         loadLocalData();
     }
@@ -77,11 +95,105 @@ async function initApp() {
 }
 
 /* ==========================================================================
-   RELOJES DE NUEVA YORK Y MÁLAGA + CONTADOR CORREGIDO
+   AUTENTICACIÓN Y SESIÓN (LOGIN ROBUSTO)
+   ========================================================================== */
+function showLoginScreen() {
+    const loginScreen = document.getElementById("login-screen");
+    const appScreen = document.getElementById("app");
+    if (loginScreen) loginScreen.hidden = false;
+    if (appScreen) appScreen.hidden = true;
+}
+
+function hideLoginScreen() {
+    const loginScreen = document.getElementById("login-screen");
+    const appScreen = document.getElementById("app");
+    if (loginScreen) loginScreen.hidden = true;
+    if (appScreen) appScreen.hidden = false;
+}
+
+function handleLoginSuccess(user) {
+    state.currentUser = user;
+    const userEmailEl = document.getElementById("current-user-email");
+    if (userEmailEl) {
+        userEmailEl.textContent = user.email || "Viajero";
+    }
+    hideLoginScreen();
+    loadAllData();
+}
+
+// Formulario de Login corregido
+const loginForm = document.getElementById("login-form");
+if (loginForm) {
+    loginForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        
+        const emailEl = document.getElementById("login-email");
+        const passwordEl = document.getElementById("login-password");
+        const errorDiv = document.getElementById("login-error");
+
+        const email = emailEl ? emailEl.value.trim() : "";
+        const password = passwordEl ? passwordEl.value.trim() : "";
+
+        // Ocultar mensaje de error previo
+        if (errorDiv) {
+            errorDiv.hidden = true;
+            errorDiv.textContent = "";
+        }
+
+        if (!supabase) {
+            hideLoginScreen();
+            loadLocalData();
+            return;
+        }
+
+        try {
+            const { data, error } = await supabase.auth.signInWithPassword({ 
+                email: email, 
+                password: password 
+            });
+
+            if (error) {
+                if (errorDiv) {
+                    // Traducción/Formateo de errores comunes de Supabase
+                    let msg = error.message;
+                    if (msg.includes("Invalid login credentials")) {
+                        msg = "Usuario o contraseña incorrectos.";
+                    } else if (msg.includes("Email not confirmed")) {
+                        msg = "Debes confirmar tu correo electrónico antes de entrar.";
+                    }
+                    errorDiv.textContent = msg;
+                    errorDiv.hidden = false;
+                }
+            } else if (data.user) {
+                handleLoginSuccess(data.user);
+            }
+        } catch (err) {
+            console.error("Error inesperado en login:", err);
+            if (errorDiv) {
+                errorDiv.textContent = "Error inesperado. Comprueba tu conexión.";
+                errorDiv.hidden = false;
+            }
+        }
+    });
+}
+
+// Botón de Logout
+const logoutBtn = document.getElementById("logout-button");
+if (logoutBtn) {
+    logoutBtn.addEventListener("click", async () => {
+        if (supabase) {
+            await supabase.auth.signOut();
+        }
+        state.currentUser = null;
+        showLoginScreen();
+    });
+}
+
+/* ==========================================================================
+   RELOJES DE NUEVA YORK Y MÁLAGA + CONTADOR DE DÍAS
    ========================================================================== */
 function startClocksAndCountdown() {
     updateClocksAndCountdown();
-    // Actualizar cada segundo para mantener la hora exacta
     setInterval(updateClocksAndCountdown, 1000);
 }
 
@@ -115,17 +227,14 @@ function updateClocksAndCountdown() {
         `;
     }
 
-    // 3. Contador de Días Exacto (Normalizado a medianoche)
+    // 3. Contador de Días Exacto
     const dayEl = document.getElementById("trip-day");
     if (dayEl) {
-        // Fecha inicio viaje: 26 de Diciembre de 2026
-        const startDate = new Date(2026, 11, 26); // Mes 11 es Diciembre
-        const endDate = new Date(2027, 0, 4);    // Mes 0 es Enero
+        const startDate = new Date(2026, 11, 26); // 26 Dic 2026
+        const endDate = new Date(2027, 0, 4);     // 04 Ene 2027
 
-        // Normalizamos la fecha actual a medianoche local
         const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
-        // Diferencia en días enteros usando Math.round
         const diffMs = startDate - todayMidnight;
         const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
 
@@ -138,61 +247,6 @@ function updateClocksAndCountdown() {
             dayEl.textContent = "Viaje Finalizado ❤️";
         }
     }
-}
-
-/* ==========================================================================
-   AUTENTICACIÓN Y SESIÓN
-   ========================================================================== */
-function showLoginScreen() {
-    document.getElementById("login-screen").hidden = false;
-    document.getElementById("app").hidden = true;
-}
-
-function hideLoginScreen() {
-    document.getElementById("login-screen").hidden = true;
-    document.getElementById("app").hidden = false;
-}
-
-function handleLoginSuccess(user) {
-    state.currentUser = user;
-    document.getElementById("current-user-email").textContent = user.email || "Viajero";
-    hideLoginScreen();
-    loadAllData();
-}
-
-// Formulario Login
-const loginForm = document.getElementById("login-form");
-if (loginForm) {
-    loginForm.addEventListener("submit", async (e) => {
-        e.preventDefault();
-        const email = document.getElementById("login-email").value;
-        const password = document.getElementById("login-password").value;
-        const errorDiv = document.getElementById("login-error");
-
-        if (!supabase) {
-            hideLoginScreen();
-            return;
-        }
-
-        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) {
-            errorDiv.textContent = "Error al iniciar sesión: " + error.message;
-            errorDiv.hidden = false;
-        } else {
-            errorDiv.hidden = true;
-            handleLoginSuccess(data.user);
-        }
-    });
-}
-
-// Logout
-const logoutBtn = document.getElementById("logout-button");
-if (logoutBtn) {
-    logoutBtn.addEventListener("click", async () => {
-        if (supabase) await supabase.auth.signOut();
-        state.currentUser = null;
-        showLoginScreen();
-    });
 }
 
 /* ==========================================================================
@@ -221,6 +275,7 @@ async function loadAllData() {
     } catch (err) {
         console.error("Error al cargar datos:", err);
         updateStatus("⚠️ Modo Offline");
+        loadLocalData();
     }
 }
 
@@ -307,7 +362,7 @@ function closeModal(id) {
 
 function openPlanModal(planToEdit = null) {
     const form = document.getElementById("plan-form");
-    form.reset();
+    if (form) form.reset();
 
     if (planToEdit) {
         document.getElementById("plan-id").value = planToEdit.id;
@@ -318,14 +373,15 @@ function openPlanModal(planToEdit = null) {
         document.getElementById("plan-time").value = planToEdit.time || "";
         document.getElementById("plan-location").value = planToEdit.location || "";
     } else {
-        document.getElementById("plan-id").value = "";
+        const idInput = document.getElementById("plan-id");
+        if (idInput) idInput.value = "";
     }
 
     openModal("plan-modal");
 }
 
 /* ==========================================================================
-   GESTIÓN DE PLANES (FECHAS OPCIONALES Y EDICIÓN)
+   FORMULARIO DE DATOS (PLANES, RESERVAS, GASTOS)
    ========================================================================== */
 function setupForms() {
     document.getElementById("plan-form")?.addEventListener("submit", async (e) => {
@@ -414,6 +470,9 @@ function setupForms() {
     });
 }
 
+/* ==========================================================================
+   RENDERIZADO DE SECCIONES
+   ========================================================================== */
 function renderPlans() {
     const listEl = document.getElementById("plan-list");
     if (!listEl) return;
@@ -491,9 +550,6 @@ function setupFilters() {
     });
 }
 
-/* ==========================================================================
-   WIDGETS Y HOME
-   ========================================================================== */
 function renderNextActivity() {
     const nextEl = document.getElementById("next-activity");
     if (!nextEl) return;
@@ -648,6 +704,8 @@ function renderHotel() {
    MAPA LEAFLET
    ========================================================================== */
 function initOrRefreshMap() {
+    if (typeof L === 'undefined') return; // Asegurar que Leaflet esté cargado en el HTML
+    
     if (!state.map) {
         state.map = L.map("map").setView([40.7580, -73.9855], 13);
         L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
