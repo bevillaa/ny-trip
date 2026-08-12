@@ -24,7 +24,7 @@
     <!-- ==========================================
          STYLE (Actualiza v= para forzar recarga)
     =========================================== -->
-    <link rel="stylesheet" href="./style.css?v=20260812-002">
+    <link rel="stylesheet" href="./style.css?v=20260812-003">
 
     <!-- ==========================================
          LIMPIEZA DE CACHÉ / SERVICE WORKERS
@@ -48,7 +48,7 @@
                     await Promise.all(cacheNames.map(cacheName => caches.delete(cacheName)));
                 }
 
-                window.NY_TRIP_VERSION = "20260812-002";
+                window.NY_TRIP_VERSION = "20260812-003";
                 console.log("🧹 NY TRIP: caché limpiada.");
             } catch (error) {
                 console.warn("⚠️ No se pudo limpiar toda la caché:", error);
@@ -112,7 +112,8 @@
                  INICIO
             ======================================= -->
             <section id="screen-home" class="screen active">
-                
+
+                <!-- TARJETA HERO (Contador) -->
                 <div class="hero-card">
                     <div>
                         <span class="small-label">📅 VIAJE</span>
@@ -125,23 +126,19 @@
                 </div>
 
                 <!-- TIEMPO Y RELOJES -->
-                <div class="weather-card" style="display: flex; justify-content: space-between; align-items: center; gap: 12px;">
-                    <div>
-                        <div class="weather-main">
-                            <span id="weather-icon">🌤️</span>
-                            <div>
-                                <strong id="weather-temperature">--°C</strong>
-                                <span id="weather-description">Cargando tiempo...</span>
-                            </div>
-                        </div>
-                        <div class="weather-extra">
-                            <span id="weather-wind">Viento --</span>
-                            <span id="weather-update">Actualizando</span>
+                <div class="weather-card">
+                    <div class="weather-main">
+                        <span id="weather-icon">🌤️</span>
+                        <div>
+                            <strong id="weather-temperature">--°C</strong>
+                            <span id="weather-description">Cargando tiempo...</span>
                         </div>
                     </div>
-
-                    <!-- CONTENEDOR DE RELOJES AL LADO DEL TIEMPO -->
-                    <div id="header-clocks" style="display: flex; flex-direction: column; gap: 6px; text-align: right; font-size: 0.9rem; font-weight: 600;"></div>
+                    <div class="weather-extra">
+                        <span id="weather-wind">Viento --</span>
+                        <span id="weather-update">Actualizando</span>
+                    </div>
+                    <div id="header-clocks" style="margin-top: 10px; display: flex; justify-content: flex-end; gap: 12px; font-size: 0.85rem; font-weight: 600;"></div>
                 </div>
 
                 <!-- DIVISAS -->
@@ -149,9 +146,9 @@
                     <div>
                         <span class="small-label">💱 CAMBIO</span>
                         <strong id="currency-rate">EUR → USD</strong>
+                        <small id="currency-update" style="display:block; color:var(--muted); font-size:10px;">Actualizando</small>
                     </div>
-                    <span id="currency-value">Cargando...</span>
-                    <small id="currency-update">Actualizando</small>
+                    <span id="currency-value" style="font-size:18px; font-weight:700;">Cargando...</span>
                 </div>
 
                 <!-- PRÓXIMA ACTIVIDAD -->
@@ -185,7 +182,7 @@
 
                 <!-- EQUIPO -->
                 <div class="section-heading">
-                    <h2>El Equipo</h2>
+                    <h2>👥 El Equipo</h2>
                 </div>
 
                 <div class="travelers-grid">
@@ -357,7 +354,7 @@
                     <div>
                         <strong id="current-user-email">Usuario</strong>
                         <p>Sesión iniciada</p>
-                        <button id="logout-button" class="secondary-button" type="button">
+                        <button id="logout-button" class="secondary-button" type="button" style="margin-top: 8px;">
                             🚪 Cerrar sesión
                         </button>
                     </div>
@@ -369,7 +366,7 @@
         <!-- ==========================================
              MODALES
         =========================================== -->
-        
+
         <!-- MODAL PLAN -->
         <div id="plan-modal" class="modal hidden">
             <div class="modal-content">
@@ -501,7 +498,7 @@
     =========================================== -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="./app.js?v=20260812-002"></script>
+    <script src="./app.js?v=20260812-003"></script>
 
     <!-- FILTROS DE PLANES -->
     <script>
