@@ -6,7 +6,7 @@
 const SUPABASE_URL = "https://rtbrnbyosrtxeayqmvwc.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ0YnJuYnlvc3J0eGVheXFtdndjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY0NTUwODQsImV4cCI6MjA4NjA0NTA4NH0.W3mCe1yAehFd0bz_XNVJ83YR-dNz-8VZnnhgj-cQEss";
 
-// Inicialización limpia y directa del cliente
+// Inicialización de Supabase
 var supabaseApp = null;
 if (window.supabase) {
     supabaseApp = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -48,7 +48,7 @@ const CATEGORIES = {
 };
 
 /* ==========================================================================
-   INICIALIZACIÓN Y CONTROL DE AUTENTICACIÓN
+   INICIALIZACIÓN
    ========================================================================== */
 document.addEventListener("DOMContentLoaded", () => {
     initApp();
@@ -59,12 +59,10 @@ async function initApp() {
     setupModals();
     setupForms();
     setupFilters();
-    setupLocationSearch(); // Habilita la búsqueda gratuita de lugares con Photon
+    setupLocationSearch();
 
-    // Relojes en directo y contador
     startClocksAndCountdown();
 
-    // Comprobar autenticación con Supabase
     if (supabaseApp) {
         supabaseApp.auth.onAuthStateChange((event, session) => {
             if (session && session.user) {
@@ -90,7 +88,7 @@ async function initApp() {
 }
 
 /* ==========================================================================
-   AUTENTICACIÓN Y SESIÓN
+   AUTENTICACIÓN
    ========================================================================== */
 function showLoginScreen() {
     const loginScreen = document.getElementById("login-screen");
@@ -116,7 +114,6 @@ function handleLoginSuccess(user) {
     loadAllData();
 }
 
-// Handler de Formulario de Login y Logout
 document.addEventListener("DOMContentLoaded", () => {
     const loginForm = document.getElementById("login-form");
     if (loginForm) {
@@ -137,26 +134,19 @@ document.addEventListener("DOMContentLoaded", () => {
 
             if (!supabaseApp) {
                 if (errorDiv) {
-                    errorDiv.textContent = "Error de conexión con la base de datos.";
+                    errorDiv.textContent = "Error de conexión con Supabase.";
                     errorDiv.hidden = false;
                 }
                 return;
             }
 
             try {
-                const { data, error } = await supabaseApp.auth.signInWithPassword({ 
-                    email: email, 
-                    password: password 
-                });
+                const { data, error } = await supabaseApp.auth.signInWithPassword({ email, password });
 
                 if (error) {
                     if (errorDiv) {
                         let msg = error.message;
-                        if (msg.includes("Invalid login credentials")) {
-                            msg = "Usuario o contraseña incorrectos.";
-                        } else if (msg.includes("Email not confirmed")) {
-                            msg = "Debes confirmar tu correo electrónico antes de entrar.";
-                        }
+                        if (msg.includes("Invalid login credentials")) msg = "Usuario o contraseña incorrectos.";
                         errorDiv.textContent = msg;
                         errorDiv.hidden = false;
                     }
@@ -164,11 +154,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     handleLoginSuccess(data.user);
                 }
             } catch (err) {
-                console.error("Error inesperado en login:", err);
-                if (errorDiv) {
-                    errorDiv.textContent = "Error inesperado. Comprueba tu conexión.";
-                    errorDiv.hidden = false;
-                }
+                console.error("Error en login:", err);
             }
         });
     }
@@ -176,9 +162,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const logoutBtn = document.getElementById("logout-button");
     if (logoutBtn) {
         logoutBtn.addEventListener("click", async () => {
-            if (supabaseApp) {
-                await supabaseApp.auth.signOut();
-            }
+            if (supabaseApp) await supabaseApp.auth.signOut();
             state.currentUser = null;
             showLoginScreen();
         });
@@ -196,21 +180,8 @@ function startClocksAndCountdown() {
 function updateClocksAndCountdown() {
     const now = new Date();
 
-    const malagaTimeStr = now.toLocaleTimeString('es-ES', {
-        timeZone: 'Europe/Madrid',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        hour12: false
-    });
-
-    const nyTimeStr = now.toLocaleTimeString('es-ES', {
-        timeZone: 'America/New_York',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        hour12: false
-    });
+    const malagaTimeStr = now.toLocaleTimeString('es-ES', { timeZone: 'Europe/Madrid', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+    const nyTimeStr = now.toLocaleTimeString('es-ES', { timeZone: 'America/New_York', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
 
     const clocksEl = document.getElementById("header-clocks");
     if (clocksEl) {
@@ -228,16 +199,13 @@ function updateClocksAndCountdown() {
     if (dayEl) {
         const startDate = new Date(2026, 11, 26);
         const endDate = new Date(2027, 0, 4);
-
         const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        const diffMs = startDate - todayMidnight;
-        const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
+        const diffDays = Math.round((startDate - todayMidnight) / (1000 * 60 * 60 * 24));
 
         if (diffDays > 0) {
             dayEl.textContent = `Faltan ${diffDays} días`;
         } else if (diffDays <= 0 && todayMidnight <= endDate) {
-            const currentDay = Math.abs(diffDays) + 1;
-            dayEl.textContent = `¡Día ${currentDay} en NY! 🗽`;
+            dayEl.textContent = `¡Día ${Math.abs(diffDays) + 1} en NY! 🗽`;
         } else {
             dayEl.textContent = "Viaje Finalizado ❤️";
         }
@@ -245,7 +213,7 @@ function updateClocksAndCountdown() {
 }
 
 /* ==========================================================================
-   BÚSQUEDA GRATUITA Y AUTOCOMPLETADO DE LUGARES (PHOTON API)
+   BÚSQUEDA Y GEOCODIFICACIÓN (PHOTON)
    ========================================================================== */
 function setupLocationSearch() {
     initPhotonAutocomplete("plan-location", "plan-location-results");
@@ -257,7 +225,6 @@ function initPhotonAutocomplete(inputId, resultsContainerId) {
     if (!input) return;
 
     let container = document.getElementById(resultsContainerId);
-    
     if (!container) {
         container = document.createElement("div");
         container.id = resultsContainerId;
@@ -270,12 +237,10 @@ function initPhotonAutocomplete(inputId, resultsContainerId) {
 
     input.addEventListener("input", () => {
         clearTimeout(timeout);
-        // Al escribir manualmente, reseteamos las coordenadas data-attributes
         delete input.dataset.lat;
         delete input.dataset.lng;
 
         const query = input.value.trim();
-
         if (query.length < 2) {
             container.innerHTML = "";
             return;
@@ -297,11 +262,9 @@ function initPhotonAutocomplete(inputId, resultsContainerId) {
                 data.features.forEach(feature => {
                     const props = feature.properties;
                     const coords = feature.geometry.coordinates; // [lon, lat]
-
                     const name = props.name || query;
                     const city = props.city || props.state || "New York";
-                    const street = props.street ? `${props.street}, ` : "";
-                    const fullAddress = `${street}${city}`;
+                    const fullAddress = `${props.street ? props.street + ', ' : ''}${city}`;
 
                     const item = document.createElement("div");
                     item.style.cssText = "padding: 10px; cursor: pointer; border-bottom: 1px solid rgba(255,255,255,0.1); text-align: left;";
@@ -317,7 +280,7 @@ function initPhotonAutocomplete(inputId, resultsContainerId) {
                     container.appendChild(item);
                 });
             } catch (err) {
-                console.error("Error en la búsqueda Photon:", err);
+                console.error("Error en autocompletado Photon:", err);
             }
         }, 250);
     });
@@ -340,7 +303,6 @@ function selectSearchLocation(name, inputId, resultsContainerId, lat, lon) {
     if (container) container.innerHTML = "";
 }
 
-// Función auxiliar para geocodificar al vuelo si el usuario solo escribió texto sin seleccionar sugerencia
 async function geocodeAddress(query) {
     try {
         const url = `https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&lat=40.7128&lon=-73.9352&limit=1`;
@@ -351,9 +313,10 @@ async function geocodeAddress(query) {
             return { lat: coords[1], lng: coords[0] };
         }
     } catch (e) {
-        console.warn("No se pudo geocodificar la dirección:", query, e);
+        console.warn("No se pudo geocodificar:", query, e);
     }
-    return null;
+    // Fallback: Centro de NY si la geocodificación no responde
+    return { lat: 40.7128, lng: -74.0060 };
 }
 
 function escapeHTML(str) {
@@ -380,7 +343,9 @@ async function loadAllData() {
             supabaseApp.from("expenses").select("*")
         ]);
 
+        if (plansRes.error) console.error("Error cargando planes:", plansRes.error);
         if (plansRes.data) state.plans = plansRes.data;
+
         if (resRes.data) state.reservations = resRes.data;
         if (expRes.data) state.expenses = expRes.data;
 
@@ -432,7 +397,7 @@ function switchScreen(screenName) {
     if (activeNav) activeNav.classList.add("active");
 
     if (screenName === "map") {
-        setTimeout(initOrRefreshMap, 100);
+        setTimeout(initOrRefreshMap, 150);
     }
 }
 
@@ -445,10 +410,7 @@ function setupModals() {
     document.getElementById("open-expense-form")?.addEventListener("click", () => openModal("expense-modal"));
 
     document.querySelectorAll("[data-close]").forEach(btn => {
-        btn.addEventListener("click", () => {
-            const modalId = btn.getAttribute("data-close");
-            closeModal(modalId);
-        });
+        btn.addEventListener("click", () => closeModal(btn.getAttribute("data-close")));
     });
 }
 
@@ -495,67 +457,79 @@ function openPlanModal(planToEdit = null) {
 }
 
 /* ==========================================================================
-   FORMULARIO DE DATOS
+   FORMULARIO DE PLANES (CON ERROR HANDLING EXPLICITO)
    ========================================================================== */
 function setupForms() {
     document.getElementById("plan-form")?.addEventListener("submit", async (e) => {
         e.preventDefault();
         
         const submitBtn = e.target.querySelector('button[type="submit"]');
-        if (submitBtn) submitBtn.disabled = true;
-
-        const id = document.getElementById("plan-id").value;
-        const dateValue = document.getElementById("plan-date").value;
-        const locInput = document.getElementById("plan-location");
-        const locationText = locInput ? locInput.value.trim() : "";
-
-        let lat = locInput && locInput.dataset.lat ? parseFloat(locInput.dataset.lat) : null;
-        let lng = locInput && locInput.dataset.lng ? parseFloat(locInput.dataset.lng) : null;
-
-        // Si hay texto escrito en ubicación pero no hay coordenadas guardadas (por no haber hecho clic en el autocompletado)
-        if (locationText && (!lat || !lng)) {
-            const coords = await geocodeAddress(locationText);
-            if (coords) {
-                lat = coords.lat;
-                lng = coords.lng;
-            }
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.textContent = "Guardando...";
         }
 
-        // Objeto alineado con Supabase
-        const planData = {
-            title: document.getElementById("plan-title").value,
-            category: document.getElementById("plan-category").value || null,
-            description: document.getElementById("plan-description").value || null,
-            date: dateValue ? dateValue : null,
-            time: document.getElementById("plan-time").value || null,
-            location_name: locationText || null,
-            latitude: lat,
-            longitude: lng,
-            created_by: state.currentUser ? (state.currentUser.email || state.currentUser.id) : null
-        };
-
         try {
-            if (!supabaseApp) throw new Error("Cliente de Supabase no inicializado");
+            const id = document.getElementById("plan-id").value;
+            const titleVal = document.getElementById("plan-title").value.trim();
+            const dateVal = document.getElementById("plan-date").value;
+            const locInput = document.getElementById("plan-location");
+            const locationText = locInput ? locInput.value.trim() : "";
 
-            if (id) {
-                const { error } = await supabaseApp.from("plans").update(planData).eq("id", id);
-                if (error) throw error;
-            } else {
-                const { data, error } = await supabaseApp.from("plans").insert([planData]).select();
-                if (error) throw error;
-                if (data && data.length > 0) {
-                    state.plans.push(data[0]);
+            if (!titleVal) {
+                alert("Por favor introduce un título para el plan.");
+                return;
+            }
+
+            let lat = locInput && locInput.dataset.lat ? parseFloat(locInput.dataset.lat) : null;
+            let lng = locInput && locInput.dataset.lng ? parseFloat(locInput.dataset.lng) : null;
+
+            // Si hay dirección pero no coordenadas, geocodificar inmediatamente
+            if (locationText && (!lat || !lng)) {
+                const coords = await geocodeAddress(locationText);
+                if (coords) {
+                    lat = coords.lat;
+                    lng = coords.lng;
                 }
+            }
+
+            // Mapeo directo a las columnas exactas de Supabase
+            const planData = {
+                title: titleVal,
+                category: document.getElementById("plan-category").value || "other",
+                description: document.getElementById("plan-description").value || null,
+                date: dateVal ? dateVal : null,
+                time: document.getElementById("plan-time").value || null,
+                location_name: locationText || null,
+                latitude: lat,
+                longitude: lng,
+                created_by: state.currentUser ? (state.currentUser.email || state.currentUser.id) : "invitado"
+            };
+
+            if (!supabaseApp) throw new Error("No hay conexión con Supabase.");
+
+            let result;
+            if (id) {
+                result = await supabaseApp.from("plans").update(planData).eq("id", id);
+            } else {
+                result = await supabaseApp.from("plans").insert([planData]);
+            }
+
+            if (result.error) {
+                throw new Error(result.error.message);
             }
 
             closeModal("plan-modal");
             await loadAllData();
 
         } catch (err) {
-            console.error("Error al guardar el plan en Supabase:", err);
-            alert("Error al guardar el plan: " + (err.message || "Comprueba la consola"));
+            console.error("Error al guardar plan:", err);
+            alert("⚠️ No se pudo guardar el plan: " + err.message);
         } finally {
-            if (submitBtn) submitBtn.disabled = false;
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.textContent = "Guardar Plan";
+            }
         }
     });
 
@@ -597,7 +571,7 @@ function setupForms() {
 }
 
 /* ==========================================================================
-   RENDERIZADO DE SECCIONES
+   RENDERIZADO DE VISTAS
    ========================================================================== */
 function renderPlans() {
     const listEl = document.getElementById("plan-list");
@@ -608,8 +582,8 @@ function renderPlans() {
         filtered = filtered.filter(p => p.category === state.activePlanFilter);
     }
 
-    if (filtered.length === 0) {
-        listEl.innerHTML = `<div class="empty-state">No hay planes en esta categoría.</div>`;
+    if (!filtered || filtered.length === 0) {
+        listEl.innerHTML = `<div class="empty-state">No hay planes registrados en esta categoría.</div>`;
         return;
     }
 
@@ -640,8 +614,8 @@ function renderPlans() {
                 ${plan.description ? `<p>${escapeHTML(plan.description)}</p>` : ''}
                 ${plan.location_name ? `<small>📍 ${escapeHTML(plan.location_name)}</small>` : ''}
                 <div class="card-actions">
-                    <button class="icon-button" onclick="editPlan('${plan.id}')" title="Editar">✏️ Editar</button>
-                    <button class="icon-button danger" onclick="deletePlan('${plan.id}')" title="Eliminar">🗑️ Borrar</button>
+                    <button class="icon-button" onclick="editPlan('${plan.id}')">✏️ Editar</button>
+                    <button class="icon-button danger" onclick="deletePlan('${plan.id}')">🗑️ Borrar</button>
                 </div>
             </div>
         `;
@@ -654,7 +628,7 @@ window.editPlan = function(id) {
 };
 
 window.deletePlan = async function(id) {
-    if (!confirm("¿Seguro que deseas eliminar este plan?")) return;
+    if (!confirm("¿Seguro que deseas borrar este plan?")) return;
 
     if (supabaseApp) {
         await supabaseApp.from("plans").delete().eq("id", id);
@@ -700,7 +674,7 @@ function renderNextActivity() {
             <span>🗽</span>
             <div>
                 <strong>¡Sin planes próximos!</strong>
-                <p>Añade actividades o explora la lista de ideas.</p>
+                <p>Añade actividades para sincronizarlas con el mapa.</p>
             </div>
         `;
     }
@@ -720,7 +694,7 @@ async function updateWeather() {
             document.getElementById("weather-update").textContent = "Actualizado";
         }
     } catch (e) {
-        console.warn("Error obteniendo tiempo:", e);
+        console.warn("Error tiempo:", e);
     }
 }
 
@@ -729,18 +703,14 @@ async function updateCurrency() {
         const res = await fetch("https://open.er-api.com/v6/latest/EUR");
         const data = await res.json();
         if (data && data.rates && data.rates.USD) {
-            const rate = data.rates.USD.toFixed(2);
-            document.getElementById("currency-value").textContent = `1 € = ${rate} $`;
+            document.getElementById("currency-value").textContent = `1 € = ${data.rates.USD.toFixed(2)} $`;
             document.getElementById("currency-update").textContent = "Tiempo real";
         }
     } catch (e) {
-        console.warn("Error obteniendo divisas:", e);
+        console.warn("Error divisas:", e);
     }
 }
 
-/* ==========================================================================
-   RESERVAS, GASTOS, VUELOS Y HOTEL
-   ========================================================================== */
 function renderReservations() {
     const listEl = document.getElementById("reservation-list");
     if (!listEl) return;
@@ -829,35 +799,46 @@ function renderHotel() {
    ========================================================================== */
 function initOrRefreshMap() {
     if (typeof L === 'undefined') return;
-    
+
+    const mapContainer = document.getElementById("map");
+    if (!mapContainer) return;
+
     if (!state.map) {
         state.map = L.map("map").setView([40.7580, -73.9855], 13);
         L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
             attribution: "© OpenStreetMap"
         }).addTo(state.map);
     }
+    
+    // Forzar el renderizado de dimensiones si estaba oculto
+    state.map.invalidateSize();
     renderMap();
 }
 
 function renderMap() {
     if (!state.map) return;
 
+    // Limpiar marcadores viejos
     state.markers.forEach(m => state.map.removeLayer(m));
     state.markers = [];
 
-    // Marcador del hotel
+    const bounds = [[state.hotel.lat, state.hotel.lng]];
+
+    // Marcador Hotel
     const hotelMarker = L.marker([state.hotel.lat, state.hotel.lng])
         .addTo(state.map)
         .bindPopup(`<b>🏨 ${escapeHTML(state.hotel.name)}</b><br>${escapeHTML(state.hotel.address)}`);
     state.markers.push(hotelMarker);
 
-    // Dibuja los pines de los planes que tengan latitud y longitud válidos
-    const bounds = [ [state.hotel.lat, state.hotel.lng] ];
-
+    // Marcadores para Planes
     state.plans.forEach(plan => {
-        if (plan.latitude && plan.longitude) {
+        // Aseguramos que latitude y longitude existen y son números válidos
+        const lat = parseFloat(plan.latitude);
+        const lng = parseFloat(plan.longitude);
+
+        if (!isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0) {
             const cat = CATEGORIES[plan.category] || CATEGORIES.other;
-            const marker = L.marker([plan.latitude, plan.longitude])
+            const marker = L.marker([lat, lng])
                 .addTo(state.map)
                 .bindPopup(`
                     <b>${cat.icon} ${escapeHTML(plan.title)}</b><br>
@@ -865,12 +846,11 @@ function renderMap() {
                     ${plan.description ? '<small>' + escapeHTML(plan.description) + '</small>' : ''}
                 `);
             state.markers.push(marker);
-            bounds.push([plan.latitude, plan.longitude]);
+            bounds.push([lat, lng]);
         }
     });
 
-    // Ajusta la vista del mapa para encuadrar todos los pines existentes
     if (bounds.length > 1) {
-        state.map.fitBounds(bounds, { padding: [30, 30] });
+        state.map.fitBounds(bounds, { padding: [40, 40] });
     }
 }
