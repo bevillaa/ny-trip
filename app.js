@@ -59,13 +59,13 @@ async function initApp() {
     setupModals();
     setupForms();
     setupFilters();
+    setupLocationSearch(); // Habilita la búsqueda gratuita de lugares
 
-    // Relojes dentro de la tarjeta del tiempo y contador de días
+    // Relojes en directo y contador
     startClocksAndCountdown();
 
     // Comprobar autenticación con Supabase
     if (supabaseApp) {
-        // Escuchar cambios de estado (Login / Logout)
         supabaseApp.auth.onAuthStateChange((event, session) => {
             if (session && session.user) {
                 handleLoginSuccess(session.user);
@@ -74,7 +74,6 @@ async function initApp() {
             }
         });
 
-        // Verificar si ya hay una sesión activa
         const { data: { session } } = await supabaseApp.auth.getSession();
         if (session && session.user) {
             handleLoginSuccess(session.user);
@@ -91,7 +90,7 @@ async function initApp() {
 }
 
 /* ==========================================================================
-   AUTENTICACIÓN Y SESIÓN (LOGIN CONTRA BBDD)
+   AUTENTICACIÓN Y SESIÓN
    ========================================================================== */
 function showLoginScreen() {
     const loginScreen = document.getElementById("login-screen");
@@ -174,7 +173,6 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // Botón de Logout
     const logoutBtn = document.getElementById("logout-button");
     if (logoutBtn) {
         logoutBtn.addEventListener("click", async () => {
@@ -188,7 +186,7 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 /* ==========================================================================
-   RELOJES (EN TARJETA DE TIEMPO) Y CONTADOR DE DÍAS
+   RELOJES Y CONTADOR
    ========================================================================== */
 function startClocksAndCountdown() {
     updateClocksAndCountdown();
@@ -214,7 +212,6 @@ function updateClocksAndCountdown() {
         hour12: false
     });
 
-    // Renderiza ambos relojes dentro de la tarjeta del tiempo (A la derecha)
     const clocksEl = document.getElementById("header-clocks");
     if (clocksEl) {
         clocksEl.innerHTML = `
@@ -227,14 +224,12 @@ function updateClocksAndCountdown() {
         `;
     }
 
-    // Contador de días hacia el viaje
     const dayEl = document.getElementById("trip-day");
     if (dayEl) {
         const startDate = new Date(2026, 11, 26);
         const endDate = new Date(2027, 0, 4);
 
         const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-
         const diffMs = startDate - todayMidnight;
         const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
 
@@ -248,6 +243,77 @@ function updateClocksAndCountdown() {
         }
     }
 }
+
+/* ==========================================================================
+   BÚSQUEDA GRATUITA DE LUGARES (OPENSTREETMAP / NOMINATIM)
+   ========================================================================== */
+function setupLocationSearch() {
+    const planBtn = document.getElementById("search-plan-location");
+    if (planBtn) {
+        planBtn.addEventListener("click", () => {
+            const query = document.getElementById("plan-location")?.value;
+            searchLocationQuery(query, "plan-location-results", "plan-location");
+        });
+    }
+
+    const resBtn = document.getElementById("search-reservation-location");
+    if (resBtn) {
+        resBtn.addEventListener("click", () => {
+            const query = document.getElementById("reservation-location")?.value;
+            searchLocationQuery(query, "reservation-location-results", "reservation-location");
+        });
+    }
+}
+
+async function searchLocationQuery(query, resultsContainerId, inputId) {
+    const container = document.getElementById(resultsContainerId);
+    if (!container) return;
+
+    if (!query || query.trim() === "") {
+        container.innerHTML = `<div style="padding: 8px; color: #888;">Escribe un lugar antes de buscar.</div>`;
+        return;
+    }
+
+    container.innerHTML = `<div style="padding: 8px; color: #888;">🔍 Buscando "${query}"...</div>`;
+
+    try {
+        // Petición gratuita a Nominatim con contexto de Nueva York si no especifica ciudad
+        const searchQuery = query.toLowerCase().includes("york") ? query : `${query}, New York`;
+        const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}&limit=5`;
+        
+        const res = await fetch(url);
+        const data = await res.json();
+
+        if (!data || data.length === 0) {
+            container.innerHTML = `<div style="padding: 8px; color: #888;">No se encontraron resultados.</div>`;
+            return;
+        }
+
+        container.innerHTML = data.map(item => {
+            const cleanName = item.display_name.replace(/'/g, "\\'");
+            return `
+                <div style="padding: 10px; cursor: pointer; border-bottom: 1px solid rgba(255,255,255,0.1); text-align: left;"
+                     onclick="selectSearchLocation('${cleanName}', '${inputId}', '${resultsContainerId}', ${item.lat}, ${item.lon})">
+                    📍 <strong>${item.display_name}</strong>
+                </div>
+            `;
+        }).join("");
+    } catch (err) {
+        console.error("Error en búsqueda de lugar:", err);
+        container.innerHTML = `<div style="padding: 8px; color: #ff5555;">Error al buscar lugar. Inténtalo de nuevo.</div>`;
+    }
+}
+
+window.selectSearchLocation = function(name, inputId, resultsContainerId, lat, lon) {
+    const input = document.getElementById(inputId);
+    if (input) {
+        input.value = name;
+        input.dataset.lat = lat;
+        input.dataset.lng = lon;
+    }
+    const container = document.getElementById(resultsContainerId);
+    if (container) container.innerHTML = "";
+};
 
 /* ==========================================================================
    CARGA Y SINCRONIZACIÓN DE DATOS
@@ -347,6 +413,9 @@ function openPlanModal(planToEdit = null) {
     const form = document.getElementById("plan-form");
     if (form) form.reset();
 
+    const resultsContainer = document.getElementById("plan-location-results");
+    if (resultsContainer) resultsContainer.innerHTML = "";
+
     if (planToEdit) {
         document.getElementById("plan-id").value = planToEdit.id;
         document.getElementById("plan-title").value = planToEdit.title || "";
@@ -354,7 +423,13 @@ function openPlanModal(planToEdit = null) {
         document.getElementById("plan-description").value = planToEdit.description || "";
         document.getElementById("plan-date").value = planToEdit.date || ""; 
         document.getElementById("plan-time").value = planToEdit.time || "";
-        document.getElementById("plan-location").value = planToEdit.location || "";
+        
+        const locInput = document.getElementById("plan-location");
+        if (locInput) {
+            locInput.value = planToEdit.location || "";
+            locInput.dataset.lat = planToEdit.lat || "";
+            locInput.dataset.lng = planToEdit.lng || "";
+        }
     } else {
         const idInput = document.getElementById("plan-id");
         if (idInput) idInput.value = "";
@@ -372,15 +447,22 @@ function setupForms() {
         
         const id = document.getElementById("plan-id").value;
         const dateValue = document.getElementById("plan-date").value;
+        const locInput = document.getElementById("plan-location");
 
+        // Objeto de plan (Fecha Opcional)
         const planData = {
             title: document.getElementById("plan-title").value,
             category: document.getElementById("plan-category").value,
-            description: document.getElementById("plan-description").value,
-            date: dateValue ? dateValue : null,
+            description: document.getElementById("plan-description").value || null,
+            date: dateValue ? dateValue : null, // Si está vacío se guarda como null sin dar error
             time: document.getElementById("plan-time").value || null,
-            location: document.getElementById("plan-location").value || null
+            location: locInput ? locInput.value : null
         };
+
+        if (locInput && locInput.dataset.lat) {
+            planData.lat = parseFloat(locInput.dataset.lat);
+            planData.lng = parseFloat(locInput.dataset.lng);
+        }
 
         if (id) {
             if (supabaseApp) await supabaseApp.from("plans").update(planData).eq("id", id);
@@ -685,4 +767,14 @@ function renderMap() {
         .addTo(state.map)
         .bindPopup(`<b>🏨 ${state.hotel.name}</b><br>${state.hotel.address}`);
     state.markers.push(hotelMarker);
+
+    // Renderizar pines en el mapa para planes que tengan latitud y longitud
+    state.plans.forEach(plan => {
+        if (plan.lat && plan.lng) {
+            const marker = L.marker([plan.lat, plan.lng])
+                .addTo(state.map)
+                .bindPopup(`<b>📍 ${plan.title}</b><br>${plan.location || ''}`);
+            state.markers.push(marker);
+        }
+    });
 }
