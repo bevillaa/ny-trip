@@ -6,12 +6,11 @@
 const SUPABASE_URL = "https://rtbrnbyosrtxeayqmvwc.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ0YnJuYnlvc3J0eGVheXFtdndjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY0NTUwODQsImV4cCI6MjEwMjAzMTA4NH0.W3mCe1yAehFd0bz_XNVJ83YR-dNz-8VZnnhgj-cQEss";
 
-// Evita la colisión de nombres usando la variable global del navegador
-if (!window.supabaseClient && window.supabase && SUPABASE_URL !== "https://TU-PROYECTO.supabase.co") {
-    window.supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+// Inicialización limpia y directa del cliente
+var supabaseApp = null;
+if (window.supabase) {
+    supabaseApp = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 }
-// Asignamos el cliente a una variable local sin volver a re-declarar 'supabase'
-var supabaseApp = window.supabaseClient || null;
 
 // ESTADO GLOBAL
 const state = {
