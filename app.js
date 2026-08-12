@@ -6,10 +6,15 @@
 const SUPABASE_URL = "https://rtbrnbyosrtxeayqmvwc.supabase.co";
 const SUPABASE_KEY = "sb_publishable_xvstsFi5T_bbgYb-9qiJ6A_y8OrAL";
 
-// Inicialización segura del cliente Supabase
-const supabase = (window.supabase && SUPABASE_URL !== "https://TU-PROYECTO.supabase.co")
-    ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) 
-    : null;
+// Usamos una variable global segura en window o 'db' para evitar redeclaraciones:
+window.dbClient = window.dbClient || (
+    (window.supabase && SUPABASE_URL !== "https://TU-PROYECTO.supabase.co")
+        ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) 
+        : null
+);
+
+// Alias seguro para no romper el resto del código
+var supabase = window.dbClient;
 
 // ESTADO GLOBAL
 const state = {
