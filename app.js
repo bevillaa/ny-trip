@@ -19,13 +19,14 @@ const state = {
     plans: [],
     reservations: [],
     expenses: [],
+    // HOTEL ACTUALIZADO: Courtyard Upper East Side
     hotel: {
-        name: "Hotel Pod Times Square",
-        address: "400 W 42nd St, New York, NY 10036",
-        lat: 40.7580,
-        lng: -73.9922,
-        checkIn: "2026-12-26",
-        checkOut: "2027-01-04"
+        name: "Courtyard by Marriott New York Manhattan/Upper East Side",
+        address: "410 East 92nd Street, Upper East Side, New York, NY 10128",
+        lat: 40.7797,
+        lng: -73.9472,
+        checkIn: "26 Dic 2026 (15:00)",
+        checkOut: "04 Ene 2027 (12:00)"
     },
     flights: [
         { type: "Ida", route: "MAD → JFK", date: "26 Dic 2026", details: "Salida: 10:00 - Llegada: 12:30 (Directo)" },
@@ -510,9 +511,22 @@ function setupForms() {
                 }
             }
 
+            // MAPEO TIPO CHECK CONSTRAINT SEGÚN NOMBRES ESPAÑOL/INGLÉS
+            const CATEGORY_TO_DB = {
+                food: "Restaurantes",
+                sweet: "Dulces",
+                activity: "Spots",
+                shopping: "Tiendas",
+                sightseeing: "Turisteo",
+                other: "Otros"
+            };
+
+            const rawCategory = document.getElementById("plan-category").value || "other";
+            const dbCategory = CATEGORY_TO_DB[rawCategory] || rawCategory;
+
             const planData = {
                 title: titleVal,
-                category: document.getElementById("plan-category").value || "other",
+                category: dbCategory,
                 description: document.getElementById("plan-description").value || null,
                 date: dateVal ? dateVal : null,
                 time: document.getElementById("plan-time").value || null,
@@ -587,7 +601,7 @@ function setupForms() {
 }
 
 /* ==========================================================================
-   RENDERIZADO DE VISTAS DE PLANES CON SOPORTE DE CHECK COMPLETADO Y FILTROS
+   RENDERIZADO DE VISTAS DE PLANES CON CHECK COMPLETADO Y FILTROS
    ========================================================================== */
 function renderPlans() {
     const listEl = document.getElementById("plan-list");
@@ -639,7 +653,7 @@ function renderPlans() {
         const cat = CATEGORIES[catKey] || CATEGORIES.other;
         const isDone = !!plan.completed;
 
-        let dateText = "";
+        let dateText = "Por definir";
         if (plan.date) {
             const dateObj = new Date(plan.date + "T00:00:00");
             dateText = dateObj.toLocaleDateString("es-ES", { day: "numeric", month: "short" });
@@ -664,7 +678,7 @@ function renderPlans() {
                         style="width: 18px; height: 18px; cursor: pointer; accent-color: #10b981;"
                     >
                     <label for="check-${plan.id}" style="font-size: 13px; font-weight: 600; cursor: pointer; color: var(--muted);">
-                        ${isDone ? '✅ Realizado' : 'Check ✔️'}
+                        ${isDone ? '✅ Realizado' : 'Marcar como hecho'}
                     </label>
                 </div>
 
@@ -883,7 +897,7 @@ function initOrRefreshMap() {
     if (!mapContainer) return;
 
     if (!state.map) {
-        state.map = L.map("map").setView([40.7580, -73.9855], 13);
+        state.map = L.map("map").setView([state.hotel.lat, state.hotel.lng], 13);
         L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
             attribution: "© OpenStreetMap"
         }).addTo(state.map);
