@@ -17,8 +17,9 @@
     <!-- LEAFLET CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 
-    <!-- STYLE (Enlazado correctamente a styles.css) -->
-    <link rel="stylesheet" href="./styles.css?v=20260811-003">
+    <!-- STYLE (Asegúrate de que tu CSS se llama style.css o styles.css en la carpeta) -->
+    <link rel="stylesheet" href="./style.css?v=20260811-004">
+    <link rel="stylesheet" href="./styles.css?v=20260811-004">
 
     <!-- LIMPIEZA DE CACHÉ -->
     <script>
@@ -34,7 +35,7 @@
                     const cacheNames = await caches.keys();
                     await Promise.all(cacheNames.map(name => caches.delete(name)));
                 }
-                window.NY_TRIP_VERSION = "20260811-003";
+                window.NY_TRIP_VERSION = "20260811-004";
             } catch (error) {
                 console.warn("⚠️ Error en limpieza de caché:", error);
             }
@@ -44,29 +45,29 @@
 
 <body>
 
-    <!-- LOGIN -->
+    <!-- LOGIN (Estructura moderna y 100% funcional) -->
     <div id="login-screen" class="login-screen">
         <div class="login-card">
-            <div class="login-logo" style="font-size: 40px; text-align: center; margin-bottom: 10px;">🗽</div>
-            <h1 style="text-align: center; margin-bottom: 4px;">NY TRIP</h1>
-            <p class="login-subtitle" style="text-align: center; color: var(--muted); font-size: 13px; margin-bottom: 20px;">El tridente en Nueva York 😈😇🤪</p>
+            <div class="login-logo">🗽</div>
+            <h1>NY TRIP</h1>
+            <p class="login-subtitle">El tridente en Nueva York 😈😇🤪</p>
 
             <form id="login-form">
-                <label>
+                <label for="login-email">
                     Email
-                    <input id="login-email" type="email" autocomplete="username" inputmode="email" placeholder="Tu email" required>
+                    <input id="login-email" type="email" autocomplete="username" inputmode="email" placeholder="tu@email.com" required>
                 </label>
-                <label>
+                <label for="login-password">
                     Contraseña
-                    <input id="login-password" type="password" autocomplete="current-password" placeholder="Tu contraseña" required>
+                    <input id="login-password" type="password" autocomplete="current-password" placeholder="••••••••" required>
                 </label>
                 <button id="login-button" class="primary-button full" type="submit">Entrar</button>
-                <div id="login-error" class="login-error" style="color: var(--danger); font-size: 12px; margin-top: 10px; text-align: center;" hidden></div>
+                <div id="login-error" class="login-error" hidden></div>
             </form>
         </div>
     </div>
 
-    <!-- APP -->
+    <!-- APP PRINCIPAL -->
     <div id="app" hidden>
         <!-- CABECERA -->
         <header class="app-header">
@@ -265,7 +266,6 @@
                 <div class="section-heading">
                     <h2>🏨 HOTEL</h2>
                 </div>
-                <!-- Contenedor del hotel renderizado por app.js -->
                 <div id="hotel-container"></div>
 
                 <div class="section-heading">
@@ -276,14 +276,14 @@
                     <div>
                         <strong id="current-user-email">Usuario</strong>
                         <p>Sesión iniciada</p>
-                        <button id="logout-button" class="secondary-button" style="margin-top: 8px;" type="button">🚪 Cerrar sesión</button>
+                        <button id="logout-button" class="secondary-button" type="button">🚪 Cerrar sesión</button>
                     </div>
                 </div>
             </section>
 
         </main>
 
-        <!-- MODAL PLAN (CREAR/EDITAR) -->
+        <!-- MODAL PLAN -->
         <div id="plan-modal" class="modal hidden">
             <div class="modal-content">
                 <div class="modal-header">
@@ -291,15 +291,14 @@
                     <button class="close-modal" data-close="plan-modal" type="button">×</button>
                 </div>
                 <form id="plan-form">
-                    <!-- CAMPO OCULTO PARA EDICIÓN -->
                     <input type="hidden" id="plan-id" value="">
 
-                    <label>
+                    <label for="plan-title">
                         Nombre
                         <input id="plan-title" required placeholder="Ej. Central Park">
                     </label>
 
-                    <label>
+                    <label for="plan-category">
                         Categoría
                         <select id="plan-category">
                             <option value="rooftop">🌇 RoofTops</option>
@@ -312,25 +311,24 @@
                         </select>
                     </label>
 
-                    <label>
+                    <label for="plan-description">
                         Descripción
                         <textarea id="plan-description" placeholder="Qué vais a hacer..."></textarea>
                     </label>
 
                     <div class="form-row">
-                        <label>
+                        <label for="plan-date">
                             Fecha
                             <input id="plan-date" type="date">
                         </label>
-                        <label>
+                        <label for="plan-time">
                             Hora
                             <input id="plan-time" type="time">
                         </label>
                     </div>
 
-                    <!-- BÚSQUEDA DE LUGAR Y DESPLEGABLE DE SUGERENCIAS -->
                     <div style="position: relative;">
-                        <label>
+                        <label for="plan-location">
                             Lugar en Mapa
                             <input id="plan-location" placeholder="Escribe y selecciona un lugar..." autocomplete="off">
                         </label>
@@ -350,7 +348,7 @@
                     <button class="close-modal" data-close="reservation-modal" type="button">×</button>
                 </div>
                 <form id="reservation-form">
-                    <label>
+                    <label for="reservation-type">
                         Tipo
                         <select id="reservation-type">
                             <option value="restaurant">🍽️ Restaurante</option>
@@ -360,25 +358,25 @@
                             <option value="other">📋 Otro</option>
                         </select>
                     </label>
-                    <label>
+                    <label for="reservation-title">
                         Nombre
                         <input id="reservation-title" required placeholder="Ej. Restaurante">
                     </label>
-                    <label>
+                    <label for="reservation-description">
                         Descripción
                         <textarea id="reservation-description" placeholder="Detalles de la reserva..."></textarea>
                     </label>
                     <div class="form-row">
-                        <label>
+                        <label for="reservation-date">
                             Fecha
                             <input id="reservation-date" type="date">
                         </label>
-                        <label>
+                        <label for="reservation-time">
                             Hora
                             <input id="reservation-time" type="time">
                         </label>
                     </div>
-                    <label>
+                    <label for="reservation-location">
                         Lugar
                         <input id="reservation-location" placeholder="Ej. Times Square">
                     </label>
@@ -395,16 +393,16 @@
                     <button class="close-modal" data-close="expense-modal" type="button">×</button>
                 </div>
                 <form id="expense-form">
-                    <label>
+                    <label for="expense-title">
                         Concepto
                         <input id="expense-title" required placeholder="Ej. Cena">
                     </label>
                     <div class="form-row">
-                        <label>
+                        <label for="expense-amount">
                             Importe
                             <input id="expense-amount" type="number" min="0" step="0.01" required placeholder="120">
                         </label>
-                        <label>
+                        <label for="expense-currency">
                             Moneda
                             <select id="expense-currency">
                                 <option value="EUR">€</option>
@@ -412,7 +410,7 @@
                             </select>
                         </label>
                     </div>
-                    <label>
+                    <label for="expense-paid-by">
                         Pagó
                         <select id="expense-paid-by">
                             <option value="Laura">😈 Laura</option>
@@ -427,7 +425,7 @@
                         <label class="check-label"><input type="checkbox" name="participant" value="Belén" checked> 🤪 Belén</label>
                     </fieldset>
                     <div class="form-row">
-                        <label>
+                        <label for="expense-date">
                             Fecha
                             <input id="expense-date" type="date">
                         </label>
@@ -450,7 +448,7 @@
     <!-- LEAFLET & SUPABASE -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="./app.js?v=20260811-003"></script>
+    <script src="./app.js?v=20260811-004"></script>
 
 </body>
 </html>
