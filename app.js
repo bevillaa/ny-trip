@@ -4,7 +4,7 @@
 
 // Configuración de Supabase
 const SUPABASE_URL = "https://rtbrnbyosrtxeayqmvwc.supabase.co";
-const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ0YnJuYnlvc3J0eGVheXFtdndjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY0NTUwODQsImV4cCI6MjEwMjAzMTA4NH0.W3mCe1yAehFd0bz_XNVJ83YR-dNz-8VZnnhgj-cQEss";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ0YnJuYnlvc3J0eGVheXFtdndjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY0NTUwODQsImV4cCI6MjA4NjA0NTA4NH0.W3mCe1yAehFd0bz_XNVJ83YR-dNz-8VZnnhgj-cQEss";
 
 // Inicialización limpia y directa del cliente
 var supabaseApp = null;
@@ -188,7 +188,7 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 /* ==========================================================================
-   RELOJES Y CONTADOR DE DÍAS
+   RELOJES Y CONTADOR DE DÍAS (EN LA MISMA LÍNEA)
    ========================================================================== */
 function startClocksAndCountdown() {
     updateClocksAndCountdown();
@@ -214,11 +214,14 @@ function updateClocksAndCountdown() {
         hour12: false
     });
 
+    // Renderiza ambos relojes dentro de un wrapper flexible alineados horizontalmente
     const clocksEl = document.getElementById("header-clocks");
     if (clocksEl) {
         clocksEl.innerHTML = `
-            <div class="clock-badge">🗽 <span>NY</span> <strong>${nyTimeStr}</strong></div>
-            <div class="clock-badge">💃 <span>Málaga</span> <strong>${malagaTimeStr}</strong></div>
+            <div class="clocks-container" style="display: flex; gap: 8px; align-items: center; justify-content: center; width: 100%;">
+                <div class="clock-badge" style="flex: 1; text-align: center; white-space: nowrap;">🗽 <span>NY</span> <strong>${nyTimeStr}</strong></div>
+                <div class="clock-badge" style="flex: 1; text-align: center; white-space: nowrap;">💃 <span>Málaga</span> <strong>${malagaTimeStr}</strong></div>
+            </div>
         `;
     }
 
@@ -280,7 +283,7 @@ function renderAll() {
     renderReservations();
     renderExpenses();
     renderFlights();
-    renderHotel();
+    renderHotel(); // Solo se pintará dentro del contenedor 'hotel-container' en la pestaña 'Más'
     if (state.currentScreen === 'map') renderMap();
 }
 
@@ -641,6 +644,7 @@ function renderFlights() {
 }
 
 function renderHotel() {
+    // Busca únicamente el contenedor exclusivo del hotel en la pestaña "Más"
     const container = document.getElementById("hotel-container");
     if (!container) return;
 
