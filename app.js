@@ -42,7 +42,7 @@ const CATEGORIES = {
     spot: { name: "Spots", icon: "📍" },
     restaurant: { name: "Restaurantes", icon: "🍽️" },
     food: { name: "Restaurantes", icon: "🍽️" },
-    sweet: { name: "Dulces", icon: "🍰" },
+    sweet: { name: "Dulces", icon: "🍪" },
     sightseeing: { name: "Turisteo", icon: "🗽" },
     shopping: { name: "Tiendas", icon: "🛍️" },
     activity: { name: "Spots", icon: "📍" },
@@ -579,7 +579,7 @@ function setupForms() {
 }
 
 /* ==========================================================================
-   RENDERIZADO DE VISTAS
+   RENDERIZADO DE VISTAS DE PLANES (CON BOTONES A LA DERECHA)
    ========================================================================== */
 function renderPlans() {
     const listEl = document.getElementById("plan-list");
@@ -604,7 +604,7 @@ function renderPlans() {
     listEl.innerHTML = filtered.map(plan => {
         const cat = CATEGORIES[plan.category] || CATEGORIES.other;
         
-        let dateText = "📌 Por definir";
+        let dateText = "Por definir";
         if (plan.date) {
             const dateObj = new Date(plan.date + "T00:00:00");
             dateText = dateObj.toLocaleDateString("es-ES", { day: "numeric", month: "short" });
@@ -614,17 +614,16 @@ function renderPlans() {
 
         return `
             <div class="card plan-card">
-                <div class="card-header">
-                    <span class="badge-category">${cat.icon} ${cat.name}</span>
-                    <span class="badge-date ${!plan.date ? 'no-date' : ''}">${dateText}${timeText}</span>
-                </div>
-                <h3>${escapeHTML(plan.title)}</h3>
-                ${plan.description ? `<p>${escapeHTML(plan.description)}</p>` : ''}
-                ${plan.location_name ? `<small>📍 ${escapeHTML(plan.location_name)}</small>` : ''}
                 <div class="card-actions">
-                    <button class="icon-button" onclick="editPlan('${plan.id}')">✏️ Editar</button>
-                    <button class="icon-button danger" onclick="deletePlan('${plan.id}')">🗑️ Borrar</button>
+                    <button class="icon-button" onclick="editPlan('${plan.id}')" title="Editar">✏️</button>
+                    <button class="icon-button danger" onclick="deletePlan('${plan.id}')" title="Borrar">🗑️</button>
                 </div>
+                <div class="card-header" style="margin-bottom: 6px;">
+                    <span class="badge-category">${cat.icon} ${cat.name} ${dateText}${timeText}</span>
+                </div>
+                <h3 style="margin: 4px 0 8px 0; font-size: 17px;">${escapeHTML(plan.title)}</h3>
+                ${plan.location_name ? `<div style="font-size: 13px; color: var(--muted); margin-top: 4px;">📍 ${escapeHTML(plan.location_name)}</div>` : ''}
+                ${plan.description ? `<p style="font-size: 13px; margin-top: 6px; opacity: 0.8;">${escapeHTML(plan.description)}</p>` : ''}
             </div>
         `;
     }).join("");
@@ -682,7 +681,7 @@ function renderNextActivity() {
             <span>🗽</span>
             <div>
                 <strong>¡Sin planes próximos!</strong>
-                <p>Añade actividades para synchronizarlas con el mapa.</p>
+                <p>Añade actividades para sincronizarlas con el mapa.</p>
             </div>
         `;
     }
@@ -803,7 +802,7 @@ function renderHotel() {
 }
 
 /* ==========================================================================
-   MAPA LEAFLET
+   MAPA LEAFLET CON ICONOS PERSONALIZADOS POR CATEGORÍA
    ========================================================================== */
 function initOrRefreshMap() {
     if (typeof L === 'undefined') return;
@@ -828,23 +827,28 @@ function renderMap() {
     state.markers.forEach(m => state.map.removeLayer(m));
     state.markers = [];
 
-    const bounds = [[state.hotel.lat, state.hotel.lng]];
+    const bounds = [];
 
-    // Marcador de Hotel
-    const hotelIcon = L.divIcon({
-        className: 'custom-map-marker',
-        html: `<div class="marker-pin">🏨</div>`,
-        iconSize: [36, 36],
-        iconAnchor: [18, 18],
-        popupAnchor: [0, -18]
-    });
+    // 1. Marcador del Hotel (Icono 🏨)
+    if (state.hotel && state.hotel.lat && state.hotel.lng) {
+        bounds.push([state.hotel.lat, state.hotel.lng]);
+        
+        const hotelIcon = L.divIcon({
+            className: 'custom-map-marker',
+            html: `<div class="marker-pin">🏨</div>`,
+            iconSize: [36, 36],
+            iconAnchor: [18, 18],
+            popupAnchor: [0, -18]
+        });
 
-    const hotelMarker = L.marker([state.hotel.lat, state.hotel.lng], { icon: hotelIcon })
-        .addTo(state.map)
-        .bindPopup(`<b>🏨 ${escapeHTML(state.hotel.name)}</b><br>${escapeHTML(state.hotel.address)}`);
-    state.markers.push(hotelMarker);
+        const hotelMarker = L.marker([state.hotel.lat, state.hotel.lng], { icon: hotelIcon })
+            .addTo(state.map)
+            .bindPopup(`<b>🏨 ${escapeHTML(state.hotel.name)}</b><br>${escapeHTML(state.hotel.address)}`);
+        
+        state.markers.push(hotelMarker);
+    }
 
-    // Marcadores de Planes con su emoji correspondiente
+    // 2. Marcadores de Planes (🗽 para Turisteo, 📍 para Spots, etc.)
     state.plans.forEach(plan => {
         const lat = parseFloat(plan.latitude);
         const lng = parseFloat(plan.longitude);
@@ -867,12 +871,14 @@ function renderMap() {
                     ${plan.location_name ? '📍 ' + escapeHTML(plan.location_name) : ''}<br>
                     ${plan.description ? '<small>' + escapeHTML(plan.description) + '</small>' : ''}
                 `);
+
             state.markers.push(marker);
             bounds.push([lat, lng]);
         }
     });
 
-    if (bounds.length > 1) {
+    // Enmarcar todos los puntos en la pantalla
+    if (bounds.length > 0) {
         state.map.fitBounds(bounds, { padding: [40, 40] });
     }
 }
