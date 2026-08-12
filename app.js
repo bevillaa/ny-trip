@@ -255,7 +255,7 @@ function initPhotonAutocomplete(inputId, resultsContainerId) {
                 container.innerHTML = "";
 
                 if (!data.features || data.features.length === 0) {
-                    container.innerHTML = `<div style="padding: 10px; color: #888; font-size: 13px;">Sin resultados encontrados</div>`;
+                    container.innerHTML = `<div style="padding: 10px; color: var(--muted); font-size: 13px;">Sin resultados encontrados</div>`;
                     return;
                 }
 
@@ -267,10 +267,10 @@ function initPhotonAutocomplete(inputId, resultsContainerId) {
                     const fullAddress = `${props.street ? props.street + ', ' : ''}${city}`;
 
                     const item = document.createElement("div");
-                    item.style.cssText = "padding: 10px; cursor: pointer; border-bottom: 1px solid rgba(255,255,255,0.1); text-align: left;";
+                    item.className = "search-result-item";
                     item.innerHTML = `
                         <strong style="display: block; font-size: 14px;">📍 ${escapeHTML(name)}</strong>
-                        <span style="font-size: 11px; color: #aaa; display: block;">${escapeHTML(fullAddress)}</span>
+                        <span style="font-size: 11px; color: var(--muted); display: block;">${escapeHTML(fullAddress)}</span>
                     `;
 
                     item.addEventListener("click", () => {
@@ -315,7 +315,6 @@ async function geocodeAddress(query) {
     } catch (e) {
         console.warn("No se pudo geocodificar:", query, e);
     }
-    // Fallback: Centro de NY si la geocodificación no responde
     return { lat: 40.7128, lng: -74.0060 };
 }
 
@@ -457,7 +456,7 @@ function openPlanModal(planToEdit = null) {
 }
 
 /* ==========================================================================
-   FORMULARIO DE PLANES (CON ERROR HANDLING EXPLICITO)
+   FORMULARIO DE PLANES
    ========================================================================== */
 function setupForms() {
     document.getElementById("plan-form")?.addEventListener("submit", async (e) => {
@@ -484,7 +483,6 @@ function setupForms() {
             let lat = locInput && locInput.dataset.lat ? parseFloat(locInput.dataset.lat) : null;
             let lng = locInput && locInput.dataset.lng ? parseFloat(locInput.dataset.lng) : null;
 
-            // Si hay dirección pero no coordenadas, geocodificar inmediatamente
             if (locationText && (!lat || !lng)) {
                 const coords = await geocodeAddress(locationText);
                 if (coords) {
@@ -493,7 +491,6 @@ function setupForms() {
                 }
             }
 
-            // Mapeo directo a las columnas exactas de Supabase
             const planData = {
                 title: titleVal,
                 category: document.getElementById("plan-category").value || "other",
@@ -810,7 +807,6 @@ function initOrRefreshMap() {
         }).addTo(state.map);
     }
     
-    // Forzar el renderizado de dimensiones si estaba oculto
     state.map.invalidateSize();
     renderMap();
 }
@@ -818,21 +814,17 @@ function initOrRefreshMap() {
 function renderMap() {
     if (!state.map) return;
 
-    // Limpiar marcadores viejos
     state.markers.forEach(m => state.map.removeLayer(m));
     state.markers = [];
 
     const bounds = [[state.hotel.lat, state.hotel.lng]];
 
-    // Marcador Hotel
     const hotelMarker = L.marker([state.hotel.lat, state.hotel.lng])
         .addTo(state.map)
         .bindPopup(`<b>🏨 ${escapeHTML(state.hotel.name)}</b><br>${escapeHTML(state.hotel.address)}`);
     state.markers.push(hotelMarker);
 
-    // Marcadores para Planes
     state.plans.forEach(plan => {
-        // Aseguramos que latitude y longitude existen y son números válidos
         const lat = parseFloat(plan.latitude);
         const lng = parseFloat(plan.longitude);
 
