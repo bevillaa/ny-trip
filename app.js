@@ -664,7 +664,7 @@ function renderPlans() {
                         style="width: 18px; height: 18px; cursor: pointer; accent-color: #10b981;"
                     >
                     <label for="check-${plan.id}" style="font-size: 13px; font-weight: 600; cursor: pointer; color: var(--muted);">
-                        ${isDone ? '✅ Realizado' : 'Marcar como hecho'}
+                        ${isDone ? '✅ Realizado' : 'Check ✔️'}
                     </label>
                 </div>
 
