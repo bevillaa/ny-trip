@@ -60,7 +60,7 @@ async function initApp() {
     setupForms();
     setupFilters();
 
-    // Relojes en directo y contador
+    // Relojes dentro de la tarjeta del tiempo y contador de días
     startClocksAndCountdown();
 
     // Comprobar autenticación con Supabase
@@ -188,7 +188,7 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 /* ==========================================================================
-   RELOJES Y CONTADOR DE DÍAS (EN LA MISMA LÍNEA)
+   RELOJES (EN TARJETA DE TIEMPO) Y CONTADOR DE DÍAS
    ========================================================================== */
 function startClocksAndCountdown() {
     updateClocksAndCountdown();
@@ -214,17 +214,20 @@ function updateClocksAndCountdown() {
         hour12: false
     });
 
-    // Renderiza ambos relojes dentro de un wrapper flexible alineados horizontalmente
+    // Renderiza ambos relojes dentro de la tarjeta del tiempo (A la derecha)
     const clocksEl = document.getElementById("header-clocks");
     if (clocksEl) {
         clocksEl.innerHTML = `
-            <div class="clocks-container" style="display: flex; gap: 8px; align-items: center; justify-content: center; width: 100%;">
-                <div class="clock-badge" style="flex: 1; text-align: center; white-space: nowrap;">🗽 <span>NY</span> <strong>${nyTimeStr}</strong></div>
-                <div class="clock-badge" style="flex: 1; text-align: center; white-space: nowrap;">💃 <span>Málaga</span> <strong>${malagaTimeStr}</strong></div>
+            <div style="display: flex; align-items: center; justify-content: flex-end; gap: 6px; font-weight: 600;">
+                <span>🗽 NY</span> <strong>${nyTimeStr}</strong>
+            </div>
+            <div style="display: flex; align-items: center; justify-content: flex-end; gap: 6px; opacity: 0.85; font-weight: 500;">
+                <span>💃 Málaga</span> <strong>${malagaTimeStr}</strong>
             </div>
         `;
     }
 
+    // Contador de días hacia el viaje
     const dayEl = document.getElementById("trip-day");
     if (dayEl) {
         const startDate = new Date(2026, 11, 26);
@@ -283,7 +286,7 @@ function renderAll() {
     renderReservations();
     renderExpenses();
     renderFlights();
-    renderHotel(); // Solo se pintará dentro del contenedor 'hotel-container' en la pestaña 'Más'
+    renderHotel();
     if (state.currentScreen === 'map') renderMap();
 }
 
@@ -644,7 +647,6 @@ function renderFlights() {
 }
 
 function renderHotel() {
-    // Busca únicamente el contenedor exclusivo del hotel en la pestaña "Más"
     const container = document.getElementById("hotel-container");
     if (!container) return;
 
