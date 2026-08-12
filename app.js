@@ -55,6 +55,9 @@ async function initApp() {
     setupForms();
     setupFilters();
 
+    // Iniciar relojes en directo y contador de días
+    startClocksAndCountdown();
+
     // Comprobar sesión de usuario
     if (supabase) {
         const { data: { session } } = await supabase.auth.getSession();
@@ -69,9 +72,72 @@ async function initApp() {
         loadLocalData();
     }
 
-    updateHeaderWidget();
     updateWeather();
     updateCurrency();
+}
+
+/* ==========================================================================
+   RELOJES DE NUEVA YORK Y MÁLAGA + CONTADOR CORREGIDO
+   ========================================================================== */
+function startClocksAndCountdown() {
+    updateClocksAndCountdown();
+    // Actualizar cada segundo para mantener la hora exacta
+    setInterval(updateClocksAndCountdown, 1000);
+}
+
+function updateClocksAndCountdown() {
+    const now = new Date();
+
+    // 1. Hora de Málaga (Europe/Madrid)
+    const malagaTimeStr = now.toLocaleTimeString('es-ES', {
+        timeZone: 'Europe/Madrid',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false
+    });
+
+    // 2. Hora de Nueva York (America/New_York)
+    const nyTimeStr = now.toLocaleTimeString('es-ES', {
+        timeZone: 'America/New_York',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false
+    });
+
+    // Renderizar horas en la cabecera
+    const clocksEl = document.getElementById("header-clocks");
+    if (clocksEl) {
+        clocksEl.innerHTML = `
+            <div class="clock-badge">🗽 <span>NY</span> <strong>${nyTimeStr}</strong></div>
+            <div class="clock-badge">💃 <span>Málaga</span> <strong>${malagaTimeStr}</strong></div>
+        `;
+    }
+
+    // 3. Contador de Días Exacto (Normalizado a medianoche)
+    const dayEl = document.getElementById("trip-day");
+    if (dayEl) {
+        // Fecha inicio viaje: 26 de Diciembre de 2026
+        const startDate = new Date(2026, 11, 26); // Mes 11 es Diciembre
+        const endDate = new Date(2027, 0, 4);    // Mes 0 es Enero
+
+        // Normalizamos la fecha actual a medianoche local
+        const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+        // Diferencia en días enteros usando Math.round
+        const diffMs = startDate - todayMidnight;
+        const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
+
+        if (diffDays > 0) {
+            dayEl.textContent = `Faltan ${diffDays} días`;
+        } else if (diffDays <= 0 && todayMidnight <= endDate) {
+            const currentDay = Math.abs(diffDays) + 1;
+            dayEl.textContent = `¡Día ${currentDay} en NY! 🗽`;
+        } else {
+            dayEl.textContent = "Viaje Finalizado ❤️";
+        }
+    }
 }
 
 /* ==========================================================================
@@ -219,12 +285,10 @@ function switchScreen(screenName) {
    GESTIÓN DE MODALES
    ========================================================================== */
 function setupModals() {
-    // Abrir Modales
     document.getElementById("open-plan-form")?.addEventListener("click", () => openPlanModal());
     document.getElementById("open-reservation-form")?.addEventListener("click", () => openModal("reservation-modal"));
     document.getElementById("open-expense-form")?.addEventListener("click", () => openModal("expense-modal"));
 
-    // Cerrar Modales
     document.querySelectorAll("[data-close]").forEach(btn => {
         btn.addEventListener("click", () => {
             const modalId = btn.getAttribute("data-close");
@@ -250,7 +314,7 @@ function openPlanModal(planToEdit = null) {
         document.getElementById("plan-title").value = planToEdit.title || "";
         document.getElementById("plan-category").value = planToEdit.category || "other";
         document.getElementById("plan-description").value = planToEdit.description || "";
-        document.getElementById("plan-date").value = planToEdit.date || ""; // Si es null queda vacío
+        document.getElementById("plan-date").value = planToEdit.date || ""; 
         document.getElementById("plan-time").value = planToEdit.time || "";
         document.getElementById("plan-location").value = planToEdit.location || "";
     } else {
@@ -264,24 +328,22 @@ function openPlanModal(planToEdit = null) {
    GESTIÓN DE PLANES (FECHAS OPCIONALES Y EDICIÓN)
    ========================================================================== */
 function setupForms() {
-    // FORMULARIO PLANES
     document.getElementById("plan-form")?.addEventListener("submit", async (e) => {
         e.preventDefault();
         
         const id = document.getElementById("plan-id").value;
-        const dateValue = document.getElementById("plan-date").value; // Puede estar vacío
+        const dateValue = document.getElementById("plan-date").value;
 
         const planData = {
             title: document.getElementById("plan-title").value,
             category: document.getElementById("plan-category").value,
             description: document.getElementById("plan-description").value,
-            date: dateValue ? dateValue : null, // FECHA OPCIONAL (null si está vacía)
+            date: dateValue ? dateValue : null,
             time: document.getElementById("plan-time").value || null,
             location: document.getElementById("plan-location").value || null
         };
 
         if (id) {
-            // EDITAR
             if (supabase) {
                 await supabase.from("plans").update(planData).eq("id", id);
             } else {
@@ -289,7 +351,6 @@ function setupForms() {
                 if (idx !== -1) state.plans[idx] = { ...state.plans[idx], ...planData };
             }
         } else {
-            // CREAR NUEVO
             if (supabase) {
                 const { data } = await supabase.from("plans").insert([planData]).select();
                 if (data) state.plans.push(data[0]);
@@ -304,7 +365,6 @@ function setupForms() {
         loadAllData();
     });
 
-    // FORMULARIO RESERVAS
     document.getElementById("reservation-form")?.addEventListener("submit", async (e) => {
         e.preventDefault();
         const resData = {
@@ -328,7 +388,6 @@ function setupForms() {
         loadAllData();
     });
 
-    // FORMULARIO GASTOS
     document.getElementById("expense-form")?.addEventListener("submit", async (e) => {
         e.preventDefault();
         const participants = Array.from(document.querySelectorAll("input[name='participant']:checked")).map(cb => cb.value);
@@ -355,12 +414,10 @@ function setupForms() {
     });
 }
 
-// RENDERIZAR LISTA DE PLANES
 function renderPlans() {
     const listEl = document.getElementById("plan-list");
     if (!listEl) return;
 
-    // Filtrado por categoría
     let filtered = state.plans;
     if (state.activePlanFilter !== 'all') {
         filtered = filtered.filter(p => p.category === state.activePlanFilter);
@@ -371,7 +428,6 @@ function renderPlans() {
         return;
     }
 
-    // Ordenar: Los que tienen fecha van primero (de más cercana a más lejana); los SIN fecha van al final.
     filtered.sort((a, b) => {
         if (!a.date) return 1;
         if (!b.date) return -1;
@@ -381,7 +437,6 @@ function renderPlans() {
     listEl.innerHTML = filtered.map(plan => {
         const cat = CATEGORIES[plan.category] || CATEGORIES.other;
         
-        // Formatear fecha si existe
         let dateText = "📌 Por definir";
         if (plan.date) {
             const dateObj = new Date(plan.date + "T00:00:00");
@@ -408,13 +463,11 @@ function renderPlans() {
     }).join("");
 }
 
-// EDITAR PLAN
 window.editPlan = function(id) {
     const plan = state.plans.find(p => p.id == id);
     if (plan) openPlanModal(plan);
 };
 
-// ELIMINAR PLAN
 window.deletePlan = async function(id) {
     if (!confirm("¿Seguro que deseas eliminar este plan?")) return;
 
@@ -426,7 +479,6 @@ window.deletePlan = async function(id) {
     loadAllData();
 };
 
-// FILTROS DE PLANES
 function setupFilters() {
     const filterBtns = document.querySelectorAll(".plan-filter");
     filterBtns.forEach(btn => {
@@ -440,13 +492,12 @@ function setupFilters() {
 }
 
 /* ==========================================================================
-   WIDGETS Y HOME (¿Qué hacemos ahora?)
+   WIDGETS Y HOME
    ========================================================================== */
 function renderNextActivity() {
     const nextEl = document.getElementById("next-activity");
     if (!nextEl) return;
 
-    // Solo considerar actividades con fecha igual o futura
     const today = new Date().toISOString().split("T")[0];
     const upcoming = state.plans
         .filter(p => p.date && p.date >= today)
@@ -472,24 +523,6 @@ function renderNextActivity() {
                 <p>Añade actividades o explora la lista de ideas.</p>
             </div>
         `;
-    }
-}
-
-function updateHeaderWidget() {
-    const dayEl = document.getElementById("trip-day");
-    if (!dayEl) return;
-
-    const startDate = new Date("2026-12-26T00:00:00");
-    const today = new Date();
-    const diffTime = startDate - today;
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-    if (diffDays > 0) {
-        dayEl.textContent = `Faltan ${diffDays} días`;
-    } else if (diffDays >= -9) {
-        dayEl.textContent = `¡Día ${Math.abs(diffDays) + 1} en NY! 🗽`;
-    } else {
-        dayEl.textContent = "Viaje Finalizado ❤️";
     }
 }
 
@@ -557,7 +590,6 @@ function renderExpenses() {
         return;
     }
 
-    // Cálculo básico de Tricount
     let totalUSD = 0;
     state.expenses.forEach(e => {
         totalUSD += e.currency === 'EUR' ? e.amount * 1.08 : e.amount;
@@ -628,11 +660,9 @@ function initOrRefreshMap() {
 function renderMap() {
     if (!state.map) return;
 
-    // Limpiar marcadores antiguos
     state.markers.forEach(m => state.map.removeLayer(m));
     state.markers = [];
 
-    // Añadir hotel al mapa
     const hotelMarker = L.marker([state.hotel.lat, state.hotel.lng])
         .addTo(state.map)
         .bindPopup(`<b>🏨 ${state.hotel.name}</b><br>${state.hotel.address}`);
