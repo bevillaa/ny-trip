@@ -36,21 +36,34 @@ const state = {
     activePlanFilter: 'all'
 };
 
-// MAPEO UNIFICADO DE CATEGORÍAS
+// MAPEO UNIFICADO Y FLEXIBLE DE CATEGORÍAS
 const CATEGORIES = {
     food: { name: "Restaurantes", icon: "🍽️" },
     restaurant: { name: "Restaurantes", icon: "🍽️" },
+    restaurantes: { name: "Restaurantes", icon: "🍽️" },
+    
     sweet: { name: "Dulces", icon: "🍪" },
+    dulces: { name: "Dulces", icon: "🍪" },
+    dulce: { name: "Dulces", icon: "🍪" },
+    
     activity: { name: "Spots", icon: "📍" },
     spot: { name: "Spots", icon: "📍" },
+    spots: { name: "Spots", icon: "📍" },
+    
     shopping: { name: "Tiendas", icon: "🛍️" },
+    tiendas: { name: "Tiendas", icon: "🛍️" },
+    
     sightseeing: { name: "Turisteo", icon: "🗽" },
-    nightlife: { name: "Turisteo", icon: "🗽" },
-    other: { name: "Otros", icon: "📌" }
+    turisteo: { name: "Turisteo", icon: "🗽" },
+    
+    other: { name: "Otros", icon: "📌" },
+    otros: { name: "Otros", icon: "📌" }
 };
 
 function getCategoryIcon(category) {
-    return CATEGORIES[category] ? CATEGORIES[category].icon : "📌";
+    if (!category) return "📌";
+    const key = category.toString().trim().toLowerCase();
+    return CATEGORIES[key] ? CATEGORIES[key].icon : "📌";
 }
 
 /* ==========================================================================
@@ -574,26 +587,30 @@ function setupForms() {
 }
 
 /* ==========================================================================
-   RENDERIZADO DE VISTAS DE PLANES CON FILTRADO CORREGIDO
+   RENDERIZADO DE VISTAS DE PLANES CON SOPORTE DE CHECK COMPLETADO Y FILTROS
    ========================================================================== */
 function renderPlans() {
     const listEl = document.getElementById("plan-list");
     if (!listEl) return;
 
     let filtered = state.plans;
-    
-    // Filtrado estricto por categoría
+
+    // 1. Filtrado por categoría
     if (state.activePlanFilter !== 'all') {
         filtered = filtered.filter(p => {
-            const cat = p.category ? p.category.toLowerCase() : 'other';
-            const currentFilter = state.activePlanFilter.toLowerCase();
+            if (!p.category) return state.activePlanFilter === 'other';
             
-            // Agrupar variaciones de nombres si existen
-            if (currentFilter === 'food') return cat === 'food' || cat === 'restaurant';
-            if (currentFilter === 'activity') return cat === 'activity' || cat === 'spot';
-            if (currentFilter === 'sightseeing') return cat === 'sightseeing' || cat === 'nightlife';
-            
-            return cat === currentFilter;
+            const cat = p.category.toString().trim().toLowerCase();
+            const filter = state.activePlanFilter.toLowerCase();
+
+            if (filter === 'food') return cat === 'food' || cat === 'restaurant' || cat === 'restaurantes';
+            if (filter === 'sweet') return cat === 'sweet' || cat === 'dulce' || cat === 'dulces';
+            if (filter === 'activity') return cat === 'activity' || cat === 'spot' || cat === 'spots';
+            if (filter === 'shopping') return cat === 'shopping' || cat === 'tiendas';
+            if (filter === 'sightseeing') return cat === 'sightseeing' || cat === 'turisteo' || cat === 'nightlife';
+            if (filter === 'other') return cat === 'other' || cat === 'otros';
+
+            return cat === filter;
         });
     }
 
@@ -602,16 +619,26 @@ function renderPlans() {
         return;
     }
 
+    // 2. Ordenación: Pendientes arriba (por fecha), Completados abajo (por fecha)
     filtered.sort((a, b) => {
+        const aDone = a.completed ? 1 : 0;
+        const bDone = b.completed ? 1 : 0;
+
+        if (aDone !== bDone) {
+            return aDone - bDone;
+        }
+
         if (!a.date) return 1;
         if (!b.date) return -1;
         return new Date(a.date) - new Date(b.date);
     });
 
+    // 3. Renderizado HTML
     listEl.innerHTML = filtered.map(plan => {
-        const catKey = plan.category ? plan.category.toLowerCase() : 'other';
+        const catKey = plan.category ? plan.category.toString().trim().toLowerCase() : 'other';
         const cat = CATEGORIES[catKey] || CATEGORIES.other;
-        
+        const isDone = !!plan.completed;
+
         let dateText = "Por definir";
         if (plan.date) {
             const dateObj = new Date(plan.date + "T00:00:00");
@@ -621,21 +648,58 @@ function renderPlans() {
         const timeText = plan.time ? ` ⏰ ${plan.time}` : "";
 
         return `
-            <div class="card plan-card">
+            <div class="card plan-card ${isDone ? 'is-completed' : ''}">
                 <div class="card-actions">
                     <button class="icon-button" onclick="editPlan('${plan.id}')" title="Editar">✏️</button>
                     <button class="icon-button danger" onclick="deletePlan('${plan.id}')" title="Borrar">🗑️</button>
                 </div>
+
+                <div class="plan-checkbox-wrapper" style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                    <input 
+                        type="checkbox" 
+                        class="plan-checkbox" 
+                        id="check-${plan.id}" 
+                        ${isDone ? 'checked' : ''} 
+                        onchange="togglePlanCompleted('${plan.id}', this.checked)"
+                        style="width: 18px; height: 18px; cursor: pointer; accent-color: #10b981;"
+                    >
+                    <label for="check-${plan.id}" style="font-size: 13px; font-weight: 600; cursor: pointer; color: var(--muted);">
+                        ${isDone ? '✅ Realizado' : 'Marcar como hecho'}
+                    </label>
+                </div>
+
                 <div class="card-header" style="margin-bottom: 6px;">
                     <span class="badge-category">${cat.icon} ${cat.name} ${dateText}${timeText}</span>
                 </div>
-                <h3 style="margin: 4px 0 8px 0; font-size: 17px;">${escapeHTML(plan.title)}</h3>
+
+                <h3 style="margin: 4px 0 8px 0; font-size: 17px; ${isDone ? 'text-decoration: line-through; opacity: 0.7;' : ''}">${escapeHTML(plan.title)}</h3>
                 ${plan.location_name ? `<div style="font-size: 13px; color: var(--muted); margin-top: 4px;">📍 ${escapeHTML(plan.location_name)}</div>` : ''}
                 ${plan.description ? `<p style="font-size: 13px; margin-top: 6px; opacity: 0.8;">${escapeHTML(plan.description)}</p>` : ''}
             </div>
         `;
     }).join("");
 }
+
+window.togglePlanCompleted = async function(id, isChecked) {
+    const plan = state.plans.find(p => p.id == id);
+    if (plan) {
+        plan.completed = isChecked;
+        renderPlans();
+    }
+
+    if (supabaseApp) {
+        const { error } = await supabaseApp
+            .from("plans")
+            .update({ completed: isChecked })
+            .eq("id", id);
+
+        if (error) {
+            console.error("Error actualizando estado completado:", error);
+            if (plan) plan.completed = !isChecked;
+            renderPlans();
+        }
+    }
+};
 
 window.editPlan = function(id) {
     const plan = state.plans.find(p => p.id == id);
@@ -658,7 +722,7 @@ function setupFilters() {
             filterBtns.forEach(b => b.classList.remove("active"));
             btn.classList.add("active");
             state.activePlanFilter = btn.getAttribute("data-plan-filter");
-            renderPlans(); // Vuelve a pintar la lista al instante
+            renderPlans();
         });
     });
 }
@@ -669,7 +733,7 @@ function renderNextActivity() {
 
     const today = new Date().toISOString().split("T")[0];
     const upcoming = state.plans
-        .filter(p => p.date && p.date >= today)
+        .filter(p => !p.completed && p.date && p.date >= today)
         .sort((a, b) => new Date(a.date) - new Date(b.date));
 
     if (upcoming.length > 0) {
