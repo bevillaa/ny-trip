@@ -6,13 +6,13 @@
 const SUPABASE_URL = "https://rtbrnbyosrtxeayqmvwc.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ0YnJuYnlvc3J0eGVheXFtdndjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY0NTUwODQsImV4cCI6MjEwMjAzMTA4NH0.W3mCe1yAehFd0bz_XNVJ83YR-dNz-8VZnnhgj-cQEss";
 
-// Inicialización de Supabase Client
+// Inicialización de Supabase
 var supabaseApp = null;
 if (window.supabase) {
     supabaseApp = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 }
 
-// ESTADO GLOBAL DE LA APLICACIÓN
+// ESTADO GLOBAL
 const state = {
     currentUser: null,
     currentScreen: 'home',
@@ -20,12 +20,12 @@ const state = {
     reservations: [],
     expenses: [],
     hotel: {
-        name: "Courtyard by Marriott New York Manhattan/Upper East Side",
-        address: "410 East 92nd Street, Upper East Side, New York, NY 10128",
-        lat: 40.7797,
-        lng: -73.9472,
-        checkIn: "26 Dic 2026 (15:00)",
-        checkOut: "04 Ene 2027 (12:00)"
+        name: "Hotel Pod Times Square",
+        address: "400 W 42nd St, New York, NY 10036",
+        lat: 40.7580,
+        lng: -73.9922,
+        checkIn: "2026-12-26",
+        checkOut: "2027-01-04"
     },
     flights: [
         { type: "Ida", route: "MAD → JFK", date: "26 Dic 2026", details: "Salida: 10:00 - Llegada: 12:30 (Directo)" },
@@ -36,29 +36,22 @@ const state = {
     activePlanFilter: 'all'
 };
 
-// DICCIONARIO DE CATEGORÍAS E ICONOS
+// CATEGORÍAS DE PLANES
 const CATEGORIES = {
     food: { name: "Restaurantes", icon: "🍽️" },
-    restaurant: { name: "Restaurantes", icon: "🍽️" },
-    restaurantes: { name: "Restaurantes", icon: "🍽️" },
     sweet: { name: "Dulces", icon: "🍪" },
-    dulces: { name: "Dulces", icon: "🍪" },
-    dulce: { name: "Dulces", icon: "🍪" },
     activity: { name: "Spots", icon: "📍" },
-    spot: { name: "Spots", icon: "📍" },
-    spots: { name: "Spots", icon: "📍" },
     shopping: { name: "Tiendas", icon: "🛍️" },
-    tiendas: { name: "Tiendas", icon: "🛍️" },
     sightseeing: { name: "Turisteo", icon: "🗽" },
-    turisteo: { name: "Turisteo", icon: "🗽" },
-    other: { name: "Otros", icon: "📌" },
-    otros: { name: "Otros", icon: "📌" }
+    other: { name: "Otros", icon: "📌" }
 };
 
+// Función auxiliar para obtener el icono según la categoría
 function getCategoryIcon(category) {
-    if (!category) return "📌";
-    const key = category.toString().trim().toLowerCase();
-    return CATEGORIES[key] ? CATEGORIES[key].icon : "📌";
+    if (CATEGORIES[category]) {
+        return CATEGORIES[category].icon;
+    }
+    return "📌";
 }
 
 /* ==========================================================================
@@ -69,7 +62,6 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 async function initApp() {
-    setupAuthListeners();
     setupNavigation();
     setupModals();
     setupForms();
@@ -87,19 +79,14 @@ async function initApp() {
             }
         });
 
-        try {
-            const { data: { session } } = await supabaseApp.auth.getSession();
-            if (session && session.user) {
-                handleLoginSuccess(session.user);
-            } else {
-                showLoginScreen();
-            }
-        } catch(e) {
-            console.error("Error al obtener sesión:", e);
+        const { data: { session } } = await supabaseApp.auth.getSession();
+        if (session && session.user) {
+            handleLoginSuccess(session.user);
+        } else {
             showLoginScreen();
         }
     } else {
-        console.error("No se pudo inicializar Supabase.");
+        console.error("No se pudo inicializar el cliente de Supabase.");
         showLoginScreen();
     }
 
@@ -110,7 +97,31 @@ async function initApp() {
 /* ==========================================================================
    AUTENTICACIÓN
    ========================================================================== */
-function setupAuthListeners() {
+function showLoginScreen() {
+    const loginScreen = document.getElementById("login-screen");
+    const appScreen = document.getElementById("app");
+    if (loginScreen) loginScreen.hidden = false;
+    if (appScreen) appScreen.hidden = true;
+}
+
+function hideLoginScreen() {
+    const loginScreen = document.getElementById("login-screen");
+    const appScreen = document.getElementById("app");
+    if (loginScreen) loginScreen.hidden = true;
+    if (appScreen) appScreen.hidden = false;
+}
+
+function handleLoginSuccess(user) {
+    state.currentUser = user;
+    const userEmailEl = document.getElementById("current-user-email");
+    if (userEmailEl) {
+        userEmailEl.textContent = user.email || "Viajero";
+    }
+    hideLoginScreen();
+    loadAllData();
+}
+
+document.addEventListener("DOMContentLoaded", () => {
     const loginForm = document.getElementById("login-form");
     if (loginForm) {
         loginForm.addEventListener("submit", async (e) => {
@@ -119,7 +130,6 @@ function setupAuthListeners() {
             const emailEl = document.getElementById("login-email");
             const passwordEl = document.getElementById("login-password");
             const errorDiv = document.getElementById("login-error");
-            const submitBtn = loginForm.querySelector('button[type="submit"]');
 
             const email = emailEl ? emailEl.value.trim() : "";
             const password = passwordEl ? passwordEl.value.trim() : "";
@@ -129,17 +139,12 @@ function setupAuthListeners() {
                 errorDiv.textContent = "";
             }
 
-            if (!email || !password) {
+            if (!supabaseApp) {
                 if (errorDiv) {
-                    errorDiv.textContent = "Por favor, introduce el email y la contraseña.";
+                    errorDiv.textContent = "Error de conexión con Supabase.";
                     errorDiv.hidden = false;
                 }
                 return;
-            }
-
-            if (submitBtn) {
-                submitBtn.disabled = true;
-                submitBtn.textContent = "Entrando...";
             }
 
             try {
@@ -157,15 +162,6 @@ function setupAuthListeners() {
                 }
             } catch (err) {
                 console.error("Error en login:", err);
-                if (errorDiv) {
-                    errorDiv.textContent = "Error inesperado al iniciar sesión.";
-                    errorDiv.hidden = false;
-                }
-            } finally {
-                if (submitBtn) {
-                    submitBtn.disabled = false;
-                    submitBtn.textContent = "Iniciar Sesión";
-                }
             }
         });
     }
@@ -178,34 +174,53 @@ function setupAuthListeners() {
             showLoginScreen();
         });
     }
+});
+
+/* ==========================================================================
+   RELOJES Y CONTADOR
+   ========================================================================== */
+function startClocksAndCountdown() {
+    updateClocksAndCountdown();
+    setInterval(updateClocksAndCountdown, 1000);
 }
 
-function showLoginScreen() {
-    const loginScreen = document.getElementById("login-screen");
-    const appScreen = document.getElementById("app");
-    if (loginScreen) loginScreen.style.display = "block";
-    if (appScreen) appScreen.style.display = "none";
-}
+function updateClocksAndCountdown() {
+    const now = new Date();
 
-function hideLoginScreen() {
-    const loginScreen = document.getElementById("login-screen");
-    const appScreen = document.getElementById("app");
-    if (loginScreen) loginScreen.style.display = "none";
-    if (appScreen) appScreen.style.display = "block";
-}
+    const malagaTimeStr = now.toLocaleTimeString('es-ES', { timeZone: 'Europe/Madrid', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+    const nyTimeStr = now.toLocaleTimeString('es-ES', { timeZone: 'America/New_York', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
 
-function handleLoginSuccess(user) {
-    state.currentUser = user;
-    const userEmailEl = document.getElementById("current-user-email");
-    if (userEmailEl) {
-        userEmailEl.textContent = user.email || "Viajero";
+    const clocksEl = document.getElementById("header-clocks");
+    if (clocksEl) {
+        clocksEl.innerHTML = `
+            <div style="display: flex; align-items: center; justify-content: flex-end; gap: 6px; font-weight: 600;">
+                <span>🗽 NY</span> <strong>${nyTimeStr}</strong>
+            </div>
+            <div style="display: flex; align-items: center; justify-content: flex-end; gap: 6px; opacity: 0.85; font-weight: 500;">
+                <span>💃 Málaga</span> <strong>${malagaTimeStr}</strong>
+            </div>
+        `;
     }
-    hideLoginScreen();
-    loadAllData();
+
+    const dayEl = document.getElementById("trip-day");
+    if (dayEl) {
+        const startDate = new Date(2026, 11, 26);
+        const endDate = new Date(2027, 0, 4);
+        const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const diffDays = Math.round((startDate - todayMidnight) / (1000 * 60 * 60 * 24));
+
+        if (diffDays > 0) {
+            dayEl.textContent = `Faltan ${diffDays} días`;
+        } else if (diffDays <= 0 && todayMidnight <= endDate) {
+            dayEl.textContent = `¡Día ${Math.abs(diffDays) + 1} en NY! 🗽`;
+        } else {
+            dayEl.textContent = "Viaje Finalizado ❤️";
+        }
+    }
 }
 
 /* ==========================================================================
-   BÚSQUEDA Y GEOCODIFICACIÓN (PHOTON API)
+   BÚSQUEDA Y GEOCODIFICACIÓN (PHOTON)
    ========================================================================== */
 function setupLocationSearch() {
     initPhotonAutocomplete("plan-location", "plan-location-results");
@@ -221,6 +236,7 @@ function initPhotonAutocomplete(inputId, resultsContainerId) {
         container = document.createElement("div");
         container.id = resultsContainerId;
         container.className = "search-results-dropdown";
+        input.parentNode.style.position = "relative";
         input.parentNode.appendChild(container);
     }
 
@@ -239,7 +255,6 @@ function initPhotonAutocomplete(inputId, resultsContainerId) {
 
         timeout = setTimeout(async () => {
             try {
-                // Enfocar resultados preferentemente en el área de Nueva York
                 const url = `https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&lat=40.7128&lon=-73.9352&limit=5`;
                 const res = await fetch(url);
                 const data = await res.json();
@@ -247,7 +262,7 @@ function initPhotonAutocomplete(inputId, resultsContainerId) {
                 container.innerHTML = "";
 
                 if (!data.features || data.features.length === 0) {
-                    container.innerHTML = `<div style="padding: 10px; color: var(--muted); font-size: 13px;">Sin resultados</div>`;
+                    container.innerHTML = `<div style="padding: 10px; color: var(--muted); font-size: 13px;">Sin resultados encontrados</div>`;
                     return;
                 }
 
@@ -261,21 +276,18 @@ function initPhotonAutocomplete(inputId, resultsContainerId) {
                     const item = document.createElement("div");
                     item.className = "search-result-item";
                     item.innerHTML = `
-                        <strong style="display: block; font-size: 13px; color: var(--text);">📍 ${escapeHTML(name)}</strong>
+                        <strong style="display: block; font-size: 14px;">📍 ${escapeHTML(name)}</strong>
                         <span style="font-size: 11px; color: var(--muted); display: block;">${escapeHTML(fullAddress)}</span>
                     `;
 
                     item.addEventListener("click", () => {
-                        input.value = name;
-                        input.dataset.lat = coords[1]; // latitud
-                        input.dataset.lng = coords[0]; // longitud
-                        container.innerHTML = "";
+                        selectSearchLocation(name, inputId, resultsContainerId, coords[1], coords[0]);
                     });
 
                     container.appendChild(item);
                 });
             } catch (err) {
-                console.error("Error autocompletado Photon:", err);
+                console.error("Error en autocompletado Photon:", err);
             }
         }, 250);
     });
@@ -285,6 +297,17 @@ function initPhotonAutocomplete(inputId, resultsContainerId) {
             container.innerHTML = "";
         }
     });
+}
+
+function selectSearchLocation(name, inputId, resultsContainerId, lat, lon) {
+    const input = document.getElementById(inputId);
+    if (input) {
+        input.value = name;
+        input.dataset.lat = lat;
+        input.dataset.lng = lon;
+    }
+    const container = document.getElementById(resultsContainerId);
+    if (container) container.innerHTML = "";
 }
 
 async function geocodeAddress(query) {
@@ -299,7 +322,17 @@ async function geocodeAddress(query) {
     } catch (e) {
         console.warn("No se pudo geocodificar:", query, e);
     }
-    return { lat: 40.7128, lng: -74.0060 }; // Default Manhattan
+    return { lat: 40.7128, lng: -74.0060 };
+}
+
+function escapeHTML(str) {
+    if (!str) return "";
+    return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
 }
 
 /* ==========================================================================
@@ -316,7 +349,9 @@ async function loadAllData() {
             supabaseApp.from("expenses").select("*")
         ]);
 
+        if (plansRes.error) console.error("Error cargando planes:", plansRes.error);
         if (plansRes.data) state.plans = plansRes.data;
+
         if (resRes.data) state.reservations = resRes.data;
         if (expRes.data) state.expenses = expRes.data;
 
@@ -344,88 +379,91 @@ function renderAll() {
 }
 
 /* ==========================================================================
-   MAPA LEAFLET CON ICONOS POR CATEGORÍA
+   NAVEGACIÓN DE PANTALLAS
    ========================================================================== */
-function initOrRefreshMap() {
-    if (typeof L === 'undefined') return;
-
-    const mapContainer = document.getElementById("map");
-    if (!mapContainer) return;
-
-    if (!state.map) {
-        state.map = L.map("map").setView([state.hotel.lat, state.hotel.lng], 13);
-        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-            attribution: "© OpenStreetMap"
-        }).addTo(state.map);
-    }
-    
-    state.map.invalidateSize();
-    renderMap();
+function setupNavigation() {
+    const buttons = document.querySelectorAll("[data-screen]");
+    buttons.forEach(btn => {
+        btn.addEventListener("click", () => {
+            const screen = btn.getAttribute("data-screen");
+            switchScreen(screen);
+        });
+    });
 }
 
-function renderMap() {
-    if (!state.map) return;
+function switchScreen(screenName) {
+    state.currentScreen = screenName;
+    document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+    document.querySelectorAll(".nav-button").forEach(b => b.classList.remove("active"));
 
-    state.markers.forEach(m => state.map.removeLayer(m));
-    state.markers = [];
+    const targetScreen = document.getElementById(`screen-${screenName}`);
+    if (targetScreen) targetScreen.classList.add("active");
 
-    const bounds = [];
+    const activeNav = document.querySelector(`.bottom-nav .nav-button[data-screen="${screenName}"]`);
+    if (activeNav) activeNav.classList.add("active");
 
-    // 1. HOTEL
-    if (state.hotel && state.hotel.lat && state.hotel.lng) {
-        bounds.push([state.hotel.lat, state.hotel.lng]);
-        
-        const hotelIcon = L.divIcon({
-            className: 'custom-map-marker',
-            html: `<div style="background:#ef4444; color:white; width:34px; height:34px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:18px; box-shadow:0 3px 6px rgba(0,0,0,0.4); border:2px solid white;">🏨</div>`,
-            iconSize: [34, 34],
-            iconAnchor: [17, 17]
-        });
-
-        const hotelMarker = L.marker([state.hotel.lat, state.hotel.lng], { icon: hotelIcon })
-            .addTo(state.map)
-            .bindPopup(`<b>🏨 ${escapeHTML(state.hotel.name)}</b><br>${escapeHTML(state.hotel.address)}`);
-        
-        state.markers.push(hotelMarker);
-    }
-
-    // 2. PLANES SEGÚN CATEGORÍA
-    state.plans.forEach(plan => {
-        const lat = parseFloat(plan.latitude);
-        const lng = parseFloat(plan.longitude);
-
-        if (!isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0) {
-            const emoji = getCategoryIcon(plan.category);
-
-            const planIcon = L.divIcon({
-                className: 'custom-map-marker',
-                html: `<div style="background:#3b82f6; color:white; width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:16px; box-shadow:0 2px 5px rgba(0,0,0,0.3); border:2px solid white;">${emoji}</div>`,
-                iconSize: [32, 32],
-                iconAnchor: [16, 16]
-            });
-
-            const marker = L.marker([lat, lng], { icon: planIcon })
-                .addTo(state.map)
-                .bindPopup(`
-                    <div style="font-family:sans-serif;">
-                        <strong>${emoji} ${escapeHTML(plan.title)}</strong><br>
-                        <small style="color:#666;">${plan.location_name ? '📍 ' + escapeHTML(plan.location_name) : ''}</small>
-                        ${plan.description ? `<p style="margin:4px 0 0; font-size:12px;">${escapeHTML(plan.description)}</p>` : ''}
-                    </div>
-                `);
-
-            state.markers.push(marker);
-            bounds.push([lat, lng]);
-        }
-    });
-
-    if (bounds.length > 0) {
-        state.map.fitBounds(bounds, { padding: [40, 40] });
+    if (screenName === "map") {
+        setTimeout(initOrRefreshMap, 150);
     }
 }
 
 /* ==========================================================================
-   FORMULARIOS Y PROCESAMIENTO
+   GESTIÓN DE MODALES
+   ========================================================================== */
+function setupModals() {
+    document.getElementById("open-plan-form")?.addEventListener("click", () => openPlanModal());
+    document.getElementById("open-reservation-form")?.addEventListener("click", () => openModal("reservation-modal"));
+    document.getElementById("open-expense-form")?.addEventListener("click", () => openModal("expense-modal"));
+
+    document.querySelectorAll("[data-close]").forEach(btn => {
+        btn.addEventListener("click", () => closeModal(btn.getAttribute("data-close")));
+    });
+}
+
+function openModal(id) {
+    document.getElementById(id)?.classList.remove("hidden");
+}
+
+function closeModal(id) {
+    document.getElementById(id)?.classList.add("hidden");
+}
+
+function openPlanModal(planToEdit = null) {
+    const form = document.getElementById("plan-form");
+    if (form) form.reset();
+
+    const resultsContainer = document.getElementById("plan-location-results");
+    if (resultsContainer) resultsContainer.innerHTML = "";
+
+    const locInput = document.getElementById("plan-location");
+
+    if (planToEdit) {
+        document.getElementById("plan-id").value = planToEdit.id;
+        document.getElementById("plan-title").value = planToEdit.title || "";
+        document.getElementById("plan-category").value = planToEdit.category || "other";
+        document.getElementById("plan-description").value = planToEdit.description || "";
+        document.getElementById("plan-date").value = planToEdit.date || ""; 
+        document.getElementById("plan-time").value = planToEdit.time || "";
+        
+        if (locInput) {
+            locInput.value = planToEdit.location_name || "";
+            locInput.dataset.lat = planToEdit.latitude || "";
+            locInput.dataset.lng = planToEdit.longitude || "";
+        }
+    } else {
+        const idInput = document.getElementById("plan-id");
+        if (idInput) idInput.value = "";
+        if (locInput) {
+            delete locInput.dataset.lat;
+            delete locInput.dataset.lng;
+        }
+    }
+
+    openModal("plan-modal");
+}
+
+/* ==========================================================================
+   FORMULARIO DE PLANES
    ========================================================================== */
 function setupForms() {
     document.getElementById("plan-form")?.addEventListener("submit", async (e) => {
@@ -460,11 +498,9 @@ function setupForms() {
                 }
             }
 
-            const rawCategory = document.getElementById("plan-category").value || "other";
-
             const planData = {
                 title: titleVal,
-                category: rawCategory,
+                category: document.getElementById("plan-category").value || "other",
                 description: document.getElementById("plan-description").value || null,
                 date: dateVal ? dateVal : null,
                 time: document.getElementById("plan-time").value || null,
@@ -483,7 +519,9 @@ function setupForms() {
                 result = await supabaseApp.from("plans").insert([planData]);
             }
 
-            if (result.error) throw new Error(result.error.message);
+            if (result.error) {
+                throw new Error(result.error.message);
+            }
 
             closeModal("plan-modal");
             await loadAllData();
@@ -537,172 +575,31 @@ function setupForms() {
 }
 
 /* ==========================================================================
-   NAVEGACIÓN Y UTILS
-   ========================================================================== */
-function setupNavigation() {
-    const buttons = document.querySelectorAll("[data-screen]");
-    buttons.forEach(btn => {
-        btn.addEventListener("click", () => {
-            const screen = btn.getAttribute("data-screen");
-            switchScreen(screen);
-        });
-    });
-}
-
-function switchScreen(screenName) {
-    state.currentScreen = screenName;
-    document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
-    document.querySelectorAll(".nav-button").forEach(b => b.classList.remove("active"));
-
-    const targetScreen = document.getElementById(`screen-${screenName}`);
-    if (targetScreen) targetScreen.classList.add("active");
-
-    const activeNav = document.querySelector(`.bottom-nav .nav-button[data-screen="${screenName}"]`);
-    if (activeNav) activeNav.classList.add("active");
-
-    if (screenName === "map") {
-        setTimeout(initOrRefreshMap, 150);
-    }
-}
-
-function setupModals() {
-    document.getElementById("open-plan-form")?.addEventListener("click", () => openPlanModal());
-    document.getElementById("open-reservation-form")?.addEventListener("click", () => openModal("reservation-modal"));
-    document.getElementById("open-expense-form")?.addEventListener("click", () => openModal("expense-modal"));
-
-    document.querySelectorAll("[data-close]").forEach(btn => {
-        btn.addEventListener("click", () => closeModal(btn.getAttribute("data-close")));
-    });
-}
-
-function openModal(id) {
-    document.getElementById(id)?.classList.remove("hidden");
-}
-
-function closeModal(id) {
-    document.getElementById(id)?.classList.add("hidden");
-}
-
-function openPlanModal(planToEdit = null) {
-    const form = document.getElementById("plan-form");
-    if (form) form.reset();
-
-    const resultsContainer = document.getElementById("plan-location-results");
-    if (resultsContainer) resultsContainer.innerHTML = "";
-
-    const locInput = document.getElementById("plan-location");
-
-    if (planToEdit) {
-        document.getElementById("plan-id").value = planToEdit.id;
-        document.getElementById("plan-title").value = planToEdit.title || "";
-        document.getElementById("plan-category").value = planToEdit.category || "other";
-        document.getElementById("plan-description").value = planToEdit.description || "";
-        document.getElementById("plan-date").value = planToEdit.date || ""; 
-        document.getElementById("plan-time").value = planToEdit.time || "";
-        
-        if (locInput) {
-            locInput.value = planToEdit.location_name || "";
-            locInput.dataset.lat = planToEdit.latitude || "";
-            locInput.dataset.lng = planToEdit.longitude || "";
-        }
-    } else {
-        const idInput = document.getElementById("plan-id");
-        if (idInput) idInput.value = "";
-        if (locInput) {
-            delete locInput.dataset.lat;
-            delete locInput.dataset.lng;
-        }
-    }
-
-    openModal("plan-modal");
-}
-
-function startClocksAndCountdown() {
-    updateClocksAndCountdown();
-    setInterval(updateClocksAndCountdown, 1000);
-}
-
-function updateClocksAndCountdown() {
-    const now = new Date();
-    const malagaTimeStr = now.toLocaleTimeString('es-ES', { timeZone: 'Europe/Madrid', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
-    const nyTimeStr = now.toLocaleTimeString('es-ES', { timeZone: 'America/New_York', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
-
-    const clocksEl = document.getElementById("header-clocks");
-    if (clocksEl) {
-        clocksEl.innerHTML = `
-            <div style="display: flex; align-items: center; justify-content: flex-end; gap: 6px; font-weight: 600;">
-                <span>🗽 NY</span> <strong>${nyTimeStr}</strong>
-            </div>
-            <div style="display: flex; align-items: center; justify-content: flex-end; gap: 6px; opacity: 0.85; font-weight: 500;">
-                <span>💃 Málaga</span> <strong>${malagaTimeStr}</strong>
-            </div>
-        `;
-    }
-
-    const dayEl = document.getElementById("trip-day");
-    if (dayEl) {
-        const startDate = new Date(2026, 11, 26);
-        const endDate = new Date(2027, 0, 4);
-        const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        const diffDays = Math.round((startDate - todayMidnight) / (1000 * 60 * 60 * 24));
-
-        if (diffDays > 0) {
-            dayEl.textContent = `Faltan ${diffDays} días`;
-        } else if (diffDays <= 0 && todayMidnight <= endDate) {
-            dayEl.textContent = `¡Día ${Math.abs(diffDays) + 1} en NY! 🗽`;
-        } else {
-            dayEl.textContent = "Viaje Finalizado ❤️";
-        }
-    }
-}
-
-function escapeHTML(str) {
-    if (!str) return "";
-    return String(str)
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
-}
-
-/* ==========================================================================
-   RENDERIZADOS VISTAS
+   RENDERIZADO DE VISTAS DE PLANES (CON BOTONES A LA DERECHA)
    ========================================================================== */
 function renderPlans() {
     const listEl = document.getElementById("plan-list");
     if (!listEl) return;
 
     let filtered = state.plans;
-
     if (state.activePlanFilter !== 'all') {
-        filtered = filtered.filter(p => {
-            if (!p.category) return state.activePlanFilter === 'other';
-            const cat = p.category.toString().trim().toLowerCase();
-            const filter = state.activePlanFilter.toLowerCase();
-            return cat === filter;
-        });
+        filtered = filtered.filter(p => p.category === state.activePlanFilter);
     }
 
     if (!filtered || filtered.length === 0) {
-        listEl.innerHTML = `<div class="empty-state" style="padding: 20px; text-align: center; color: var(--muted);">No hay planes en esta categoría.</div>`;
+        listEl.innerHTML = `<div class="empty-state">No hay planes registrados en esta categoría.</div>`;
         return;
     }
 
     filtered.sort((a, b) => {
-        const aDone = a.completed ? 1 : 0;
-        const bDone = b.completed ? 1 : 0;
-        if (aDone !== bDone) return aDone - bDone;
         if (!a.date) return 1;
         if (!b.date) return -1;
         return new Date(a.date) - new Date(b.date);
     });
 
     listEl.innerHTML = filtered.map(plan => {
-        const catKey = plan.category ? plan.category.toString().trim().toLowerCase() : 'other';
-        const cat = CATEGORIES[catKey] || CATEGORIES.other;
-        const isDone = !!plan.completed;
-
+        const cat = CATEGORIES[plan.category] || CATEGORIES.other;
+        
         let dateText = "Por definir";
         if (plan.date) {
             const dateObj = new Date(plan.date + "T00:00:00");
@@ -712,58 +609,21 @@ function renderPlans() {
         const timeText = plan.time ? ` ⏰ ${plan.time}` : "";
 
         return `
-            <div class="card plan-card ${isDone ? 'is-completed' : ''}">
+            <div class="card plan-card">
                 <div class="card-actions">
                     <button class="icon-button" onclick="editPlan('${plan.id}')" title="Editar">✏️</button>
                     <button class="icon-button danger" onclick="deletePlan('${plan.id}')" title="Borrar">🗑️</button>
                 </div>
-
-                <div class="plan-checkbox-wrapper" style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
-                    <input 
-                        type="checkbox" 
-                        class="plan-checkbox" 
-                        id="check-${plan.id}" 
-                        ${isDone ? 'checked' : ''} 
-                        onchange="togglePlanCompleted('${plan.id}', this.checked)"
-                        style="width: 18px; height: 18px; cursor: pointer; accent-color: #10b981;"
-                    >
-                    <label for="check-${plan.id}" style="font-size: 13px; font-weight: 600; cursor: pointer; color: var(--muted);">
-                        ${isDone ? '✅ Realizado' : 'Marcar como hecho'}
-                    </label>
-                </div>
-
                 <div class="card-header" style="margin-bottom: 6px;">
-                    <span class="badge-category">${cat.icon} ${cat.name} — ${dateText}${timeText}</span>
+                    <span class="badge-category">${cat.icon} ${cat.name} ${dateText}${timeText}</span>
                 </div>
-
-                <h3 style="margin: 4px 0 8px 0; font-size: 17px; ${isDone ? 'text-decoration: line-through; opacity: 0.7;' : ''}">${escapeHTML(plan.title)}</h3>
+                <h3 style="margin: 4px 0 8px 0; font-size: 17px;">${escapeHTML(plan.title)}</h3>
                 ${plan.location_name ? `<div style="font-size: 13px; color: var(--muted); margin-top: 4px;">📍 ${escapeHTML(plan.location_name)}</div>` : ''}
                 ${plan.description ? `<p style="font-size: 13px; margin-top: 6px; opacity: 0.8;">${escapeHTML(plan.description)}</p>` : ''}
             </div>
         `;
     }).join("");
 }
-
-window.togglePlanCompleted = async function(id, isChecked) {
-    const plan = state.plans.find(p => p.id == id);
-    if (plan) {
-        plan.completed = isChecked;
-        renderPlans();
-    }
-
-    if (supabaseApp) {
-        const { error } = await supabaseApp
-            .from("plans")
-            .update({ completed: isChecked })
-            .eq("id", id);
-
-        if (error) {
-            console.error("Error actualizando estado:", error);
-            if (plan) plan.completed = !isChecked;
-            renderPlans();
-        }
-    }
-};
 
 window.editPlan = function(id) {
     const plan = state.plans.find(p => p.id == id);
@@ -780,7 +640,7 @@ window.deletePlan = async function(id) {
 };
 
 function setupFilters() {
-    const filterBtns = document.querySelectorAll("[data-plan-filter]");
+    const filterBtns = document.querySelectorAll(".plan-filter");
     filterBtns.forEach(btn => {
         btn.addEventListener("click", () => {
             filterBtns.forEach(b => b.classList.remove("active"));
@@ -797,7 +657,7 @@ function renderNextActivity() {
 
     const today = new Date().toISOString().split("T")[0];
     const upcoming = state.plans
-        .filter(p => !p.completed && p.date && p.date >= today)
+        .filter(p => p.date && p.date >= today)
         .sort((a, b) => new Date(a.date) - new Date(b.date));
 
     if (upcoming.length > 0) {
@@ -817,12 +677,15 @@ function renderNextActivity() {
             <span>🗽</span>
             <div>
                 <strong>¡Sin planes próximos!</strong>
-                <p>Añade actividades para sincronizarlas en el mapa.</p>
+                <p>Añade actividades para sincronizarlas con el mapa.</p>
             </div>
         `;
     }
 }
 
+/* ==========================================================================
+   TIEMPO Y DIVISAS
+   ========================================================================== */
 async function updateWeather() {
     try {
         const res = await fetch("https://api.open-meteo.com/v1/forecast?latitude=40.7143&longitude=-74.006&current_weather=true");
@@ -896,12 +759,12 @@ function renderExpenses() {
 
     listEl.innerHTML = state.expenses.map(e => `
         <div class="card">
-            <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
+            <div class="card-header">
                 <strong>${escapeHTML(e.title)}</strong>
-                <span class="badge-amount" style="background:rgba(16,185,129,0.2); color:#10b981; padding:2px 8px; border-radius:12px; font-weight:600; font-size:12px;">${e.amount} ${e.currency}</span>
+                <span class="badge-amount">${e.amount} ${e.currency}</span>
             </div>
-            <p style="margin:4px 0; font-size:13px;">Pagó: <strong>${escapeHTML(e.paid_by)}</strong></p>
-            <small style="color:var(--muted);">Para: ${e.participants ? e.participants.map(p => escapeHTML(p)).join(", ") : "Todos"}</small>
+            <p>Pagó: <strong>${escapeHTML(e.paid_by)}</strong></p>
+            <small>Para: ${e.participants ? e.participants.map(p => escapeHTML(p)).join(", ") : "Todos"}</small>
         </div>
     `).join("");
 }
@@ -932,4 +795,86 @@ function renderHotel() {
             <small>📅 Entrada: ${escapeHTML(h.checkIn)} | Salida: ${escapeHTML(h.checkOut)}</small>
         </div>
     `;
+}
+
+/* ==========================================================================
+   MAPA LEAFLET CON ICONOS PERSONALIZADOS POR CATEGORÍA
+   ========================================================================== */
+function initOrRefreshMap() {
+    if (typeof L === 'undefined') return;
+
+    const mapContainer = document.getElementById("map");
+    if (!mapContainer) return;
+
+    if (!state.map) {
+        state.map = L.map("map").setView([40.7580, -73.9855], 13);
+        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+            attribution: "© OpenStreetMap"
+        }).addTo(state.map);
+    }
+    
+    state.map.invalidateSize();
+    renderMap();
+}
+
+function renderMap() {
+    if (!state.map) return;
+
+    state.markers.forEach(m => state.map.removeLayer(m));
+    state.markers = [];
+
+    const bounds = [];
+
+    // 1. Marcador del Hotel (Icono 🏨)
+    if (state.hotel && state.hotel.lat && state.hotel.lng) {
+        bounds.push([state.hotel.lat, state.hotel.lng]);
+        
+        const hotelIcon = L.divIcon({
+            className: 'custom-map-marker',
+            html: `<div class="marker-pin">🏨</div>`,
+            iconSize: [36, 36],
+            iconAnchor: [18, 18],
+            popupAnchor: [0, -18]
+        });
+
+        const hotelMarker = L.marker([state.hotel.lat, state.hotel.lng], { icon: hotelIcon })
+            .addTo(state.map)
+            .bindPopup(`<b>🏨 ${escapeHTML(state.hotel.name)}</b><br>${escapeHTML(state.hotel.address)}`);
+        
+        state.markers.push(hotelMarker);
+    }
+
+    // 2. Marcadores de Planes (🗽 para Turisteo, 📍 para Spots, etc.)
+    state.plans.forEach(plan => {
+        const lat = parseFloat(plan.latitude);
+        const lng = parseFloat(plan.longitude);
+
+        if (!isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0) {
+            const emoji = getCategoryIcon(plan.category);
+
+            const customIcon = L.divIcon({
+                className: 'custom-map-marker',
+                html: `<div class="marker-pin">${emoji}</div>`,
+                iconSize: [36, 36],
+                iconAnchor: [18, 18],
+                popupAnchor: [0, -18]
+            });
+
+            const marker = L.marker([lat, lng], { icon: customIcon })
+                .addTo(state.map)
+                .bindPopup(`
+                    <b>${emoji} ${escapeHTML(plan.title)}</b><br>
+                    ${plan.location_name ? '📍 ' + escapeHTML(plan.location_name) : ''}<br>
+                    ${plan.description ? '<small>' + escapeHTML(plan.description) + '</small>' : ''}
+                `);
+
+            state.markers.push(marker);
+            bounds.push([lat, lng]);
+        }
+    });
+
+    // Enmarcar todos los puntos en la pantalla
+    if (bounds.length > 0) {
+        state.map.fitBounds(bounds, { padding: [40, 40] });
+    }
 }
