@@ -1,5 +1,5 @@
 /* ==========================================================================
-   🗽 NY TRIP - APP.JS
+   🗽 NY TRIP 
    ========================================================================== */
 
 // Configuración de Supabase
@@ -284,7 +284,7 @@ function initPhotonAutocomplete(inputId, resultsContainerId) {
 
                 data.features.forEach(feature => {
                     const props = feature.properties;
-                    const coords = feature.geometry.coordinates;
+                    const coords = feature.geometry.coordinates; // [lon, lat]
                     const name = props.name || query;
                     const city = props.city || props.state || "New York";
                     const fullAddress = `${props.street ? props.street + ', ' : ''}${city}`;
