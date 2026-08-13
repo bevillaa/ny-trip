@@ -19,7 +19,6 @@ const state = {
     plans: [],
     reservations: [],
     expenses: [],
-    // HOTEL ACTUALIZADO: Courtyard Upper East Side
     hotel: {
         name: "Courtyard by Marriott New York Manhattan/Upper East Side",
         address: "410 East 92nd Street, Upper East Side, New York, NY 10128",
@@ -37,26 +36,20 @@ const state = {
     activePlanFilter: 'all'
 };
 
-// MAPEO UNIFICADO Y FLEXIBLE DE CATEGORÍAS
 const CATEGORIES = {
     food: { name: "Restaurantes", icon: "🍽️" },
     restaurant: { name: "Restaurantes", icon: "🍽️" },
     restaurantes: { name: "Restaurantes", icon: "🍽️" },
-    
     sweet: { name: "Dulces", icon: "🍪" },
     dulces: { name: "Dulces", icon: "🍪" },
     dulce: { name: "Dulces", icon: "🍪" },
-    
     activity: { name: "Spots", icon: "📍" },
     spot: { name: "Spots", icon: "📍" },
     spots: { name: "Spots", icon: "📍" },
-    
     shopping: { name: "Tiendas", icon: "🛍️" },
     tiendas: { name: "Tiendas", icon: "🛍️" },
-    
     sightseeing: { name: "Turisteo", icon: "🗽" },
     turisteo: { name: "Turisteo", icon: "🗽" },
-    
     other: { name: "Otros", icon: "📌" },
     otros: { name: "Otros", icon: "📌" }
 };
@@ -93,14 +86,24 @@ async function initApp() {
             }
         });
 
-        const { data: { session } } = await supabaseApp.auth.getSession();
-        if (session && session.user) {
-            handleLoginSuccess(session.user);
-        } else {
+        try {
+            const { data: { session } } = await supabaseApp.auth.getSession();
+            if (session && session.user) {
+                handleLoginSuccess(session.user);
+            } else {
+                showLoginScreen();
+            }
+        } catch(e) {
+            console.error("Error al obtener sesión:", e);
             showLoginScreen();
         }
     } else {
-        console.error("No se pudo inicializar el cliente de Supabase.");
+        console.error("No se pudo inicializar Supabase.");
+        const errorDiv = document.getElementById("login-error");
+        if(errorDiv) {
+            errorDiv.textContent = "Error: No se pudo conectar con la librería de Supabase.";
+            errorDiv.hidden = false;
+        }
         showLoginScreen();
     }
 
@@ -109,7 +112,7 @@ async function initApp() {
 }
 
 /* ==========================================================================
-   AUTENTICACIÓN
+   AUTENTICACIÓN Y LOGIN
    ========================================================================== */
 function setupAuthListeners() {
     const loginForm = document.getElementById("login-form");
@@ -120,6 +123,7 @@ function setupAuthListeners() {
             const emailEl = document.getElementById("login-email");
             const passwordEl = document.getElementById("login-password");
             const errorDiv = document.getElementById("login-error");
+            const submitBtn = loginForm.querySelector('button[type="submit"]');
 
             const email = emailEl ? emailEl.value.trim() : "";
             const password = passwordEl ? passwordEl.value.trim() : "";
@@ -129,12 +133,25 @@ function setupAuthListeners() {
                 errorDiv.textContent = "";
             }
 
-            if (!supabaseApp) {
+            if (!email || !password) {
                 if (errorDiv) {
-                    errorDiv.textContent = "Error de conexión con Supabase. Revisa las claves o la red.";
+                    errorDiv.textContent = "Por favor, renumera el email y la contraseña.";
                     errorDiv.hidden = false;
                 }
                 return;
+            }
+
+            if (!supabaseApp) {
+                if (errorDiv) {
+                    errorDiv.textContent = "Error de conexión con la base de datos (Supabase no cargado).";
+                    errorDiv.hidden = false;
+                }
+                return;
+            }
+
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.textContent = "Entrando...";
             }
 
             try {
@@ -144,6 +161,7 @@ function setupAuthListeners() {
                     if (errorDiv) {
                         let msg = error.message;
                         if (msg.includes("Invalid login credentials")) msg = "Usuario o contraseña incorrectos.";
+                        if (msg.includes("Email not confirmed")) msg = "Email no confirmado en Supabase.";
                         errorDiv.textContent = msg;
                         errorDiv.hidden = false;
                     }
@@ -153,8 +171,13 @@ function setupAuthListeners() {
             } catch (err) {
                 console.error("Error en login:", err);
                 if (errorDiv) {
-                    errorDiv.textContent = "Ocurrió un error inesperado durante el inicio de sesión.";
+                    errorDiv.textContent = "Error inesperado al intentar iniciar sesión.";
                     errorDiv.hidden = false;
+                }
+            } finally {
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = "Iniciar Sesión";
                 }
             }
         });
@@ -173,15 +196,15 @@ function setupAuthListeners() {
 function showLoginScreen() {
     const loginScreen = document.getElementById("login-screen");
     const appScreen = document.getElementById("app");
-    if (loginScreen) loginScreen.hidden = false;
-    if (appScreen) appScreen.hidden = true;
+    if (loginScreen) loginScreen.style.display = "block";
+    if (appScreen) appScreen.style.display = "none";
 }
 
 function hideLoginScreen() {
     const loginScreen = document.getElementById("login-screen");
     const appScreen = document.getElementById("app");
-    if (loginScreen) loginScreen.hidden = true;
-    if (appScreen) appScreen.hidden = false;
+    if (loginScreen) loginScreen.style.display = "none";
+    if (appScreen) appScreen.style.display = "block";
 }
 
 function handleLoginSuccess(user) {
@@ -238,7 +261,7 @@ function updateClocksAndCountdown() {
 }
 
 /* ==========================================================================
-   BÚSQUEDA Y GEOCODIFICACIÓN (PHOTON)
+   BÚSQUEDA DE LUGARES
    ========================================================================== */
 function setupLocationSearch() {
     initPhotonAutocomplete("plan-location", "plan-location-results");
@@ -286,7 +309,7 @@ function initPhotonAutocomplete(inputId, resultsContainerId) {
 
                 data.features.forEach(feature => {
                     const props = feature.properties;
-                    const coords = feature.geometry.coordinates; // [lon, lat]
+                    const coords = feature.geometry.coordinates;
                     const name = props.name || query;
                     const city = props.city || props.state || "New York";
                     const fullAddress = `${props.street ? props.street + ', ' : ''}${city}`;
@@ -354,7 +377,7 @@ function escapeHTML(str) {
 }
 
 /* ==========================================================================
-   CARGA Y SINCRONIZACIÓN DE DATOS
+   CARGA Y SINCRONIZACIÓN
    ========================================================================== */
 async function loadAllData() {
     updateStatus("● Sincronizando...");
@@ -367,9 +390,7 @@ async function loadAllData() {
             supabaseApp.from("expenses").select("*")
         ]);
 
-        if (plansRes.error) console.error("Error cargando planes:", plansRes.error);
         if (plansRes.data) state.plans = plansRes.data;
-
         if (resRes.data) state.reservations = resRes.data;
         if (expRes.data) state.expenses = expRes.data;
 
@@ -397,7 +418,7 @@ function renderAll() {
 }
 
 /* ==========================================================================
-   NAVEGACIÓN DE PANTALLAS
+   NAVEGACIÓN
    ========================================================================== */
 function setupNavigation() {
     const buttons = document.querySelectorAll("[data-screen]");
@@ -426,7 +447,7 @@ function switchScreen(screenName) {
 }
 
 /* ==========================================================================
-   GESTIÓN DE MODALES
+   MODALES Y FORMULARIOS
    ========================================================================== */
 function setupModals() {
     document.getElementById("open-plan-form")?.addEventListener("click", () => openPlanModal());
@@ -480,9 +501,6 @@ function openPlanModal(planToEdit = null) {
     openModal("plan-modal");
 }
 
-/* ==========================================================================
-   FORMULARIO DE PLANES
-   ========================================================================== */
 function setupForms() {
     document.getElementById("plan-form")?.addEventListener("submit", async (e) => {
         e.preventDefault();
@@ -549,9 +567,7 @@ function setupForms() {
                 result = await supabaseApp.from("plans").insert([planData]);
             }
 
-            if (result.error) {
-                throw new Error(result.error.message);
-            }
+            if (result.error) throw new Error(result.error.message);
 
             closeModal("plan-modal");
             await loadAllData();
@@ -605,7 +621,7 @@ function setupForms() {
 }
 
 /* ==========================================================================
-   RENDERIZADO DE VISTAS DE PLANES CON CHECK COMPLETADO Y FILTROS
+   RENDERIZADO DE VISTAS
    ========================================================================== */
 function renderPlans() {
     const listEl = document.getElementById("plan-list");
@@ -640,9 +656,7 @@ function renderPlans() {
         const aDone = a.completed ? 1 : 0;
         const bDone = b.completed ? 1 : 0;
 
-        if (aDone !== bDone) {
-            return aDone - bDone;
-        }
+        if (aDone !== bDone) return aDone - bDone;
 
         if (!a.date) return 1;
         if (!b.date) return -1;
