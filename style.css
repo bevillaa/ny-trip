@@ -1,9 +1,7 @@
 /* ==========================================
     🗽 NY TRIP - ESTILOS COMPLETOS
 ========================================== */
-.hidden, [hidden] {
-    display: none !important;
-}
+
 * {
     box-sizing: border-box;
 }
