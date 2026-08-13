@@ -8,15 +8,18 @@ const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 
 // Inicialización de Supabase con fallback seguro
 var supabaseApp = null;
-try {
-    if (window.supabase) {
-        supabaseApp = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-    } else {
-        console.error("El SDK de Supabase no está cargado en window.supabase.");
+function initSupabaseClient() {
+    try {
+        if (window.supabase) {
+            supabaseApp = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        } else {
+            console.error("El script SDK de Supabase no está disponible en window.supabase.");
+        }
+    } catch (e) {
+        console.error("Error inicializando Supabase:", e);
     }
-} catch (e) {
-    console.error("Error al inicializar cliente de Supabase:", e);
 }
+initSupabaseClient();
 
 // ESTADO GLOBAL
 const state = {
@@ -42,7 +45,7 @@ const state = {
     activePlanFilter: 'all'
 };
 
-// MAPEO UNIFICADO Y FLEXIBLE DE CATEGORÍAS
+// MAPEO UNIFICADO DE CATEGORÍAS
 const CATEGORIES = {
     food: { name: "Restaurantes", icon: "🍽️" },
     restaurant: { name: "Restaurantes", icon: "🍽️" },
@@ -73,11 +76,10 @@ function getCategoryIcon(category) {
 }
 
 /* ==========================================================================
-   INICIALIZACIÓN DE LA APLICACIÓN
+   INICIALIZACIÓN
    ========================================================================== */
-document.addEventListener("DOMContentLoaded", async () => {
-    // 1. Configurar eventos de botones y formulario de login
-    setupAuthForm();
+document.addEventListener("DOMContentLoaded", () => {
+    setupAuthListeners();
     setupNavigation();
     setupModals();
     setupForms();
@@ -85,21 +87,19 @@ document.addEventListener("DOMContentLoaded", async () => {
     setupLocationSearch();
     startClocksAndCountdown();
 
-    // 2. Revisar si hay una sesión activa de Supabase
-    await checkSession();
+    checkSession();
 
-    // 3. Clima y Divisas
     updateWeather();
     updateCurrency();
 });
 
 /* ==========================================================================
-   SISTEMA DE AUTENTICACIÓN (LOGIN Y LOGOUT)
+   AUTENTICACIÓN
    ========================================================================== */
-function setupAuthForm() {
+function setupAuthListeners() {
     const loginForm = document.getElementById("login-form");
     if (loginForm) {
-        // Reemplazar event listener viejo para evitar duplicados
+        // Clonar para limpiar eventos acumulados
         const newForm = loginForm.cloneNode(true);
         loginForm.parentNode.replaceChild(newForm, loginForm);
 
@@ -120,8 +120,12 @@ function setupAuthForm() {
             }
 
             if (!supabaseApp) {
+                initSupabaseClient();
+            }
+
+            if (!supabaseApp) {
                 if (errorDiv) {
-                    errorDiv.textContent = "Error: El SDK de Supabase no está disponible.";
+                    errorDiv.textContent = "Error: No se puede conectar con Supabase. Revisa si cargaste el SDK en index.html.";
                     errorDiv.hidden = false;
                 }
                 return;
@@ -130,20 +134,18 @@ function setupAuthForm() {
             try {
                 if (submitBtn) {
                     submitBtn.disabled = true;
-                    submitBtn.textContent = "Iniciando sesión...";
+                    submitBtn.textContent = "Verificando...";
                 }
 
                 const { data, error } = await supabaseApp.auth.signInWithPassword({ email, password });
 
                 if (error) {
-                    console.error("Error de Supabase Auth:", error);
+                    console.error("Error Auth Supabase:", error);
                     if (errorDiv) {
                         let msg = error.message;
-                        if (msg.includes("Invalid login credentials")) {
-                            msg = "Usuario o contraseña incorrectos.";
-                        } else if (msg.includes("JWT") || msg.includes("apiKey")) {
-                            msg = "Error de clave de Supabase. Revisa la SUPABASE_KEY.";
-                        }
+                        if (msg.includes("Invalid login credentials")) msg = "Usuario o contraseña incorrectos.";
+                        else if (msg.includes("rate limit")) msg = "Demasiados intentos. Espera unos minutos.";
+                        
                         errorDiv.textContent = msg;
                         errorDiv.hidden = false;
                     }
@@ -151,9 +153,9 @@ function setupAuthForm() {
                     handleLoginSuccess(data.user);
                 }
             } catch (err) {
-                console.error("Excepción inesperada en login:", err);
+                console.error("Error en login:", err);
                 if (errorDiv) {
-                    errorDiv.textContent = "Error inesperado al conectar: " + err.message;
+                    errorDiv.textContent = "Ocurrió un fallo de conexión: " + err.message;
                     errorDiv.hidden = false;
                 }
             } finally {
@@ -190,20 +192,14 @@ async function checkSession() {
             }
         });
 
-        const { data: { session }, error } = await supabaseApp.auth.getSession();
-        if (error) {
-            console.warn("Error obteniendo sesión:", error);
-            showLoginScreen();
-            return;
-        }
-
+        const { data: { session } } = await supabaseApp.auth.getSession();
         if (session && session.user) {
             handleLoginSuccess(session.user);
         } else {
             showLoginScreen();
         }
     } catch (e) {
-        console.error("Error comprobando sesión inicial:", e);
+        console.warn("Fallo comprobando sesión:", e);
         showLoginScreen();
     }
 }
@@ -519,7 +515,7 @@ function openPlanModal(planToEdit = null) {
 }
 
 /* ==========================================================================
-   FORMULARIOS
+   FORMULARIOS DE PLANES, RESERVAS Y GASTOS
    ========================================================================== */
 function setupForms() {
     document.getElementById("plan-form")?.addEventListener("submit", async (e) => {
@@ -643,7 +639,7 @@ function setupForms() {
 }
 
 /* ==========================================================================
-   RENDERIZADO DE VISTAS DE PLANES CON CHECK COMPLETADO Y FILTROS
+   RENDERIZADO DE PLANES
    ========================================================================== */
 function renderPlans() {
     const listEl = document.getElementById("plan-list");
