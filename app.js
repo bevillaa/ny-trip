@@ -1,14 +1,12 @@
 /* ==========================================================================
-   🗽 NY TRIP - APP.JS
+   🗽 NY TRIP - 
    ========================================================================== */
 
-// Configuración de Supabase
 const SUPABASE_URL = "https://rtbrnbyosrtxeayqmvwc.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ0YnJuYnlvc3J0eGVheXFtdndjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY0NTUwODQsImV4cCI6MjEwMjAzMTA4NH0.W3mCe1yAehFd0bz_XNVJ83YR-dNz-8VZnnhgj-cQEss";
 
 var supabaseApp = null;
 
-// Inicialización asíncrona y segura del cliente de Supabase
 function initSupabaseClient() {
     if (supabaseApp) return true;
     if (window.supabase && typeof window.supabase.createClient === 'function') {
@@ -22,7 +20,6 @@ function initSupabaseClient() {
     return false;
 }
 
-// ESTADO GLOBAL
 const state = {
     currentUser: null,
     currentScreen: 'home',
@@ -46,26 +43,20 @@ const state = {
     activePlanFilter: 'all'
 };
 
-// MAPEO UNIFICADO DE CATEGORÍAS
 const CATEGORIES = {
     food: { name: "Restaurantes", icon: "🍽️" },
     restaurant: { name: "Restaurantes", icon: "🍽️" },
     restaurantes: { name: "Restaurantes", icon: "🍽️" },
-    
     sweet: { name: "Dulces", icon: "🍪" },
     dulces: { name: "Dulces", icon: "🍪" },
     dulce: { name: "Dulces", icon: "🍪" },
-    
     activity: { name: "Spots", icon: "📍" },
     spot: { name: "Spots", icon: "📍" },
     spots: { name: "Spots", icon: "📍" },
-    
     shopping: { name: "Tiendas", icon: "🛍️" },
     tiendas: { name: "Tiendas", icon: "🛍️" },
-    
     sightseeing: { name: "Turisteo", icon: "🗽" },
     turisteo: { name: "Turisteo", icon: "🗽" },
-    
     other: { name: "Otros", icon: "📌" },
     otros: { name: "Otros", icon: "📌" }
 };
@@ -77,12 +68,11 @@ function getCategoryIcon(category) {
 }
 
 /* ==========================================================================
-   INICIALIZACIÓN
+   INICIALIZACIÓN Y ARRANQUE
    ========================================================================== */
 document.addEventListener("DOMContentLoaded", async () => {
-    // Intentar inicializar Supabase (espera activa por si el CDN tarda)
     let retries = 0;
-    while (!initSupabaseClient() && retries < 10) {
+    while (!initSupabaseClient() && retries < 15) {
         await new Promise(res => setTimeout(res, 100));
         retries++;
     }
@@ -102,88 +92,106 @@ document.addEventListener("DOMContentLoaded", async () => {
 });
 
 /* ==========================================================================
-   AUTENTICACIÓN
+   AUTENTICACIÓN Y LOGIN
    ========================================================================== */
 function setupAuthListeners() {
     const loginForm = document.getElementById("login-form");
+    
     if (loginForm) {
-        const newForm = loginForm.cloneNode(true);
-        loginForm.parentNode.replaceChild(newForm, loginForm);
+        // Asignamos el evento submit
+        loginForm.onsubmit = async (e) => {
+            if (e) e.preventDefault();
+            await executeLogin();
+            return false;
+        };
 
-        newForm.addEventListener("submit", async (e) => {
-            e.preventDefault();
-            
-            const emailEl = document.getElementById("login-email");
-            const passwordEl = document.getElementById("login-password");
-            const errorDiv = document.getElementById("login-error");
-            const submitBtn = newForm.querySelector('button[type="submit"]');
-
-            const email = emailEl ? emailEl.value.trim() : "";
-            const password = passwordEl ? passwordEl.value.trim() : "";
-
-            if (errorDiv) {
-                errorDiv.hidden = true;
-                errorDiv.textContent = "";
-            }
-
-            // Intento de re-inicialización por seguridad
-            if (!supabaseApp) initSupabaseClient();
-
-            if (!supabaseApp) {
-                if (errorDiv) {
-                    errorDiv.textContent = "Error: El SDK de Supabase no cargó a tiempo. Revisa tu conexión.";
-                    errorDiv.hidden = false;
-                }
-                return;
-            }
-
-            try {
-                if (submitBtn) {
-                    submitBtn.disabled = true;
-                    submitBtn.textContent = "Iniciando...";
-                }
-
-                const { data, error } = await supabaseApp.auth.signInWithPassword({ email, password });
-
-                if (error) {
-                    console.error("Error Supabase Login:", error);
-                    if (errorDiv) {
-                        let msg = error.message;
-                        if (msg.includes("Invalid login credentials")) {
-                            msg = "Email o contraseña incorrectos.";
-                        } else if (msg.includes("rate limit")) {
-                            msg = "Demasiados intentos. Espera 2 minutos.";
-                        }
-                        errorDiv.textContent = msg;
-                        errorDiv.hidden = false;
-                    }
-                } else if (data && data.user) {
-                    handleLoginSuccess(data.user);
-                }
-            } catch (err) {
-                console.error("Error inesperado:", err);
-                if (errorDiv) {
-                    errorDiv.textContent = "Error de conexión: " + err.message;
-                    errorDiv.hidden = false;
-                }
-            } finally {
-                if (submitBtn) {
-                    submitBtn.disabled = false;
-                    submitBtn.textContent = "Iniciar Sesión";
-                }
-            }
-        });
+        // Si el usuario le da click directo al botón de submit
+        const submitBtn = loginForm.querySelector('button[type="submit"]') || loginForm.querySelector('button');
+        if (submitBtn) {
+            submitBtn.onclick = async (e) => {
+                e.preventDefault();
+                await executeLogin();
+            };
+        }
     }
 
     const logoutBtn = document.getElementById("logout-button");
     if (logoutBtn) {
-        logoutBtn.addEventListener("click", async () => {
+        logoutBtn.onclick = async () => {
             if (supabaseApp) await supabaseApp.auth.signOut();
             state.currentUser = null;
             showLoginScreen();
-        });
+        };
     }
 }
+
+// Función global directa para ejecutar el Login
+window.executeLogin = async function() {
+    const emailEl = document.getElementById("login-email");
+    const passwordEl = document.getElementById("login-password");
+    const errorDiv = document.getElementById("login-error");
+    const submitBtn = document.querySelector('#login-form button');
+
+    const email = emailEl ? emailEl.value.trim() : "";
+    const password = passwordEl ? passwordEl.value.trim() : "";
+
+    if (errorDiv) {
+        errorDiv.hidden = true;
+        errorDiv.textContent = "";
+    }
+
+    if (!email || !password) {
+        if (errorDiv) {
+            errorDiv.textContent = "Por favor, restriga tu email y contraseña.";
+            errorDiv.hidden = false;
+        }
+        return;
+    }
+
+    if (!supabaseApp) initSupabaseClient();
+
+    if (!supabaseApp) {
+        if (errorDiv) {
+            errorDiv.textContent = "Error: El servidor de Supabase no responde. Revisa tu conexión.";
+            errorDiv.hidden = false;
+        }
+        return;
+    }
+
+    try {
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.textContent = "Entrando...";
+        }
+
+        const { data, error } = await supabaseApp.auth.signInWithPassword({ email, password });
+
+        if (error) {
+            console.error("Error Login:", error);
+            if (errorDiv) {
+                let msg = error.message;
+                if (msg.includes("Invalid login credentials")) {
+                    msg = "Email o contraseña incorrectos.";
+                }
+                errorDiv.textContent = msg;
+                errorDiv.hidden = false;
+            }
+        } else if (data && data.user) {
+            handleLoginSuccess(data.user);
+        }
+    } catch (err) {
+        console.error("Error inesperado:", err);
+        if (errorDiv) {
+            errorDiv.textContent = "Error: " + err.message;
+            errorDiv.hidden = false;
+        }
+    } finally {
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = "Iniciar Sesión";
+        }
+    }
+};
 
 async function checkSession() {
     if (!supabaseApp) {
@@ -207,7 +215,6 @@ async function checkSession() {
             showLoginScreen();
         }
     } catch (e) {
-        console.warn("Fallo al verificar sesión:", e);
         showLoginScreen();
     }
 }
@@ -280,7 +287,7 @@ function updateClocksAndCountdown() {
 }
 
 /* ==========================================================================
-   BÚSQUEDA Y GEOCODIFICACIÓN (PHOTON)
+   BÚSQUEDA Y GEOCODIFICACIÓN
    ========================================================================== */
 function setupLocationSearch() {
     initPhotonAutocomplete("plan-location", "plan-location-results");
@@ -396,7 +403,7 @@ function escapeHTML(str) {
 }
 
 /* ==========================================================================
-   CARGA Y SINCRONIZACIÓN DE DATOS
+   CARGA Y SINCRONIZACIÓN
    ========================================================================== */
 async function loadAllData() {
     updateStatus("● Sincronizando...");
@@ -409,9 +416,7 @@ async function loadAllData() {
             supabaseApp.from("expenses").select("*")
         ]);
 
-        if (plansRes.error) console.error("Error cargando planes:", plansRes.error);
         if (plansRes.data) state.plans = plansRes.data;
-
         if (resRes.data) state.reservations = resRes.data;
         if (expRes.data) state.expenses = expRes.data;
 
@@ -439,15 +444,15 @@ function renderAll() {
 }
 
 /* ==========================================================================
-   NAVEGACIÓN DE PANTALLAS
+   NAVEGACIÓN
    ========================================================================== */
 function setupNavigation() {
     const buttons = document.querySelectorAll("[data-screen]");
     buttons.forEach(btn => {
-        btn.addEventListener("click", () => {
+        btn.onclick = () => {
             const screen = btn.getAttribute("data-screen");
             switchScreen(screen);
-        });
+        };
     });
 }
 
@@ -468,15 +473,15 @@ function switchScreen(screenName) {
 }
 
 /* ==========================================================================
-   GESTIÓN DE MODALES
+   MODALES Y FORMULARIOS DE LA APP
    ========================================================================== */
 function setupModals() {
-    document.getElementById("open-plan-form")?.addEventListener("click", () => openPlanModal());
-    document.getElementById("open-reservation-form")?.addEventListener("click", () => openModal("reservation-modal"));
-    document.getElementById("open-expense-form")?.addEventListener("click", () => openModal("expense-modal"));
+    document.getElementById("open-plan-form")?.onclick = () => openPlanModal();
+    document.getElementById("open-reservation-form")?.onclick = () => openModal("reservation-modal");
+    document.getElementById("open-expense-form")?.onclick = () => openModal("expense-modal");
 
     document.querySelectorAll("[data-close]").forEach(btn => {
-        btn.addEventListener("click", () => closeModal(btn.getAttribute("data-close")));
+        btn.onclick = () => closeModal(btn.getAttribute("data-close"));
     });
 }
 
@@ -522,11 +527,8 @@ function openPlanModal(planToEdit = null) {
     openModal("plan-modal");
 }
 
-/* ==========================================================================
-   FORMULARIOS DE PLANES, RESERVAS Y GASTOS
-   ========================================================================== */
 function setupForms() {
-    document.getElementById("plan-form")?.addEventListener("submit", async (e) => {
+    document.getElementById("plan-form")?.onsubmit = async (e) => {
         e.preventDefault();
         
         const submitBtn = e.target.querySelector('button[type="submit"]');
@@ -591,15 +593,12 @@ function setupForms() {
                 result = await supabaseApp.from("plans").insert([planData]);
             }
 
-            if (result.error) {
-                throw new Error(result.error.message);
-            }
+            if (result.error) throw new Error(result.error.message);
 
             closeModal("plan-modal");
             await loadAllData();
 
         } catch (err) {
-            console.error("Error al guardar plan:", err);
             alert("⚠️ No se pudo guardar el plan: " + err.message);
         } finally {
             if (submitBtn) {
@@ -607,9 +606,9 @@ function setupForms() {
                 submitBtn.textContent = "Guardar Plan";
             }
         }
-    });
+    };
 
-    document.getElementById("reservation-form")?.addEventListener("submit", async (e) => {
+    document.getElementById("reservation-form")?.onsubmit = async (e) => {
         e.preventDefault();
         const resData = {
             type: document.getElementById("reservation-type").value,
@@ -624,9 +623,9 @@ function setupForms() {
 
         closeModal("reservation-modal");
         loadAllData();
-    });
+    };
 
-    document.getElementById("expense-form")?.addEventListener("submit", async (e) => {
+    document.getElementById("expense-form")?.onsubmit = async (e) => {
         e.preventDefault();
         const participants = Array.from(document.querySelectorAll("input[name='participant']:checked")).map(cb => cb.value);
         
@@ -643,11 +642,11 @@ function setupForms() {
 
         closeModal("expense-modal");
         loadAllData();
-    });
+    };
 }
 
 /* ==========================================================================
-   RENDERIZADO DE PLANES
+   RENDERIZADO GENERAL
    ========================================================================== */
 function renderPlans() {
     const listEl = document.getElementById("plan-list");
@@ -658,7 +657,6 @@ function renderPlans() {
     if (state.activePlanFilter !== 'all') {
         filtered = filtered.filter(p => {
             if (!p.category) return state.activePlanFilter === 'other';
-            
             const cat = p.category.toString().trim().toLowerCase();
             const filter = state.activePlanFilter.toLowerCase();
 
@@ -682,10 +680,7 @@ function renderPlans() {
         const aDone = a.completed ? 1 : 0;
         const bDone = b.completed ? 1 : 0;
 
-        if (aDone !== bDone) {
-            return aDone - bDone;
-        }
-
+        if (aDone !== bDone) return aDone - bDone;
         if (!a.date) return 1;
         if (!b.date) return -1;
         return new Date(a.date) - new Date(b.date);
@@ -745,13 +740,8 @@ window.togglePlanCompleted = async function(id, isChecked) {
     }
 
     if (supabaseApp) {
-        const { error } = await supabaseApp
-            .from("plans")
-            .update({ completed: isChecked })
-            .eq("id", id);
-
+        const { error } = await supabaseApp.from("plans").update({ completed: isChecked }).eq("id", id);
         if (error) {
-            console.error("Error actualizando estado completado:", error);
             if (plan) plan.completed = !isChecked;
             renderPlans();
         }
@@ -765,22 +755,19 @@ window.editPlan = function(id) {
 
 window.deletePlan = async function(id) {
     if (!confirm("¿Seguro que deseas borrar este plan?")) return;
-
-    if (supabaseApp) {
-        await supabaseApp.from("plans").delete().eq("id", id);
-    }
+    if (supabaseApp) await supabaseApp.from("plans").delete().eq("id", id);
     loadAllData();
 };
 
 function setupFilters() {
     const filterBtns = document.querySelectorAll("[data-plan-filter]");
     filterBtns.forEach(btn => {
-        btn.addEventListener("click", () => {
+        btn.onclick = () => {
             filterBtns.forEach(b => b.classList.remove("active"));
             btn.classList.add("active");
             state.activePlanFilter = btn.getAttribute("data-plan-filter");
             renderPlans();
-        });
+        };
     });
 }
 
@@ -816,9 +803,6 @@ function renderNextActivity() {
     }
 }
 
-/* ==========================================================================
-   TIEMPO Y DIVISAS
-   ========================================================================== */
 async function updateWeather() {
     try {
         const res = await fetch("https://api.open-meteo.com/v1/forecast?latitude=40.7143&longitude=-74.006&current_weather=true");
@@ -829,9 +813,7 @@ async function updateWeather() {
             document.getElementById("weather-wind").textContent = `Viento: ${Math.round(data.current_weather.windspeed)} km/h`;
             document.getElementById("weather-update").textContent = "Actualizado";
         }
-    } catch (e) {
-        console.warn("Error tiempo:", e);
-    }
+    } catch (e) {}
 }
 
 async function updateCurrency() {
@@ -842,9 +824,7 @@ async function updateCurrency() {
             document.getElementById("currency-value").textContent = `1 € = ${data.rates.USD.toFixed(2)} $`;
             document.getElementById("currency-update").textContent = "Tiempo real";
         }
-    } catch (e) {
-        console.warn("Error divisas:", e);
-    }
+    } catch (e) {}
 }
 
 function renderReservations() {
@@ -930,9 +910,6 @@ function renderHotel() {
     `;
 }
 
-/* ==========================================================================
-   MAPA LEAFLET
-   ========================================================================== */
 function initOrRefreshMap() {
     if (typeof L === 'undefined') return;
 
