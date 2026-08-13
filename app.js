@@ -1,5 +1,5 @@
 /* ==========================================================================
-   🗽 NY TRIP - APP.JS (VERSIÓN DEFINITIVA CORREGIDA)
+   🗽 NY TRIP 
    ========================================================================== */
 
 const SUPABASE_URL = "https://rtbrnbyosrtxeayqmvwc.supabase.co";
