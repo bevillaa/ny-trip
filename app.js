@@ -6,13 +6,13 @@
 const SUPABASE_URL = "https://rtbrnbyosrtxeayqmvwc.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ0YnJuYnlvc3J0eGVheXFtdndjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY0NTUwODQsImV4cCI6MjEwMjAzMTA4NH0.W3mCe1yAehFd0bz_XNVJ83YR-dNz-8VZnnhgj-cQEss";
 
-// Inicialización de Supabase 
+// Inicialización de Supabase
 var supabaseApp = null;
 if (window.supabase) {
     supabaseApp = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 }
 
-// ESTADO GLOBAL (añadidos editingExpenseId y selectedExpenseUser)
+// ESTADO GLOBAL
 const state = {
     currentUser: null,
     currentScreen: 'home',
@@ -33,9 +33,7 @@ const state = {
     ],
     map: null,
     markers: [],
-    activePlanFilter: 'all',
-    editingExpenseId: null,
-    selectedExpenseUser: null
+    activePlanFilter: 'all'
 };
 
 // CATEGORÍAS DE PLANES
@@ -48,9 +46,7 @@ const CATEGORIES = {
     other: { name: "Otros", icon: "📌" }
 };
 
-// Lista de integrantes
-const USERS = ["Laura", "Sara", "Belén"];
-
+// Función auxiliar para obtener el icono según la categoría
 function getCategoryIcon(category) {
     if (CATEGORIES[category]) {
         return CATEGORIES[category].icon;
@@ -71,7 +67,6 @@ async function initApp() {
     setupForms();
     setupFilters();
     setupLocationSearch();
-    setupTravelersClick(); // añadir listeners sobre las tarjetas de viajera
 
     startClocksAndCountdown();
 
@@ -100,7 +95,7 @@ async function initApp() {
 }
 
 /* ==========================================================================
-   AUTENTICACIÓN (SE MANTIENE IGUAL)
+   AUTENTICACIÓN
    ========================================================================== */
 function showLoginScreen() {
     const loginScreen = document.getElementById("login-screen");
@@ -126,9 +121,6 @@ function handleLoginSuccess(user) {
     loadAllData();
 }
 
-/* ==========================================================================
-   LOGIN HANDLERS (NO TOCADO)
-   ========================================================================== */
 document.addEventListener("DOMContentLoaded", () => {
     const loginForm = document.getElementById("login-form");
     if (loginForm) {
@@ -380,7 +372,7 @@ function renderAll() {
     renderNextActivity();
     renderPlans();
     renderReservations();
-    renderExpenses(); // ahora renderiza el resumen + acciones
+    renderExpenses();
     renderFlights();
     renderHotel();
     if (state.currentScreen === 'map') renderMap();
@@ -413,23 +405,6 @@ function switchScreen(screenName) {
     if (screenName === "map") {
         setTimeout(initOrRefreshMap, 150);
     }
-
-    // Si vamos a expenses y hay usuario seleccionado, renderizar y resaltar
-    if (screenName === "expenses") {
-        // asegurar que la vista de gastos esté actualizada
-        setTimeout(() => {
-            renderExpenses();
-            if (state.selectedExpenseUser) {
-                const el = document.getElementById(`balance-${cssId(state.selectedExpenseUser)}`);
-                if (el) {
-                    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    const prev = el.style.boxShadow;
-                    el.style.boxShadow = "0 8px 30px rgba(37,99,235,0.12)";
-                    setTimeout(() => { el.style.boxShadow = prev; }, 2000);
-                }
-            }
-        }, 120);
-    }
 }
 
 /* ==========================================================================
@@ -438,7 +413,7 @@ function switchScreen(screenName) {
 function setupModals() {
     document.getElementById("open-plan-form")?.addEventListener("click", () => openPlanModal());
     document.getElementById("open-reservation-form")?.addEventListener("click", () => openModal("reservation-modal"));
-    document.getElementById("open-expense-form")?.addEventListener("click", () => openExpenseModal());
+    document.getElementById("open-expense-form")?.addEventListener("click", () => openModal("expense-modal"));
 
     document.querySelectorAll("[data-close]").forEach(btn => {
         btn.addEventListener("click", () => closeModal(btn.getAttribute("data-close")));
@@ -488,40 +463,7 @@ function openPlanModal(planToEdit = null) {
 }
 
 /* ==========================================================================
-   MODAL GASTO: abrir/editar (nuevo)
-   ========================================================================== */
-function openExpenseModal(expenseToEdit = null) {
-    const form = document.getElementById("expense-form");
-    if (form) form.reset();
-
-    // default: marcar todos los participantes
-    document.querySelectorAll("input[name='participant']").forEach(cb => cb.checked = true);
-
-    if (expenseToEdit) {
-        state.editingExpenseId = expenseToEdit.id;
-        document.getElementById("expense-title").value = expenseToEdit.title || "";
-        document.getElementById("expense-amount").value = expenseToEdit.amount || "";
-        document.getElementById("expense-currency").value = expenseToEdit.currency || "EUR";
-        document.getElementById("expense-paid-by").value = expenseToEdit.paid_by || USERS[0];
-        document.getElementById("expense-date").value = expenseToEdit.date || new Date().toISOString().split("T")[0];
-        const notesInput = document.getElementById("expense-notes");
-        if (notesInput) notesInput.value = expenseToEdit.notes || "";
-
-        const parts = expenseToEdit.participants || USERS;
-        document.querySelectorAll("input[name='participant']").forEach(cb => {
-            cb.checked = parts.includes(cb.value);
-        });
-    } else {
-        state.editingExpenseId = null;
-        document.querySelectorAll("input[name='participant']").forEach(cb => cb.checked = true);
-        document.getElementById("expense-date").value = new Date().toISOString().split("T")[0];
-    }
-
-    openModal("expense-modal");
-}
-
-/* ==========================================================================
-   FORMULARIOS DE PLANES, RESERVAS Y GASTOS (se adapta el envio de gastos para editar)
+   FORMULARIO DE PLANES
    ========================================================================== */
 function setupForms() {
     document.getElementById("plan-form")?.addEventListener("submit", async (e) => {
@@ -586,7 +528,7 @@ function setupForms() {
 
         } catch (err) {
             console.error("Error al guardar plan:", err);
-            alert("⚠️ No se pudo guardar el plan: " + (err.message || err));
+            alert("⚠️ No se pudo guardar el plan: " + err.message);
         } finally {
             if (submitBtn) {
                 submitBtn.disabled = false;
@@ -612,64 +554,28 @@ function setupForms() {
         loadAllData();
     });
 
-    // FORMULARIO DE GASTO: ahora soporta editar y crear
     document.getElementById("expense-form")?.addEventListener("submit", async (e) => {
         e.preventDefault();
+        const participants = Array.from(document.querySelectorAll("input[name='participant']:checked")).map(cb => cb.value);
+        
+        const expData = {
+            title: document.getElementById("expense-title").value,
+            amount: parseFloat(document.getElementById("expense-amount").value),
+            currency: document.getElementById("expense-currency").value,
+            paid_by: document.getElementById("expense-paid-by").value,
+            participants: participants,
+            date: document.getElementById("expense-date").value || new Date().toISOString().split("T")[0]
+        };
 
-        const submitBtn = e.target.querySelector('button[type="submit"]');
-        if (submitBtn) {
-            submitBtn.disabled = true;
-            submitBtn.textContent = "Guardando...";
-        }
+        if (supabaseApp) await supabaseApp.from("expenses").insert([expData]);
 
-        try {
-            const participants = Array.from(document.querySelectorAll("input[name='participant']:checked")).map(cb => cb.value);
-            
-            if (participants.length === 0) {
-                alert("Selecciona al menos a un participante para el gasto.");
-                return;
-            }
-
-            const notesVal = document.getElementById("expense-notes")?.value || "";
-
-            const expData = {
-                title: document.getElementById("expense-title").value,
-                amount: parseFloat(document.getElementById("expense-amount").value) || 0,
-                currency: document.getElementById("expense-currency").value,
-                paid_by: document.getElementById("expense-paid-by").value,
-                participants: participants,
-                date: document.getElementById("expense-date").value || new Date().toISOString().split("T")[0],
-                notes: notesVal
-            };
-
-            if (!supabaseApp) throw new Error("No hay conexión con Supabase.");
-
-            if (state.editingExpenseId) {
-                // actualizar gasto existente
-                await supabaseApp.from("expenses").update(expData).eq("id", state.editingExpenseId);
-                state.editingExpenseId = null;
-            } else {
-                // insertar nuevo
-                await supabaseApp.from("expenses").insert([expData]);
-            }
-
-            closeModal("expense-modal");
-            await loadAllData();
-
-        } catch (err) {
-            console.error("Error guardando gasto:", err);
-            alert("⚠️ No se pudo guardar el gasto: " + (err.message || err));
-        } finally {
-            if (submitBtn) {
-                submitBtn.disabled = false;
-                submitBtn.textContent = "Guardar gasto";
-            }
-        }
+        closeModal("expense-modal");
+        loadAllData();
     });
 }
 
 /* ==========================================================================
-   RENDERIZADO DE VISTAS DE PLANES (SIN CAMBIOS)
+   RENDERIZADO DE VISTAS DE PLANES (CON BOTONES A LA DERECHA)
    ========================================================================== */
 function renderPlans() {
     const listEl = document.getElementById("plan-list");
@@ -808,179 +714,6 @@ async function updateCurrency() {
     }
 }
 
-/* ==========================================================================
-   RENDERIZADO Y GESTIÓN DE GASTOS (TRICOUNT) - NUEVO
-   - editar, borrar, resumen saldos y deudas
-   ========================================================================== */
-function renderExpenses() {
-    const listEl = document.getElementById("expense-list");
-    const summaryEl = document.getElementById("expense-summary");
-    const debtsEl = document.getElementById("debts");
-    if (!listEl) return;
-
-    if (!state.expenses || state.expenses.length === 0) {
-        listEl.innerHTML = `<div class="empty">No hay gastos registrados.</div>`;
-        if (summaryEl) summaryEl.innerHTML = "";
-        if (debtsEl) debtsEl.innerHTML = "<div class='empty'>No hay deudas calculadas.</div>";
-        return;
-    }
-
-    // Calcular balances por usuario (tratamos internamente como EUR; si moneda USD convertimos: USD -> EUR ≈ /1.08)
-    const balances = {};
-    USERS.forEach(u => balances[u] = 0);
-
-    state.expenses.forEach(e => {
-        const amountEUR = (e.currency === 'USD') ? (e.amount / 1.08) : e.amount;
-        const payer = e.paid_by;
-        const participants = (e.participants && e.participants.length > 0) ? e.participants : USERS;
-        const splitAmount = amountEUR / participants.length;
-
-        if (balances[payer] !== undefined) balances[payer] += amountEUR;
-        participants.forEach(p => {
-            if (balances[p] !== undefined) balances[p] -= splitAmount;
-        });
-    });
-
-    // Resumen por usuario
-    if (summaryEl) {
-        summaryEl.innerHTML = USERS.map(user => {
-            const bal = balances[user] || 0;
-            const isPos = bal >= 0;
-            const cls = isPos ? "positive" : "negative";
-            const sign = isPos ? "+" : "";
-            return `
-                <div id="balance-${cssId(user)}" class="balance-card" style="padding:12px; border-radius:12px; background:#fff; border:1px solid #e6e6e6;">
-                    <span style="display:block; color:var(--muted); font-size:12px;">${escapeHTML(user)}</span>
-                    <strong class="${cls}" style="font-size:16px; display:block; margin-top:6px;">${sign}${bal.toFixed(2)} €</strong>
-                </div>
-            `;
-        }).join("");
-    }
-
-    // Calcular deudas (algoritmo greedy simple)
-    if (debtsEl) {
-        const debtors = [];
-        const creditors = [];
-
-        USERS.forEach(u => {
-            const b = balances[u] || 0;
-            if (b < -0.01) debtors.push({ user: u, amount: -b });
-            else if (b > 0.01) creditors.push({ user: u, amount: b });
-        });
-
-        const debtList = [];
-        let i = 0, j = 0;
-
-        while (i < debtors.length && j < creditors.length) {
-            const debtor = debtors[i];
-            const creditor = creditors[j];
-            const payment = Math.min(debtor.amount, creditor.amount);
-
-            debtList.push(`
-                <div class="debt-card" style="background:white; border:1px solid #eee; padding:10px; border-radius:10px;">
-                    <div>
-                        <strong>${escapeHTML(debtor.user)}</strong> debe a <strong>${escapeHTML(creditor.user)}</strong>
-                    </div>
-                    <span class="debt-amount positive" style="font-weight:800; color:var(--success)">${payment.toFixed(2)} €</span>
-                </div>
-            `);
-
-            debtor.amount -= payment;
-            creditor.amount -= payment;
-
-            if (debtor.amount < 0.01) i++;
-            if (creditor.amount < 0.01) j++;
-        }
-
-        debtsEl.innerHTML = debtList.length > 0 ? debtList.join("") : "<div class='empty'>¡Cuentas al día! Nadie debe nada. 🎉</div>";
-    }
-
-    // Lista de gastos con botones editar / borrar
-    listEl.innerHTML = state.expenses.map(e => `
-        <div class="expense-card" style="display:flex; justify-content:space-between; align-items:center;">
-            <div class="card-main" style="min-width:0; flex:1;">
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <strong style="font-size:15px;">${escapeHTML(e.title)}</strong>
-                    <strong style="font-size:15px;">${e.amount} ${e.currency}</strong>
-                </div>
-                <p style="margin:6px 0 0;">Pagó: <strong>${escapeHTML(e.paid_by)}</strong> • Para: ${e.participants ? e.participants.map(p => escapeHTML(p)).join(", ") : "Todos"}</p>
-                ${e.date ? `<small style="color:var(--muted); font-size:11px;">📅 ${e.date}</small>` : ''}
-            </div>
-            <div class="card-actions" style="position:static; margin-left:10px; display:flex; gap:6px;">
-                <button class="icon-button" onclick="editExpense('${e.id}')" title="Editar gasto">✏️</button>
-                <button class="icon-button danger" onclick="deleteExpense('${e.id}')" title="Borrar gasto">🗑️</button>
-            </div>
-        </div>
-    `).join("");
-
-    // Si hay usuario seleccionado (viniendo desde Home), resaltar su balance
-    if (state.selectedExpenseUser) {
-        setTimeout(() => {
-            const el = document.getElementById(`balance-${cssId(state.selectedExpenseUser)}`);
-            if (el) {
-                el.style.boxShadow = "0 8px 30px rgba(37,99,235,0.12)";
-                el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                setTimeout(() => { el.style.boxShadow = ""; }, 2000);
-            }
-        }, 150);
-    }
-}
-
-// Funciones globales para editar / borrar (invocadas desde los botones)
-window.editExpense = function(id) {
-    const exp = state.expenses.find(e => e.id == id);
-    if (exp) {
-        openExpenseModal(exp);
-    } else {
-        alert("No se encontró el gasto para editar.");
-    }
-};
-
-window.deleteExpense = async function(id) {
-    if (!confirm("¿Seguro que deseas eliminar este gasto?")) return;
-
-    if (!supabaseApp) {
-        alert("No conectado a la base de datos.");
-        return;
-    }
-
-    try {
-        await supabaseApp.from("expenses").delete().eq("id", id);
-        await loadAllData();
-    } catch (e) {
-        console.error("Error borrando gasto:", e);
-        alert("No se pudo eliminar el gasto.");
-    }
-};
-
-/* ==========================================================================
-   SETUP: al hacer click en las tarjetas de viajera navegar a gastos (nuevo)
-   ========================================================================== */
-function setupTravelersClick() {
-    const cards = document.querySelectorAll(".traveler-card");
-    cards.forEach(card => {
-        card.style.cursor = "pointer";
-        card.addEventListener("click", () => {
-            const nameEl = card.querySelector("strong");
-            const name = nameEl ? nameEl.textContent.trim() : null;
-            if (name) {
-                state.selectedExpenseUser = name;
-            } else {
-                state.selectedExpenseUser = null;
-            }
-            switchScreen("expenses");
-        });
-    });
-}
-
-// Helper: crea id CSS seguro a partir del nombre (Laura -> laura)
-function cssId(name) {
-    return name.replace(/\s+/g, '-').replace(/[^a-zA-Z0-9-_]/g, '').toLowerCase();
-}
-
-/* ==========================================================================
-   RENDERIZADO RESERVAS, VUELOS, HOTEL (sin cambios)
-   ========================================================================== */
 function renderReservations() {
     const listEl = document.getElementById("reservation-list");
     if (!listEl) return;
@@ -995,6 +728,43 @@ function renderReservations() {
             <h3>📋 ${escapeHTML(r.title)}</h3>
             ${r.description ? `<p>${escapeHTML(r.description)}</p>` : ''}
             <small>${r.date || 'Sin fecha'} ${r.time || ''} ${r.location ? '— ' + escapeHTML(r.location) : ''}</small>
+        </div>
+    `).join("");
+}
+
+function renderExpenses() {
+    const listEl = document.getElementById("expense-list");
+    const summaryEl = document.getElementById("expense-summary");
+    if (!listEl) return;
+
+    if (state.expenses.length === 0) {
+        listEl.innerHTML = `<div class="empty-state">No hay gastos registrados.</div>`;
+        if (summaryEl) summaryEl.innerHTML = "";
+        return;
+    }
+
+    let totalUSD = 0;
+    state.expenses.forEach(e => {
+        totalUSD += e.currency === 'EUR' ? e.amount * 1.08 : e.amount;
+    });
+
+    if (summaryEl) {
+        summaryEl.innerHTML = `
+            <div class="info-card">
+                <strong>Gasto Total Aprox:</strong> $${totalUSD.toFixed(2)} USD
+                <small>(${state.expenses.length} pagos realizados)</small>
+            </div>
+        `;
+    }
+
+    listEl.innerHTML = state.expenses.map(e => `
+        <div class="card">
+            <div class="card-header">
+                <strong>${escapeHTML(e.title)}</strong>
+                <span class="badge-amount">${e.amount} ${e.currency}</span>
+            </div>
+            <p>Pagó: <strong>${escapeHTML(e.paid_by)}</strong></p>
+            <small>Para: ${e.participants ? e.participants.map(p => escapeHTML(p)).join(", ") : "Todos"}</small>
         </div>
     `).join("");
 }
@@ -1028,7 +798,7 @@ function renderHotel() {
 }
 
 /* ==========================================================================
-   MAPA LEAFLET (sin cambios)
+   MAPA LEAFLET CON ICONOS PERSONALIZADOS POR CATEGORÍA
    ========================================================================== */
 function initOrRefreshMap() {
     if (typeof L === 'undefined') return;
