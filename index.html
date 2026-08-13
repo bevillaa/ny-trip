@@ -18,8 +18,9 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 
     <!-- STYLE -->
-    <link rel="stylesheet" href="./style.css?v=20260812-004">
+    <link rel="stylesheet" href="./style.css?v=20260812-003">
 
+    <!-- LIMPIEZA DE CACHÉ / SERVICE WORKERS -->
     <script>
         (async function clearOldCache() {
             try {
@@ -39,7 +40,7 @@
                     await Promise.all(cacheNames.map(cacheName => caches.delete(cacheName)));
                 }
 
-                window.NY_TRIP_VERSION = "20260812-004";
+                window.NY_TRIP_VERSION = "20260812-003";
                 console.log("🧹 NY TRIP: caché limpiada.");
             } catch (error) {
                 console.warn("⚠️ No se pudo limpiar toda la caché:", error);
@@ -50,7 +51,9 @@
 
 <body>
 
-    <!-- LOGIN SCREEN -->
+    <!-- ==========================================
+         LOGIN
+    =========================================== -->
     <div id="login-screen" class="login-screen">
         <div class="login-card">
             <div class="login-logo">🗽</div>
@@ -58,27 +61,28 @@
             <p class="login-subtitle">El tridente en Nueva York 😈😇🤪</p>
 
             <form id="login-form">
-    <label>
-        Email
-        <input id="login-email" type="email" autocomplete="username" inputmode="email" placeholder="Tu email" required>
-    </label>
+                <label>
+                    Email
+                    <input id="login-email" type="email" autocomplete="username" inputmode="email" placeholder="Tu email" required>
+                </label>
 
-    <label>
-        Contraseña
-        <input id="login-password" type="password" autocomplete="current-password" placeholder="Tu contraseña" required>
-    </label>
+                <label>
+                    Contraseña
+                    <input id="login-password" type="password" autocomplete="current-password" placeholder="Tu contraseña" required>
+                </label>
 
-    <!-- Añadimos id y nos aseguramos del type="submit" -->
-    <button id="login-button" class="primary-button full" type="submit">
-        Entrar
-    </button>
+                <button id="login-button" class="primary-button full" type="submit">
+                    Entrar
+                </button>
 
-    <div id="login-error" class="login-error" hidden></div>
-</form>
+                <div id="login-error" class="login-error" hidden></div>
+            </form>
         </div>
     </div>
 
-    <!-- APP SCREEN -->
+    <!-- ==========================================
+         APP
+    =========================================== -->
     <div id="app" hidden>
 
         <!-- CABECERA -->
@@ -96,10 +100,12 @@
         <!-- CONTENIDO PRINCIPAL -->
         <main id="screen-container">
 
-            <!-- INICIO -->
+            <!-- ======================================
+                 INICIO
+            ======================================= -->
             <section id="screen-home" class="screen active">
 
-                <!-- TARJETA HERO (Contador) -->
+                <!-- TARJETA HERO -->
                 <div class="hero-card">
                     <div>
                         <span class="small-label">📅 VIAJE</span>
@@ -185,7 +191,9 @@
 
             </section>
 
-            <!-- PLAN -->
+            <!-- ======================================
+                 PLAN
+            ======================================= -->
             <section id="screen-plan" class="screen">
                 <div class="screen-title">
                     <div>
@@ -211,7 +219,9 @@
                 <div id="plan-list" class="list">Cargando...</div>
             </section>
 
-            <!-- MAPA -->
+            <!-- ======================================
+                 MAPA
+            ======================================= -->
             <section id="screen-map" class="screen map-screen">
                 <div class="screen-title map-header">
                     <div>
@@ -228,7 +238,9 @@
                 <div id="map-list" class="map-list"></div>
             </section>
 
-            <!-- GASTOS -->
+            <!-- ======================================
+                 GASTOS
+            ======================================= -->
             <section id="screen-expenses" class="screen">
                 <div class="screen-title">
                     <div>
@@ -254,7 +266,9 @@
                 <div id="expense-list" class="list">Cargando...</div>
             </section>
 
-            <!-- RESERVAS -->
+            <!-- ======================================
+                 RESERVAS
+            ======================================= -->
             <section id="screen-reservations" class="screen">
                 <div class="screen-title">
                     <div>
@@ -270,7 +284,9 @@
                 <div id="reservation-list" class="list">Cargando...</div>
             </section>
 
-            <!-- VUELOS -->
+            <!-- ======================================
+                 VUELOS
+            ======================================= -->
             <section id="screen-flights" class="screen">
                 <div class="screen-title">
                     <div>
@@ -285,7 +301,9 @@
                 <div id="flight-list" class="list"></div>
             </section>
 
-            <!-- MÁS -->
+            <!-- ======================================
+                 MÁS
+            ======================================= -->
             <section id="screen-more" class="screen">
                 <div class="screen-title">
                     <div>
@@ -337,7 +355,9 @@
 
         </main>
 
-        <!-- MODALES -->
+        <!-- ==========================================
+             MODALES
+        =========================================== -->
 
         <!-- MODAL PLAN -->
         <div id="plan-modal" class="modal hidden">
@@ -366,7 +386,7 @@
                     </div>
                     <label>Lugar <input id="plan-location" placeholder="Ej. Central Park, New York"></label>
                     <div id="plan-location-results" class="search-results"></div>
-                    <button class="primary-button full" type="submit">Guardar plan</button>
+                    <button class="primary-button full" type="submit" style="margin-top: 12px;">Guardar plan</button>
                 </form>
             </div>
         </div>
@@ -397,7 +417,7 @@
                     <label>Lugar <input id="reservation-location" placeholder="Ej. Times Square"></label>
                     <div id="reservation-location-results" class="search-results"></div>
                     <label>Enlace de reserva <input id="reservation-url" type="url" placeholder="https://..."></label>
-                    <button class="primary-button full" type="submit">Guardar reserva</button>
+                    <button class="primary-button full" type="submit" style="margin-top: 12px;">Guardar reserva</button>
                 </form>
             </div>
         </div>
@@ -422,15 +442,15 @@
                     </div>
                     <label>Pagó
                         <select id="expense-paid-by">
-                            <option value="Laura">😈 Laura</option>
-                            <option value="Sara">😇 Sara</option>
+                            <option value="Sara">😈 Sara</option>
+                            <option value="Laura">😇 Laura</option>
                             <option value="Belén">🤪 Belén</option>
                         </select>
                     </label>
                     <fieldset>
                         <legend>Participan</legend>
-                        <label class="check-label"><input type="checkbox" name="participant" value="Laura" checked> 😈 Laura</label>
-                        <label class="check-label"><input type="checkbox" name="participant" value="Sara" checked> 😇 Sara</label>
+                        <label class="check-label"><input type="checkbox" name="participant" value="Sara" checked> 😈 Sara</label>
+                        <label class="check-label"><input type="checkbox" name="participant" value="Laura" checked> 😇 Laura</label>
                         <label class="check-label"><input type="checkbox" name="participant" value="Belén" checked> 🤪 Belén</label>
                     </fieldset>
                     <label>Fecha <input id="expense-date" type="date"></label>
@@ -440,7 +460,9 @@
             </div>
         </div>
 
-        <!-- NAVEGACIÓN INFERIOR -->
+        <!-- ==========================================
+             NAVEGACIÓN INFERIOR
+        =========================================== -->
         <nav class="bottom-nav">
             <button class="nav-button active" data-screen="home" type="button">
                 <span>🏠</span><small>Inicio</small>
@@ -461,9 +483,12 @@
 
     </div>
 
-    <!-- LIBRERÍAS Y CÓDIGO JS -->
+    <!-- ==========================================
+         LIBRERÍAS JS Y LÓGICA
+    =========================================== -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="./app.js?v=20260812-004"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+    <script src="./app.js?v=20260812-003"></script>
+
 </body>
 </html>
