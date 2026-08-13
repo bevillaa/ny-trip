@@ -6,7 +6,7 @@
     <title>NY TRIP</title>
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="style.css">
-    <!-- Leaflet CSS para el Mapa -->
+    <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 </head>
 <body>
@@ -14,7 +14,7 @@
     <!-- ==========================================
        PANTALLA DE LOGIN
     ========================================== -->
-    <div id="login-screen" style="max-width: 400px; margin: 60px auto 20px; padding: 25px 20px;">
+    <div id="login-screen" style="max-width: 400px; margin: 60px auto 20px; padding: 25px 20px; display: block;">
         <div style="text-align: center; margin-bottom: 25px;">
             <span style="font-size: 50px;">🗽</span>
             <h1 style="margin: 10px 0 5px; font-size: 26px;">NY TRIP</h1>
@@ -24,13 +24,13 @@
         <form id="login-form">
             <div>
                 <label for="login-email">Correo Electrónico</label>
-                <input type="email" id="login-email" required placeholder="viajero@ejemplo.com">
+                <input type="email" id="login-email" required placeholder="viajero@ejemplo.com" autocomplete="email">
             </div>
-            <div>
+            <div style="margin-top: 10px;">
                 <label for="login-password">Contraseña</label>
-                <input type="password" id="login-password" required placeholder="••••••••">
+                <input type="password" id="login-password" required placeholder="••••••••" autocomplete="current-password">
             </div>
-            <div id="login-error" style="color: var(--danger); font-size: 13px; margin-top: 5px; text-align: center;" hidden></div>
+            <div id="login-error" style="color: var(--danger); font-size: 13px; margin-top: 12px; text-align: center; background: #fee2e2; padding: 8px; border-radius: 8px;" hidden></div>
             <button type="submit" class="primary-button full" style="margin-top: 15px;">Iniciar Sesión</button>
         </form>
     </div>
@@ -39,7 +39,7 @@
     <!-- ==========================================
        APLICACIÓN PRINCIPAL
     ========================================== -->
-    <div id="app" hidden>
+    <div id="app" style="display: none;">
 
         <!-- CABECERA PRINCIPAL -->
         <header class="app-header">
@@ -54,12 +54,8 @@
         </header>
 
         <main>
-            <!-- ==========================================
-               1. PANTALLA INICIO (HOME)
-            ========================================== -->
+            <!-- 1. PANTALLA INICIO (HOME) -->
             <section id="screen-home" class="screen active">
-                
-                <!-- HERO CARD -->
                 <div class="hero-card">
                     <div>
                         <span class="small-label">CUENTA ATRÁS</span>
@@ -72,7 +68,6 @@
                     </div>
                 </div>
 
-                <!-- TIEMPO Y DIVISAS -->
                 <div class="weather-card">
                     <div class="weather-main">
                         <span>☀️</span>
@@ -95,7 +90,6 @@
                     <span id="currency-value">1 € = -- $</span>
                 </div>
 
-                <!-- PRÓXIMA ACTIVIDAD -->
                 <div class="section-heading">
                     <h2>Próxima Actividad</h2>
                 </div>
@@ -107,7 +101,6 @@
                     </div>
                 </div>
 
-                <!-- ACCIONES RÁPIDAS -->
                 <div class="section-heading">
                     <h2>Acciones Rápidas</h2>
                 </div>
@@ -129,31 +122,10 @@
                         <strong>Ver Mapa</strong>
                     </button>
                 </div>
-
-                <!-- INTEGRANTES DEL VIAJE -->
-                <div class="section-heading">
-                    <h2>Viajeros</h2>
-                </div>
-                <div class="travelers-grid">
-                    <div class="traveler-card">
-                        <span>👑</span>
-                        <strong>Viajero 1</strong>
-                    </div>
-                    <div class="traveler-card">
-                        <span>🤠</span>
-                        <strong>Viajero 2</strong>
-                    </div>
-                    <div class="traveler-card">
-                        <span>🥳</span>
-                        <strong>Viajero 3</strong>
-                    </div>
-                </div>
             </section>
 
 
-            <!-- ==========================================
-               2. PANTALLA PLANES (ITINERARIO)
-            ========================================== -->
+            <!-- 2. PANTALLA PLANES -->
             <section id="screen-plans" class="screen">
                 <div class="screen-title">
                     <div>
@@ -166,7 +138,6 @@
                     <button class="primary-button" onclick="openPlanModal()">+ Nuevo</button>
                 </div>
 
-                <!-- FILTROS POR CATEGORÍA -->
                 <div class="plan-filters">
                     <button class="plan-filter active" data-plan-filter="all">Todos</button>
                     <button class="plan-filter" data-plan-filter="food">🍽️ Comer</button>
@@ -177,16 +148,13 @@
                     <button class="plan-filter" data-plan-filter="other">📌 Otros</button>
                 </div>
 
-                <!-- LISTA DE PLANES -->
                 <div id="plan-list" class="list">
                     <div class="empty">Cargando planes...</div>
                 </div>
             </section>
 
 
-            <!-- ==========================================
-               3. PANTALLA MAPA
-            ========================================== -->
+            <!-- 3. PANTALLA MAPA -->
             <section id="screen-map" class="screen map-screen">
                 <div class="screen-title">
                     <div>
@@ -201,9 +169,7 @@
             </section>
 
 
-            <!-- ==========================================
-               4. PANTALLA GASTOS
-            ========================================== -->
+            <!-- 4. PANTALLA GASTOS -->
             <section id="screen-expenses" class="screen">
                 <div class="screen-title">
                     <div>
@@ -224,9 +190,7 @@
             </section>
 
 
-            <!-- ==========================================
-               5. PANTALLA MÁS (INFORMACIÓN)
-            ========================================== -->
+            <!-- 5. PANTALLA MÁS -->
             <section id="screen-more" class="screen">
                 <div class="screen-title">
                     <div>
@@ -239,25 +203,21 @@
                     <button class="primary-button" onclick="openModal('reservation-modal')">+ Reserva</button>
                 </div>
 
-                <!-- ALOJAMIENTO -->
                 <div class="section-heading compact">
                     <h2>Hotel / Alojamiento</h2>
                 </div>
                 <div id="hotel-container"></div>
 
-                <!-- VUELOS -->
                 <div class="section-heading compact">
                     <h2>Vuelos</h2>
                 </div>
                 <div id="flight-list" class="list"></div>
 
-                <!-- RESERVAS Y ENTRADAS -->
                 <div class="section-heading compact">
                     <h2>Reservas Confirmadas</h2>
                 </div>
                 <div id="reservation-list" class="list"></div>
 
-                <!-- PERFIL Y SESIÓN -->
                 <div class="section-heading compact" style="margin-top: 30px;">
                     <h2>Usuario</h2>
                 </div>
@@ -272,9 +232,7 @@
         </main>
 
 
-        <!-- ==========================================
-           NAVEGACIÓN INFERIOR (BOTTOM NAV)
-        ========================================== -->
+        <!-- NAVEGACIÓN INFERIOR -->
         <nav class="bottom-nav">
             <button class="nav-button active" data-screen="home">
                 <span>🏠</span>
@@ -301,9 +259,7 @@
     </div>
 
 
-    <!-- ==========================================
-       MODAL 1: AÑADIR / EDITAR PLAN
-    ========================================== -->
+    <!-- MODALES -->
     <div id="plan-modal" class="modal hidden">
         <div class="modal-content">
             <div class="modal-header">
@@ -312,12 +268,10 @@
             </div>
             <form id="plan-form">
                 <input type="hidden" id="plan-id">
-
                 <div>
                     <label for="plan-title">Título del Plan *</label>
                     <input type="text" id="plan-title" required placeholder="Ej: Subir al Empire State">
                 </div>
-
                 <div class="form-row">
                     <div>
                         <label for="plan-category">Categoría</label>
@@ -335,7 +289,6 @@
                         <input type="date" id="plan-date">
                     </div>
                 </div>
-
                 <div class="form-row">
                     <div>
                         <label for="plan-time">Hora</label>
@@ -347,21 +300,15 @@
                         <div id="plan-location-results"></div>
                     </div>
                 </div>
-
                 <div>
                     <label for="plan-description">Notas / Detalles</label>
                     <textarea id="plan-description" placeholder="Añade notas, precios o ideas..."></textarea>
                 </div>
-
                 <button type="submit" class="primary-button full">Guardar Plan</button>
             </form>
         </div>
     </div>
 
-
-    <!-- ==========================================
-       MODAL 2: AÑADIR RESERVA
-    ========================================== -->
     <div id="reservation-modal" class="modal hidden">
         <div class="modal-content">
             <div class="modal-header">
@@ -378,12 +325,10 @@
                         <option value="otro">📌 Otro</option>
                     </select>
                 </div>
-
                 <div>
                     <label for="reservation-title">Título *</label>
                     <input type="text" id="reservation-title" required placeholder="Ej: Reserva Summit One Vanderbilt">
                 </div>
-
                 <div class="form-row">
                     <div>
                         <label for="reservation-date">Fecha</label>
@@ -394,26 +339,19 @@
                         <input type="time" id="reservation-time">
                     </div>
                 </div>
-
                 <div>
                     <label for="reservation-location">Lugar / Dirección</label>
                     <input type="text" id="reservation-location" placeholder="Dirección...">
                 </div>
-
                 <div>
                     <label for="reservation-description">Detalles / Código de Confirmación</label>
                     <textarea id="reservation-description" placeholder="Localizador, notas..."></textarea>
                 </div>
-
                 <button type="submit" class="primary-button full">Guardar Reserva</button>
             </form>
         </div>
     </div>
 
-
-    <!-- ==========================================
-       MODAL 3: AÑADIR GASTO
-    ========================================== -->
     <div id="expense-modal" class="modal hidden">
         <div class="modal-content">
             <div class="modal-header">
@@ -425,7 +363,6 @@
                     <label for="expense-title">Concepto del Gasto *</label>
                     <input type="text" id="expense-title" required placeholder="Ej: Cena en Katz's Delicatessen">
                 </div>
-
                 <div class="form-row">
                     <div>
                         <label for="expense-amount">Importe *</label>
@@ -439,7 +376,6 @@
                         </select>
                     </div>
                 </div>
-
                 <div class="form-row">
                     <div>
                         <label for="expense-paid-by">¿Quién Pagó?</label>
@@ -450,43 +386,20 @@
                         <input type="date" id="expense-date">
                     </div>
                 </div>
-
                 <fieldset>
-                    <legend>Participantes (¿Entre quiénes se divide?)</legend>
-                    <label class="check-label">
-                        <input type="checkbox" name="participant" value="Viajero 1" checked> Viajero 1
-                    </label>
-                    <label class="check-label">
-                        <input type="checkbox" name="participant" value="Viajero 2" checked> Viajero 2
-                    </label>
-                    <label class="check-label">
-                        <input type="checkbox" name="participant" value="Viajero 3" checked> Viajero 3
-                    </label>
+                    <legend>Participantes</legend>
+                    <label class="check-label"><input type="checkbox" name="participant" value="Viajero 1" checked> Viajero 1</label>
+                    <label class="check-label"><input type="checkbox" name="participant" value="Viajero 2" checked> Viajero 2</label>
+                    <label class="check-label"><input type="checkbox" name="participant" value="Viajero 3" checked> Viajero 3</label>
                 </fieldset>
-
                 <button type="submit" class="primary-button full">Registrar Gasto</button>
             </form>
         </div>
     </div>
 
-
-    <!-- ==========================================
-       LIBRERÍAS EXTERNAS Y SCRIPTS
-    ========================================== -->
-    <!-- Supabase SDK v2 -->
+    <!-- Carga de librerías en el orden adecuado -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <!-- Tu JavaScript principal -->
     <script src="app.js"></script>
-
-    <!-- Registro de Service Worker para PWA (Opcional) -->
-    <script>
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('./service-worker.js').catch(err => {
-                console.log('Error al registrar Service Worker:', err);
-            });
-        }
-    </script>
 </body>
 </html>
