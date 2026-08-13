@@ -7,28 +7,19 @@
     <meta name="theme-color" content="#111827">
     <meta name="description" content="NY TRIP — El tridente en Nueva York 😈😇🤪">
 
-    <!-- ==========================================
-         ANTI-CACHÉ
-    =========================================== -->
+    <!-- ANTI-CACHÉ -->
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate, max-age=0">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
 
     <title>🗽 NY TRIP</title>
 
-    <!-- ==========================================
-         LEAFLET CSS
-    =========================================== -->
+    <!-- LEAFLET CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 
-    <!-- ==========================================
-         STYLE (Actualiza v= para forzar recarga)
-    =========================================== -->
-    <link rel="stylesheet" href="./style.css?v=20260812-003">
+    <!-- STYLE -->
+    <link rel="stylesheet" href="./style.css?v=20260812-004">
 
-    <!-- ==========================================
-         LIMPIEZA DE CACHÉ / SERVICE WORKERS
-    =========================================== -->
     <script>
         (async function clearOldCache() {
             try {
@@ -48,7 +39,7 @@
                     await Promise.all(cacheNames.map(cacheName => caches.delete(cacheName)));
                 }
 
-                window.NY_TRIP_VERSION = "20260812-003";
+                window.NY_TRIP_VERSION = "20260812-004";
                 console.log("🧹 NY TRIP: caché limpiada.");
             } catch (error) {
                 console.warn("⚠️ No se pudo limpiar toda la caché:", error);
@@ -59,9 +50,7 @@
 
 <body>
 
-    <!-- ==========================================
-         LOGIN
-    =========================================== -->
+    <!-- LOGIN SCREEN -->
     <div id="login-screen" class="login-screen">
         <div class="login-card">
             <div class="login-logo">🗽</div>
@@ -88,9 +77,7 @@
         </div>
     </div>
 
-    <!-- ==========================================
-         APP
-    =========================================== -->
+    <!-- APP SCREEN -->
     <div id="app" hidden>
 
         <!-- CABECERA -->
@@ -108,9 +95,7 @@
         <!-- CONTENIDO PRINCIPAL -->
         <main id="screen-container">
 
-            <!-- ======================================
-                 INICIO
-            ======================================= -->
+            <!-- INICIO -->
             <section id="screen-home" class="screen active">
 
                 <!-- TARJETA HERO (Contador) -->
@@ -199,9 +184,7 @@
 
             </section>
 
-            <!-- ======================================
-                 PLAN
-            ======================================= -->
+            <!-- PLAN -->
             <section id="screen-plan" class="screen">
                 <div class="screen-title">
                     <div>
@@ -217,19 +200,17 @@
                 <div class="plan-filters" id="plan-filters">
                     <button type="button" class="plan-filter active" data-plan-filter="all">✨ Todos</button>
                     <button type="button" class="plan-filter" data-plan-filter="food">🍽️ Restaurantes</button>
-                    <button type="button" class="plan-filter" data-plan-filter="sightseeing">🍪 Dulces</button>
+                    <button type="button" class="plan-filter" data-plan-filter="sweet">🍪 Dulces</button>
                     <button type="button" class="plan-filter" data-plan-filter="activity">📍 Spots</button>
                     <button type="button" class="plan-filter" data-plan-filter="shopping">🛍️ Tiendas</button>
-                    <button type="button" class="plan-filter" data-plan-filter="nightlife">🗽 Turisteo</button>
+                    <button type="button" class="plan-filter" data-plan-filter="sightseeing">🗽 Turisteo</button>
                     <button type="button" class="plan-filter" data-plan-filter="other">📌 Otros</button>
                 </div>
 
                 <div id="plan-list" class="list">Cargando...</div>
             </section>
 
-            <!-- ======================================
-                 MAPA
-            ======================================= -->
+            <!-- MAPA -->
             <section id="screen-map" class="screen map-screen">
                 <div class="screen-title map-header">
                     <div>
@@ -246,9 +227,7 @@
                 <div id="map-list" class="map-list"></div>
             </section>
 
-            <!-- ======================================
-                 GASTOS
-            ======================================= -->
+            <!-- GASTOS -->
             <section id="screen-expenses" class="screen">
                 <div class="screen-title">
                     <div>
@@ -274,9 +253,7 @@
                 <div id="expense-list" class="list">Cargando...</div>
             </section>
 
-            <!-- ======================================
-                 RESERVAS
-            ======================================= -->
+            <!-- RESERVAS -->
             <section id="screen-reservations" class="screen">
                 <div class="screen-title">
                     <div>
@@ -292,9 +269,7 @@
                 <div id="reservation-list" class="list">Cargando...</div>
             </section>
 
-            <!-- ======================================
-                 VUELOS
-            ======================================= -->
+            <!-- VUELOS -->
             <section id="screen-flights" class="screen">
                 <div class="screen-title">
                     <div>
@@ -309,9 +284,7 @@
                 <div id="flight-list" class="list"></div>
             </section>
 
-            <!-- ======================================
-                 MÁS
-            ======================================= -->
+            <!-- MÁS -->
             <section id="screen-more" class="screen">
                 <div class="screen-title">
                     <div>
@@ -363,9 +336,7 @@
 
         </main>
 
-        <!-- ==========================================
-             MODALES
-        =========================================== -->
+        <!-- MODALES -->
 
         <!-- MODAL PLAN -->
         <div id="plan-modal" class="modal hidden">
@@ -393,7 +364,6 @@
                         <label>Hora <input id="plan-time" type="time"></label>
                     </div>
                     <label>Lugar <input id="plan-location" placeholder="Ej. Central Park, New York"></label>
-                    <button type="button" class="secondary-button" id="search-plan-location">📍 Buscar lugar</button>
                     <div id="plan-location-results" class="search-results"></div>
                     <button class="primary-button full" type="submit">Guardar plan</button>
                 </form>
@@ -424,7 +394,6 @@
                         <label>Hora <input id="reservation-time" type="time"></label>
                     </div>
                     <label>Lugar <input id="reservation-location" placeholder="Ej. Times Square"></label>
-                    <button type="button" class="secondary-button" id="search-reservation-location">📍 Buscar lugar</button>
                     <div id="reservation-location-results" class="search-results"></div>
                     <label>Enlace de reserva <input id="reservation-url" type="url" placeholder="https://..."></label>
                     <button class="primary-button full" type="submit">Guardar reserva</button>
@@ -470,9 +439,7 @@
             </div>
         </div>
 
-        <!-- ==========================================
-             NAVEGACIÓN INFERIOR
-        =========================================== -->
+        <!-- NAVEGACIÓN INFERIOR -->
         <nav class="bottom-nav">
             <button class="nav-button active" data-screen="home" type="button">
                 <span>🏠</span><small>Inicio</small>
@@ -493,24 +460,9 @@
 
     </div>
 
-    <!-- ==========================================
-         LIBRERÍAS JS Y LÓGICA
-    =========================================== -->
+    <!-- LIBRERÍAS Y CÓDIGO JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="./app.js?v=20260812-003"></script>
-
-    <!-- FILTROS DE PLANES -->
-    <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            const filterButtons = document.querySelectorAll("[data-plan-filter]");
-            filterButtons.forEach(function (button) {
-                button.addEventListener("click", function () {
-                    filterButtons.forEach(item => item.classList.remove("active"));
-                    this.classList.add("active");
-                });
-            });
-        });
-    </script>
+    <script src="./app.js?v=20260812-004"></script>
 </body>
 </html>
