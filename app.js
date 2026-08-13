@@ -1,5 +1,5 @@
 /* ==========================================================================
-   🗽 NY TRIP 
+   🗽 NY TRIP - APP.JS
    ========================================================================== */
 
 // Configuración de Supabase
@@ -19,6 +19,7 @@ const state = {
     plans: [],
     reservations: [],
     expenses: [],
+    // HOTEL ACTUALIZADO: Courtyard Upper East Side
     hotel: {
         name: "Courtyard by Marriott New York Manhattan/Upper East Side",
         address: "410 East 92nd Street, Upper East Side, New York, NY 10128",
@@ -55,7 +56,6 @@ const CATEGORIES = {
     
     sightseeing: { name: "Turisteo", icon: "🗽" },
     turisteo: { name: "Turisteo", icon: "🗽" },
-    nightlife: { name: "Turisteo", icon: "🗽" },
     
     other: { name: "Otros", icon: "📌" },
     otros: { name: "Otros", icon: "📌" }
@@ -75,7 +75,6 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 async function initApp() {
-    setupLoginHandler();
     setupNavigation();
     setupModals();
     setupForms();
@@ -85,7 +84,6 @@ async function initApp() {
     startClocksAndCountdown();
 
     if (supabaseApp) {
-        // Escuchar cambios de estado en tiempo real
         supabaseApp.auth.onAuthStateChange((event, session) => {
             if (session && session.user) {
                 handleLoginSuccess(session.user);
@@ -94,7 +92,6 @@ async function initApp() {
             }
         });
 
-        // Comprobación inicial de sesión activa
         const { data: { session } } = await supabaseApp.auth.getSession();
         if (session && session.user) {
             handleLoginSuccess(session.user);
@@ -137,7 +134,7 @@ function handleLoginSuccess(user) {
     loadAllData();
 }
 
-function setupLoginHandler() {
+document.addEventListener("DOMContentLoaded", () => {
     const loginForm = document.getElementById("login-form");
     if (loginForm) {
         loginForm.addEventListener("submit", async (e) => {
@@ -190,7 +187,7 @@ function setupLoginHandler() {
             showLoginScreen();
         });
     }
-}
+});
 
 /* ==========================================================================
    RELOJES Y CONTADOR
@@ -479,7 +476,7 @@ function openPlanModal(planToEdit = null) {
 }
 
 /* ==========================================================================
-   FORMULARIO DE PLANES Y EVENTOS
+   FORMULARIO DE PLANES
    ========================================================================== */
 function setupForms() {
     document.getElementById("plan-form")?.addEventListener("submit", async (e) => {
@@ -514,6 +511,7 @@ function setupForms() {
                 }
             }
 
+            // MAPEO TIPO CHECK CONSTRAINT SEGÚN NOMBRES ESPAÑOL/INGLÉS
             const CATEGORY_TO_DB = {
                 food: "Restaurantes",
                 sweet: "Dulces",
@@ -603,7 +601,7 @@ function setupForms() {
 }
 
 /* ==========================================================================
-   RENDERIZADO DE VISTAS Y PLANES
+   RENDERIZADO DE VISTAS DE PLANES CON CHECK COMPLETADO Y FILTROS
    ========================================================================== */
 function renderPlans() {
     const listEl = document.getElementById("plan-list");
@@ -611,6 +609,7 @@ function renderPlans() {
 
     let filtered = state.plans;
 
+    // 1. Filtrado por categoría
     if (state.activePlanFilter !== 'all') {
         filtered = filtered.filter(p => {
             if (!p.category) return state.activePlanFilter === 'other';
@@ -634,6 +633,7 @@ function renderPlans() {
         return;
     }
 
+    // 2. Ordenación: Pendientes arriba (por fecha), Completados abajo (por fecha)
     filtered.sort((a, b) => {
         const aDone = a.completed ? 1 : 0;
         const bDone = b.completed ? 1 : 0;
@@ -647,6 +647,7 @@ function renderPlans() {
         return new Date(a.date) - new Date(b.date);
     });
 
+    // 3. Renderizado HTML
     listEl.innerHTML = filtered.map(plan => {
         const catKey = plan.category ? plan.category.toString().trim().toLowerCase() : 'other';
         const cat = CATEGORIES[catKey] || CATEGORIES.other;
@@ -773,7 +774,7 @@ function renderNextActivity() {
 }
 
 /* ==========================================================================
-   TIEMPO, DIVISAS Y COMPLEMENTOS
+   TIEMPO Y DIVISAS
    ========================================================================== */
 async function updateWeather() {
     try {
