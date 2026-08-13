@@ -75,6 +75,7 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 async function initApp() {
+    setupAuthListeners();
     setupNavigation();
     setupModals();
     setupForms();
@@ -110,6 +111,65 @@ async function initApp() {
 /* ==========================================================================
    AUTENTICACIÓN
    ========================================================================== */
+function setupAuthListeners() {
+    const loginForm = document.getElementById("login-form");
+    if (loginForm) {
+        loginForm.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            
+            const emailEl = document.getElementById("login-email");
+            const passwordEl = document.getElementById("login-password");
+            const errorDiv = document.getElementById("login-error");
+
+            const email = emailEl ? emailEl.value.trim() : "";
+            const password = passwordEl ? passwordEl.value.trim() : "";
+
+            if (errorDiv) {
+                errorDiv.hidden = true;
+                errorDiv.textContent = "";
+            }
+
+            if (!supabaseApp) {
+                if (errorDiv) {
+                    errorDiv.textContent = "Error de conexión con Supabase. Revisa las claves o la red.";
+                    errorDiv.hidden = false;
+                }
+                return;
+            }
+
+            try {
+                const { data, error } = await supabaseApp.auth.signInWithPassword({ email, password });
+
+                if (error) {
+                    if (errorDiv) {
+                        let msg = error.message;
+                        if (msg.includes("Invalid login credentials")) msg = "Usuario o contraseña incorrectos.";
+                        errorDiv.textContent = msg;
+                        errorDiv.hidden = false;
+                    }
+                } else if (data && data.user) {
+                    handleLoginSuccess(data.user);
+                }
+            } catch (err) {
+                console.error("Error en login:", err);
+                if (errorDiv) {
+                    errorDiv.textContent = "Ocurrió un error inesperado durante el inicio de sesión.";
+                    errorDiv.hidden = false;
+                }
+            }
+        });
+    }
+
+    const logoutBtn = document.getElementById("logout-button");
+    if (logoutBtn) {
+        logoutBtn.addEventListener("click", async () => {
+            if (supabaseApp) await supabaseApp.auth.signOut();
+            state.currentUser = null;
+            showLoginScreen();
+        });
+    }
+}
+
 function showLoginScreen() {
     const loginScreen = document.getElementById("login-screen");
     const appScreen = document.getElementById("app");
@@ -133,61 +193,6 @@ function handleLoginSuccess(user) {
     hideLoginScreen();
     loadAllData();
 }
-
-document.addEventListener("DOMContentLoaded", () => {
-    const loginForm = document.getElementById("login-form");
-    if (loginForm) {
-        loginForm.addEventListener("submit", async (e) => {
-            e.preventDefault();
-            
-            const emailEl = document.getElementById("login-email");
-            const passwordEl = document.getElementById("login-password");
-            const errorDiv = document.getElementById("login-error");
-
-            const email = emailEl ? emailEl.value.trim() : "";
-            const password = passwordEl ? passwordEl.value.trim() : "";
-
-            if (errorDiv) {
-                errorDiv.hidden = true;
-                errorDiv.textContent = "";
-            }
-
-            if (!supabaseApp) {
-                if (errorDiv) {
-                    errorDiv.textContent = "Error de conexión con Supabase.";
-                    errorDiv.hidden = false;
-                }
-                return;
-            }
-
-            try {
-                const { data, error } = await supabaseApp.auth.signInWithPassword({ email, password });
-
-                if (error) {
-                    if (errorDiv) {
-                        let msg = error.message;
-                        if (msg.includes("Invalid login credentials")) msg = "Usuario o contraseña incorrectos.";
-                        errorDiv.textContent = msg;
-                        errorDiv.hidden = false;
-                    }
-                } else if (data && data.user) {
-                    handleLoginSuccess(data.user);
-                }
-            } catch (err) {
-                console.error("Error en login:", err);
-            }
-        });
-    }
-
-    const logoutBtn = document.getElementById("logout-button");
-    if (logoutBtn) {
-        logoutBtn.addEventListener("click", async () => {
-            if (supabaseApp) await supabaseApp.auth.signOut();
-            state.currentUser = null;
-            showLoginScreen();
-        });
-    }
-});
 
 /* ==========================================================================
    RELOJES Y CONTADOR
@@ -511,7 +516,6 @@ function setupForms() {
                 }
             }
 
-            // MAPEO TIPO CHECK CONSTRAINT SEGÚN NOMBRES ESPAÑOL/INGLÉS
             const CATEGORY_TO_DB = {
                 food: "Restaurantes",
                 sweet: "Dulces",
@@ -609,7 +613,6 @@ function renderPlans() {
 
     let filtered = state.plans;
 
-    // 1. Filtrado por categoría
     if (state.activePlanFilter !== 'all') {
         filtered = filtered.filter(p => {
             if (!p.category) return state.activePlanFilter === 'other';
@@ -633,7 +636,6 @@ function renderPlans() {
         return;
     }
 
-    // 2. Ordenación: Pendientes arriba (por fecha), Completados abajo (por fecha)
     filtered.sort((a, b) => {
         const aDone = a.completed ? 1 : 0;
         const bDone = b.completed ? 1 : 0;
@@ -647,7 +649,6 @@ function renderPlans() {
         return new Date(a.date) - new Date(b.date);
     });
 
-    // 3. Renderizado HTML
     listEl.innerHTML = filtered.map(plan => {
         const catKey = plan.category ? plan.category.toString().trim().toLowerCase() : 'other';
         const cat = CATEGORIES[catKey] || CATEGORIES.other;
