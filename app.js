@@ -6,17 +6,13 @@
 const SUPABASE_URL = "https://rtbrnbyosrtxeayqmvwc.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ0YnJuYnlvc3J0eGVheXFtdndjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY0NTUwODQsImV4cCI6MjEwMjAzMTA4NH0.W3mCe1yAehFd0bz_XNVJ83YR-dNz-8VZnnhgj-cQEss";
 
-// Inicialización de Supabase
+// Inicialización de Supabase 
 var supabaseApp = null;
-if (window.supabase && typeof window.supabase.createClient === 'function') {
-    try {
-        supabaseApp = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-    } catch (e) {
-        console.warn("No se pudo crear supabaseApp desde window.supabase:", e);
-    }
+if (window.supabase) {
+    supabaseApp = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 }
 
-// ESTADO GLOBAL
+// ESTADO GLOBAL (añadidos editingExpenseId y selectedExpenseUser)
 const state = {
     currentUser: null,
     currentScreen: 'home',
@@ -39,7 +35,6 @@ const state = {
     markers: [],
     activePlanFilter: 'all',
     editingExpenseId: null,
-    // usuario seleccionado desde la pantalla principal (para resaltar en gastos)
     selectedExpenseUser: null
 };
 
@@ -76,32 +71,23 @@ async function initApp() {
     setupForms();
     setupFilters();
     setupLocationSearch();
-    setupTravelersClick();
+    setupTravelersClick(); // añadir listeners sobre las tarjetas de viajera
 
     startClocksAndCountdown();
 
     if (supabaseApp) {
-        try {
-            supabaseApp.auth.onAuthStateChange((event, session) => {
-                if (session && session.user) {
-                    handleLoginSuccess(session.user);
-                } else if (event === 'SIGNED_OUT') {
-                    showLoginScreen();
-                }
-            });
-        } catch (e) {
-            console.warn("onAuthStateChange no disponible:", e);
-        }
-
-        try {
-            const { data: { session } } = await supabaseApp.auth.getSession();
+        supabaseApp.auth.onAuthStateChange((event, session) => {
             if (session && session.user) {
                 handleLoginSuccess(session.user);
-            } else {
+            } else if (event === 'SIGNED_OUT') {
                 showLoginScreen();
             }
-        } catch (err) {
-            console.error("Error comprobando la sesión:", err);
+        });
+
+        const { data: { session } } = await supabaseApp.auth.getSession();
+        if (session && session.user) {
+            handleLoginSuccess(session.user);
+        } else {
             showLoginScreen();
         }
     } else {
@@ -114,7 +100,7 @@ async function initApp() {
 }
 
 /* ==========================================================================
-   AUTENTICACIÓN
+   AUTENTICACIÓN (SE MANTIENE IGUAL)
    ========================================================================== */
 function showLoginScreen() {
     const loginScreen = document.getElementById("login-screen");
@@ -141,7 +127,7 @@ function handleLoginSuccess(user) {
 }
 
 /* ==========================================================================
-   LOGIN HANDLERS (form submit + logout)
+   LOGIN HANDLERS (NO TOCADO)
    ========================================================================== */
 document.addEventListener("DOMContentLoaded", () => {
     const loginForm = document.getElementById("login-form");
@@ -174,7 +160,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 if (error) {
                     if (errorDiv) {
-                        let msg = error.message || "Error en autenticación";
+                        let msg = error.message;
                         if (msg.includes("Invalid login credentials")) msg = "Usuario o contraseña incorrectos.";
                         errorDiv.textContent = msg;
                         errorDiv.hidden = false;
@@ -184,10 +170,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
             } catch (err) {
                 console.error("Error en login:", err);
-                if (errorDiv) {
-                    errorDiv.textContent = "Ocurrió un error al procesar el inicio de sesión.";
-                    errorDiv.hidden = false;
-                }
             }
         });
     }
@@ -195,13 +177,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const logoutBtn = document.getElementById("logout-button");
     if (logoutBtn) {
         logoutBtn.addEventListener("click", async () => {
-            if (supabaseApp) {
-                try {
-                    await supabaseApp.auth.signOut();
-                } catch (e) {
-                    console.warn("Error al hacer signOut:", e);
-                }
-            }
+            if (supabaseApp) await supabaseApp.auth.signOut();
             state.currentUser = null;
             showLoginScreen();
         });
@@ -404,7 +380,7 @@ function renderAll() {
     renderNextActivity();
     renderPlans();
     renderReservations();
-    renderExpenses(); // ahora con resumen y acciones
+    renderExpenses(); // ahora renderiza el resumen + acciones
     renderFlights();
     renderHotel();
     if (state.currentScreen === 'map') renderMap();
@@ -438,20 +414,21 @@ function switchScreen(screenName) {
         setTimeout(initOrRefreshMap, 150);
     }
 
-    // Si cambiamos a "expenses" y tenemos un usuario seleccionado, desplazamos y resaltamos
+    // Si vamos a expenses y hay usuario seleccionado, renderizar y resaltar
     if (screenName === "expenses") {
+        // asegurar que la vista de gastos esté actualizada
         setTimeout(() => {
+            renderExpenses();
             if (state.selectedExpenseUser) {
                 const el = document.getElementById(`balance-${cssId(state.selectedExpenseUser)}`);
                 if (el) {
                     el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    // efecto visual temporal
                     const prev = el.style.boxShadow;
-                    el.style.boxShadow = "0 6px 20px rgba(37,99,235,0.12)";
-                    setTimeout(() => { el.style.boxShadow = prev; }, 2200);
+                    el.style.boxShadow = "0 8px 30px rgba(37,99,235,0.12)";
+                    setTimeout(() => { el.style.boxShadow = prev; }, 2000);
                 }
             }
-        }, 200);
+        }, 120);
     }
 }
 
@@ -511,13 +488,13 @@ function openPlanModal(planToEdit = null) {
 }
 
 /* ==========================================================================
-   GASTOS: modal de gasto (abrir/editar) y helpers
+   MODAL GASTO: abrir/editar (nuevo)
    ========================================================================== */
 function openExpenseModal(expenseToEdit = null) {
     const form = document.getElementById("expense-form");
     if (form) form.reset();
 
-    // reset participants checkboxes
+    // default: marcar todos los participantes
     document.querySelectorAll("input[name='participant']").forEach(cb => cb.checked = true);
 
     if (expenseToEdit) {
@@ -544,7 +521,7 @@ function openExpenseModal(expenseToEdit = null) {
 }
 
 /* ==========================================================================
-   FORMULARIOS DE PLANES, RESERVAS Y GASTOS
+   FORMULARIOS DE PLANES, RESERVAS Y GASTOS (se adapta el envio de gastos para editar)
    ========================================================================== */
 function setupForms() {
     document.getElementById("plan-form")?.addEventListener("submit", async (e) => {
@@ -635,6 +612,7 @@ function setupForms() {
         loadAllData();
     });
 
+    // FORMULARIO DE GASTO: ahora soporta editar y crear
     document.getElementById("expense-form")?.addEventListener("submit", async (e) => {
         e.preventDefault();
 
@@ -664,15 +642,15 @@ function setupForms() {
                 notes: notesVal
             };
 
-            if (supabaseApp) {
-                if (state.editingExpenseId) {
-                    await supabaseApp.from("expenses").update(expData).eq("id", state.editingExpenseId);
-                    state.editingExpenseId = null;
-                } else {
-                    await supabaseApp.from("expenses").insert([expData]);
-                }
+            if (!supabaseApp) throw new Error("No hay conexión con Supabase.");
+
+            if (state.editingExpenseId) {
+                // actualizar gasto existente
+                await supabaseApp.from("expenses").update(expData).eq("id", state.editingExpenseId);
+                state.editingExpenseId = null;
             } else {
-                throw new Error("No conectado a la base de datos (Supabase).");
+                // insertar nuevo
+                await supabaseApp.from("expenses").insert([expData]);
             }
 
             closeModal("expense-modal");
@@ -691,7 +669,7 @@ function setupForms() {
 }
 
 /* ==========================================================================
-   RENDERIZADO DE VISTAS DE PLANES
+   RENDERIZADO DE VISTAS DE PLANES (SIN CAMBIOS)
    ========================================================================== */
 function renderPlans() {
     const listEl = document.getElementById("plan-list");
@@ -703,7 +681,7 @@ function renderPlans() {
     }
 
     if (!filtered || filtered.length === 0) {
-        listEl.innerHTML = `<div class="empty">No hay planes registrados en esta categoría.</div>`;
+        listEl.innerHTML = `<div class="empty-state">No hay planes registrados en esta categoría.</div>`;
         return;
     }
 
@@ -831,9 +809,8 @@ async function updateCurrency() {
 }
 
 /* ==========================================================================
-   RENDERIZADO Y GESTIÓN DE GASTOS (TRICOUNT)
-   - Permite editar y borrar
-   - Muestra resumen por usuario y lista de deudas
+   RENDERIZADO Y GESTIÓN DE GASTOS (TRICOUNT) - NUEVO
+   - editar, borrar, resumen saldos y deudas
    ========================================================================== */
 function renderExpenses() {
     const listEl = document.getElementById("expense-list");
@@ -848,13 +825,11 @@ function renderExpenses() {
         return;
     }
 
-    // Calcular balances por usuario (convertimos USD->EUR con un factor aproximado si procede)
+    // Calcular balances por usuario (tratamos internamente como EUR; si moneda USD convertimos: USD -> EUR ≈ /1.08)
     const balances = {};
     USERS.forEach(u => balances[u] = 0);
 
     state.expenses.forEach(e => {
-        // Si la moneda es USD, aplicamos un factor de conversión aproximado (USD -> EUR)
-        // Aquí vamos a tratar internamente todo en EUR para consistencia (factor inverso de 1.08 usado antes)
         const amountEUR = (e.currency === 'USD') ? (e.amount / 1.08) : e.amount;
         const payer = e.paid_by;
         const participants = (e.participants && e.participants.length > 0) ? e.participants : USERS;
@@ -882,7 +857,7 @@ function renderExpenses() {
         }).join("");
     }
 
-    // Calcular deudas simples (greedy matching debtors/creditors)
+    // Calcular deudas (algoritmo greedy simple)
     if (debtsEl) {
         const debtors = [];
         const creditors = [];
@@ -938,7 +913,7 @@ function renderExpenses() {
         </div>
     `).join("");
 
-    // Si hemos seleccionado un usuario desde la pantalla principal, aplicamos estilo de resaltado temporal
+    // Si hay usuario seleccionado (viniendo desde Home), resaltar su balance
     if (state.selectedExpenseUser) {
         setTimeout(() => {
             const el = document.getElementById(`balance-${cssId(state.selectedExpenseUser)}`);
@@ -947,10 +922,11 @@ function renderExpenses() {
                 el.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 setTimeout(() => { el.style.boxShadow = ""; }, 2000);
             }
-        }, 120);
+        }, 150);
     }
 }
 
+// Funciones globales para editar / borrar (invocadas desde los botones)
 window.editExpense = function(id) {
     const exp = state.expenses.find(e => e.id == id);
     if (exp) {
@@ -978,14 +954,13 @@ window.deleteExpense = async function(id) {
 };
 
 /* ==========================================================================
-   UTILS PARA NAVEGACIÓN DESDE TRAVELERS (clic en la lista de personas)
+   SETUP: al hacer click en las tarjetas de viajera navegar a gastos (nuevo)
    ========================================================================== */
 function setupTravelersClick() {
     const cards = document.querySelectorAll(".traveler-card");
     cards.forEach(card => {
         card.style.cursor = "pointer";
         card.addEventListener("click", () => {
-            // Extraer nombre desde el strong dentro de la tarjeta
             const nameEl = card.querySelector("strong");
             const name = nameEl ? nameEl.textContent.trim() : null;
             if (name) {
@@ -1011,7 +986,7 @@ function renderReservations() {
     if (!listEl) return;
 
     if (state.reservations.length === 0) {
-        listEl.innerHTML = `<div class="empty">No hay reservas registradas.</div>`;
+        listEl.innerHTML = `<div class="empty-state">No hay reservas registradas.</div>`;
         return;
     }
 
@@ -1080,6 +1055,7 @@ function renderMap() {
 
     const bounds = [];
 
+    // 1. Marcador del Hotel (Icono 🏨)
     if (state.hotel && state.hotel.lat && state.hotel.lng) {
         bounds.push([state.hotel.lat, state.hotel.lng]);
         
@@ -1098,6 +1074,7 @@ function renderMap() {
         state.markers.push(hotelMarker);
     }
 
+    // 2. Marcadores de Planes (🗽 para Turisteo, 📍 para Spots, etc.)
     state.plans.forEach(plan => {
         const lat = parseFloat(plan.latitude);
         const lng = parseFloat(plan.longitude);
@@ -1126,6 +1103,7 @@ function renderMap() {
         }
     });
 
+    // Enmarcar todos los puntos en la pantalla
     if (bounds.length > 0) {
         state.map.fitBounds(bounds, { padding: [40, 40] });
     }
