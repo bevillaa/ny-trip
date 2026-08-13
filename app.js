@@ -1,5 +1,5 @@
 /* ==========================================================================
-   🗽 NY TRIP 
+   🗽 NY TRIP - APP.JS
    ========================================================================== */
 
 // Configuración de Supabase
@@ -65,44 +65,110 @@ function getCategoryIcon(category) {
 }
 
 /* ==========================================================================
-   INICIALIZACIÓN
+   INICIALIZACIÓN CORREGIDA
    ========================================================================== */
 document.addEventListener("DOMContentLoaded", () => {
-    initApp();
-});
-
-async function initApp() {
+    // 1. Configurar eventos de formularios e interfaz
+    setupLoginForm();
     setupNavigation();
     setupModals();
     setupForms();
     setupFilters();
-    setupLocationSearch();
 
+    // 2. Iniciar relojes y clima
     startClocksAndCountdown();
+    updateWeather();
+    updateCurrency();
 
-    if (supabaseApp) {
-        supabaseApp.auth.onAuthStateChange((event, session) => {
-            if (session && session.user) {
-                handleLoginSuccess(session.user);
-            } else if (event === 'SIGNED_OUT') {
-                showLoginScreen();
+    // 3. Comprobar sesión de Supabase
+    checkInitialSession();
+});
+
+// Listener del Login preparado desde el primer momento
+function setupLoginForm() {
+    const loginForm = document.getElementById("login-form");
+    if (!loginForm) return;
+
+    loginForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        
+        const email = document.getElementById("login-email")?.value.trim();
+        const password = document.getElementById("login-password")?.value.trim();
+        const errorDiv = document.getElementById("login-error");
+        const submitBtn = document.getElementById("login-button");
+
+        if (errorDiv) {
+            errorDiv.hidden = true;
+            errorDiv.textContent = "";
+        }
+
+        if (!supabaseApp) {
+            if (errorDiv) {
+                errorDiv.textContent = "Error: No hay conexión con Supabase.";
+                errorDiv.hidden = false;
             }
-        });
+            return;
+        }
 
-        const { data: { session } } = await supabaseApp.auth.getSession();
+        try {
+            if (submitBtn) submitBtn.disabled = true;
+            
+            const { data, error } = await supabaseApp.auth.signInWithPassword({ email, password });
+
+            if (error) {
+                if (errorDiv) {
+                    let msg = error.message;
+                    if (msg.includes("Invalid login credentials")) msg = "Email o contraseña incorrectos.";
+                    errorDiv.textContent = msg;
+                    errorDiv.hidden = false;
+                }
+            } else if (data && data.user) {
+                handleLoginSuccess(data.user);
+            }
+        } catch (err) {
+            console.error("Error en login:", err);
+            if (errorDiv) {
+                errorDiv.textContent = "Error inesperado al iniciar sesión.";
+                errorDiv.hidden = false;
+            }
+        } finally {
+            if (submitBtn) submitBtn.disabled = false;
+        }
+    });
+
+    const logoutBtn = document.getElementById("logout-button");
+    if (logoutBtn) {
+        logoutBtn.addEventListener("click", async () => {
+            if (supabaseApp) await supabaseApp.auth.signOut();
+            state.currentUser = null;
+            showLoginScreen();
+        });
+    }
+}
+
+async function checkInitialSession() {
+    if (!supabaseApp) {
+        updateConnectionStatus(false);
+        showLoginScreen();
+        return;
+    }
+
+    // Escuchar cambios de estado (login/logout)
+    supabaseApp.auth.onAuthStateChange((event, session) => {
         if (session && session.user) {
             handleLoginSuccess(session.user);
         } else {
             showLoginScreen();
         }
+    });
+
+    // Validar sesión guardada al refrescar
+    const { data: { session } } = await supabaseApp.auth.getSession();
+    if (session && session.user) {
+        handleLoginSuccess(session.user);
     } else {
-        console.error("No se pudo inicializar Supabase.");
-        updateConnectionStatus(false);
         showLoginScreen();
     }
-
-    updateWeather();
-    updateCurrency();
 }
 
 /* ==========================================================================
@@ -147,61 +213,6 @@ function handleLoginSuccess(user) {
     hideLoginScreen();
     loadAllData();
 }
-
-document.addEventListener("DOMContentLoaded", () => {
-    const loginForm = document.getElementById("login-form");
-    if (loginForm) {
-        loginForm.addEventListener("submit", async (e) => {
-            e.preventDefault();
-            
-            const emailEl = document.getElementById("login-email");
-            const passwordEl = document.getElementById("login-password");
-            const errorDiv = document.getElementById("login-error");
-
-            const email = emailEl ? emailEl.value.trim() : "";
-            const password = passwordEl ? passwordEl.value.trim() : "";
-
-            if (errorDiv) {
-                errorDiv.hidden = true;
-                errorDiv.textContent = "";
-            }
-
-            if (!supabaseApp) {
-                if (errorDiv) {
-                    errorDiv.textContent = "Error de conexión con Supabase.";
-                    errorDiv.hidden = false;
-                }
-                return;
-            }
-
-            try {
-                const { data, error } = await supabaseApp.auth.signInWithPassword({ email, password });
-
-                if (error) {
-                    if (errorDiv) {
-                        let msg = error.message;
-                        if (msg.includes("Invalid login credentials")) msg = "Usuario o contraseña incorrectos.";
-                        errorDiv.textContent = msg;
-                        errorDiv.hidden = false;
-                    }
-                } else if (data && data.user) {
-                    handleLoginSuccess(data.user);
-                }
-            } catch (err) {
-                console.error("Error en login:", err);
-            }
-        });
-    }
-
-    const logoutBtn = document.getElementById("logout-button");
-    if (logoutBtn) {
-        logoutBtn.addEventListener("click", async () => {
-            if (supabaseApp) await supabaseApp.auth.signOut();
-            state.currentUser = null;
-            showLoginScreen();
-        });
-    }
-});
 
 /* ==========================================================================
    RELOJES Y CONTADOR
@@ -308,10 +319,7 @@ window.openMemberDetails = function(name) {
     const icon = memberIcons[name] || '👤';
     titleEl.textContent = `${icon} Resumen de ${name}`;
 
-    // Gastos pagados por esta persona
     const paidByMember = state.expenses.filter(e => e.paid_by && e.paid_by.toLowerCase() === name.toLowerCase());
-    
-    // Gastos en los que participa esta persona
     const participatedIn = state.expenses.filter(e => e.participants && e.participants.some(p => p.toLowerCase() === name.toLowerCase()));
 
     let totalPaidEUR = 0;
