@@ -1,314 +1,934 @@
-/* ==========================================================================
-   🗽 NY TRIP - APP.JS (Diagnóstico directo)
-   ========================================================================== */
+/* ==========================================
+   🗽 NY TRIP — DISEÑO COMPLETO
+========================================== */
 
-console.log("🚀 app.js cargado correctamente");
-
-const SUPABASE_URL = "https://rtbrnbyosrtxeayqmvwc.supabase.co";
-const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ0YnJuYnlvc3J0eGVheXFtdndjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY0NTUwODQsImV4cCI6MjEwMjAzMTA4NH0.W3mCe1yAehFd0bz_XNVJ83YR-dNz-8VZnnhgj-cQEss";
-
-var supabaseApp = null;
-if (window.supabase) {
-    supabaseApp = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-    console.log("✅ Supabase inicializado");
-} else {
-    console.error("❌ No se encontró la librería de Supabase en window.supabase");
+* {
+    box-sizing: border-box;
 }
 
-const state = {
-    currentUser: null,
-    currentScreen: 'home',
-    plans: [],
-    reservations: [],
-    expenses: [],
-    hotel: {
-        name: "Courtyard by Marriott New York Manhattan/Upper East Side",
-        address: "410 East 92nd Street, Upper East Side, New York, NY 10128",
-        lat: 40.7797,
-        lng: -73.9472,
-        checkIn: "26 Dic 2026 (15:00)",
-        checkOut: "04 Ene 2027 (12:00)"
-    },
-    flights: [
-        { type: "Ida", route: "MAD → JFK", date: "26 Dic 2026", details: "Salida: 10:00 - Llegada: 12:30 (Directo)" },
-        { type: "Vuelta", route: "JFK → MAD", date: "04 Ene 2027", details: "Salida: 19:30 - Llegada: 08:50 (+1 día)" }
-    ],
-    map: null,
-    markers: [],
-    activePlanFilter: 'all'
-};
-
-const CATEGORIES = {
-    food: { name: "Restaurantes", icon: "🍽️" },
-    restaurant: { name: "Restaurantes", icon: "🍽️" },
-    sweet: { name: "Dulces", icon: "🍪" },
-    activity: { name: "Spots", icon: "📍" },
-    shopping: { name: "Tiendas", icon: "🛍️" },
-    sightseeing: { name: "Turisteo", icon: "🗽" },
-    other: { name: "Otros", icon: "📌" }
-};
-
-function getCategoryIcon(category) {
-    if (!category) return "📌";
-    const key = category.toString().trim().toLowerCase();
-    return CATEGORIES[key] ? CATEGORIES[key].icon : "📌";
+:root {
+    --bg: #f4f6fa;
+    --card: #ffffff;
+    --text: #111827;
+    --muted: #6b7280;
+    --border: #e5e7eb;
+    --primary: #111827;
+    --accent: #2563eb;
+    --danger: #dc2626;
+    --success: #15803d;
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-    console.log("📄 DOM Cargado. Inicializando App...");
-    initApp();
-});
+html,
+body {
+    margin: 0;
+    padding: 0;
+    min-height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family:
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        Roboto,
+        Arial,
+        sans-serif;
+}
 
-async function initApp() {
-    setupNavigation();
-    setupModals();
-    setupForms();
-    setupFilters();
-    setupLocationSearch();
-    startClocksAndCountdown();
+body {
+    padding-bottom: 82px;
+}
 
-    if (supabaseApp) {
-        supabaseApp.auth.onAuthStateChange((event, session) => {
-            console.log("Auth State Change:", event);
-            if (session && session.user) {
-                handleLoginSuccess(session.user);
-            } else if (event === 'SIGNED_OUT') {
-                showLoginScreen();
-            }
-        });
+button,
+input,
+textarea,
+select {
+    font: inherit;
+}
 
-        try {
-            const { data: { session } } = await supabaseApp.auth.getSession();
-            if (session && session.user) {
-                console.log("Sesión activa encontrada:", session.user.email);
-                handleLoginSuccess(session.user);
-            } else {
-                console.log("Sin sesión activa. Mostrando Login.");
-                showLoginScreen();
-            }
-        } catch (e) {
-            console.error("Error al obtener sesión:", e);
-            showLoginScreen();
-        }
-    } else {
-        showLoginScreen();
+button {
+    cursor: pointer;
+}
+
+a {
+    color: var(--accent);
+    text-decoration: none;
+}
+
+#app {
+    width: 100%;
+    max-width: 760px;
+    margin: 0 auto;
+}
+
+/* ==========================================
+   CABECERA
+========================================== */
+
+.app-header {
+    background: #111827;
+    color: white;
+    padding:
+        calc(18px + env(safe-area-inset-top))
+        20px
+        20px;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 15px;
+}
+
+.app-header h1 {
+    margin: 0;
+    font-size: 25px;
+}
+
+.app-header p {
+    margin: 5px 0 0;
+    opacity: .72;
+    font-size: 13px;
+}
+
+.connection-status {
+    font-size: 11px;
+    white-space: nowrap;
+    opacity: .8;
+}
+
+.connection-status.ok {
+    color: #86efac;
+}
+
+.connection-status.error {
+    color: #fca5a5;
+}
+
+/* ==========================================
+   PANTALLAS
+========================================== */
+
+main {
+    min-height: calc(100vh - 80px);
+}
+
+.screen {
+    display: none;
+    padding: 18px 16px 30px;
+}
+
+.screen.active {
+    display: block;
+}
+
+/* ==========================================
+   HERO
+========================================== */
+
+.hero-card {
+    background:
+        linear-gradient(
+            135deg,
+            #111827,
+            #273449
+        );
+
+    color: white;
+
+    border-radius: 22px;
+
+    padding: 22px;
+
+    display: flex;
+    justify-content: space-between;
+    gap: 15px;
+
+    box-shadow:
+        0 10px 25px rgba(0,0,0,.12);
+}
+
+.small-label {
+    display: block;
+    font-size: 11px;
+    opacity: .7;
+    letter-spacing: .08em;
+    margin-bottom: 6px;
+}
+
+.hero-card strong {
+    display: block;
+    font-size: 22px;
+}
+
+.hero-card p {
+    margin: 8px 0 0;
+    font-size: 12px;
+    opacity: .7;
+}
+
+.hero-location {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 4px;
+    font-size: 13px;
+}
+
+/* ==========================================
+   WEATHER & CURRENCY
+========================================== */
+
+.weather-card,
+.currency-card {
+    margin-top: 12px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 16px;
+}
+
+.weather-main {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+}
+
+.weather-main > span {
+    font-size: 35px;
+}
+
+.weather-main strong {
+    display: block;
+    font-size: 25px;
+}
+
+.weather-main span {
+    color: var(--muted);
+    font-size: 12px;
+}
+
+.weather-extra {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 12px;
+    color: var(--muted);
+    font-size: 12px;
+}
+
+.currency-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.currency-card strong {
+    display: block;
+}
+
+.currency-card > span {
+    font-size: 18px;
+    font-weight: 700;
+}
+
+/* ==========================================
+   SECCIONES
+========================================== */
+
+.section-heading {
+    margin: 25px 2px 10px;
+}
+
+.section-heading.compact {
+    margin-top: 20px;
+}
+
+.section-heading h2 {
+    margin: 0;
+    font-size: 15px;
+}
+
+/* ==========================================
+   TARJETAS
+========================================== */
+
+.next-card,
+.info-card,
+.activity-card,
+.reservation-card,
+.expense-card,
+.flight-card,
+.debt-card,
+.balance-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 17px;
+    padding: 16px;
+}
+
+.next-card {
+    display: flex;
+    gap: 14px;
+    align-items: center;
+}
+
+.next-card > span {
+    font-size: 30px;
+}
+
+.next-card strong {
+    display: block;
+}
+
+.next-card p,
+.info-card p,
+.activity-card p,
+.reservation-card p,
+.expense-card p,
+.flight-card p {
+    color: var(--muted);
+    margin: 5px 0 0;
+    font-size: 13px;
+}
+
+/* ==========================================
+   ACCIONES
+========================================== */
+
+.quick-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 9px;
+    margin-top: 12px;
+}
+
+.quick-button {
+    border: 1px solid var(--border);
+    background: white;
+    border-radius: 16px;
+    padding: 14px 5px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    color: var(--text);
+}
+
+.quick-button span {
+    font-size: 25px;
+}
+
+.quick-button strong {
+    font-size: 11px;
+}
+
+/* ==========================================
+   VIAJERAS
+========================================== */
+
+.travelers-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+}
+
+.traveler-card {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 17px 8px;
+    text-align: center;
+}
+
+.traveler-card span {
+    display: block;
+    font-size: 30px;
+    margin-bottom: 6px;
+}
+
+/* ==========================================
+   INFO
+========================================== */
+
+.info-card {
+    display: flex;
+    gap: 13px;
+}
+
+.info-icon {
+    font-size: 30px;
+}
+
+/* ==========================================
+   TITULO PANTALLA
+========================================== */
+
+.screen-title {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 18px;
+}
+
+.screen-title > div:first-child {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.screen-title > div:first-child > span {
+    font-size: 28px;
+}
+
+.screen-title h2 {
+    margin: 0;
+    font-size: 21px;
+}
+
+.screen-title p {
+    margin: 3px 0 0;
+    color: var(--muted);
+    font-size: 12px;
+}
+
+/* ==========================================
+   BOTONES
+========================================== */
+
+.primary-button,
+.secondary-button {
+    border: 0;
+    border-radius: 12px;
+    padding: 11px 15px;
+    font-weight: 700;
+}
+
+.primary-button {
+    background: var(--primary);
+    color: white;
+}
+
+.secondary-button {
+    background: #eef2ff;
+    color: #3730a3;
+}
+
+.primary-button.full {
+    width: 100%;
+    margin-top: 10px;
+}
+
+.danger-button {
+    border: 0;
+    background: #fee2e2;
+    color: var(--danger);
+    border-radius: 10px;
+    padding: 8px 11px;
+}
+
+/* ==========================================
+   LISTAS
+========================================== */
+
+.list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.activity-card,
+.reservation-card,
+.expense-card,
+.flight-card {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.card-main {
+    min-width: 0;
+    flex: 1;
+}
+
+.card-actions {
+    display: flex;
+    align-items: flex-start;
+}
+
+.date-badge {
+    flex: 0 0 60px;
+    background: #f3f4f6;
+    border-radius: 12px;
+    text-align: center;
+    padding: 8px 4px;
+}
+
+.date-badge strong {
+    display: block;
+    font-size: 17px;
+}
+
+.date-badge span {
+    font-size: 10px;
+    color: var(--muted);
+}
+
+.type-badge {
+    display: inline-block;
+    padding: 4px 7px;
+    background: #f3f4f6;
+    border-radius: 7px;
+    font-size: 10px;
+    margin-bottom: 6px;
+}
+
+/* ==========================================
+   GASTOS
+========================================== */
+
+.expense-summary {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+}
+
+.balance-card {
+    padding: 13px 8px;
+    text-align: center;
+}
+
+.balance-card span {
+    display: block;
+    color: var(--muted);
+    font-size: 11px;
+}
+
+.balance-card strong {
+    display: block;
+    margin-top: 5px;
+    font-size: 16px;
+}
+
+.positive {
+    color: var(--success);
+}
+
+.negative {
+    color: var(--danger);
+}
+
+.debts {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.debt-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.debt-card strong {
+    font-size: 14px;
+}
+
+.debt-amount {
+    font-weight: 800;
+}
+
+/* ==========================================
+   VUELOS
+========================================== */
+
+.flight-route {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    margin: 9px 0;
+}
+
+.flight-airport {
+    font-weight: 800;
+    font-size: 20px;
+}
+
+.flight-arrow {
+    color: var(--muted);
+}
+
+/* ==========================================
+   MÁS
+========================================== */
+
+.more-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.more-card {
+    border: 1px solid var(--border);
+    background: white;
+    border-radius: 17px;
+    padding: 20px 14px;
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.more-card:first-child {
+    font-size: 27px;
+}
+
+.more-card strong {
+    font-size: 15px;
+}
+
+.more-card span {
+    color: var(--muted);
+    font-size: 11px;
+}
+
+/* ==========================================
+   MAPA
+========================================== */
+
+.map-screen {
+    padding-left: 0;
+    padding-right: 0;
+}
+
+.map-screen .screen-title {
+    padding: 0 16px;
+}
+
+#map {
+    width: 100%;
+    height: 60vh;
+    min-height: 420px;
+}
+
+.map-list {
+    padding: 12px 16px 20px;
+}
+
+.map-item {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 13px;
+    padding: 12px;
+    margin-bottom: 8px;
+}
+
+.map-item strong {
+    display: block;
+}
+
+.map-item span {
+    display: block;
+    color: var(--muted);
+    font-size: 11px;
+    margin-top: 3px;
+}
+
+/* ==========================================
+   MODALES
+========================================== */
+
+.modal {
+    position: fixed;
+    inset: 0;
+    z-index: 5000;
+    background: rgba(0,0,0,.55);
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+}
+
+.modal.hidden {
+    display: none;
+}
+
+.modal-content {
+    width: 100%;
+    max-width: 760px;
+    max-height: 92vh;
+    overflow-y: auto;
+    background: white;
+    border-radius: 22px 22px 0 0;
+    padding: 20px 17px 30px;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.modal-header h2 {
+    margin: 0;
+    font-size: 20px;
+}
+
+.close-modal {
+    border: 0;
+    background: #f3f4f6;
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    font-size: 23px;
+}
+
+/* ==========================================
+   FORMULARIOS
+========================================== */
+
+form {
+    display: flex;
+    flex-direction: column;
+    gap: 13px;
+}
+
+label,
+fieldset legend {
+    font-size: 12px;
+    font-weight: 700;
+}
+
+input,
+textarea,
+select {
+    display: block;
+    width: 100%;
+    margin-top: 6px;
+    border: 1px solid #d1d5db;
+    border-radius: 11px;
+    padding: 12px;
+    background: white;
+    color: var(--text);
+}
+
+textarea {
+    min-height: 80px;
+    resize: vertical;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+fieldset {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px;
+}
+
+.check-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+    font-weight: 500;
+}
+
+.check-label input {
+    width: auto;
+    margin: 0;
+}
+
+/* Sugerencias de Autocompletado Gratis (Nominatim/OSM) */
+#nominatim-suggestions {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: #ffffff;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 6000;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.12);
+    margin-top: 4px;
+}
+
+.suggestion-item {
+    padding: 11px 14px;
+    cursor: pointer;
+    font-size: 13px;
+    border-bottom: 1px solid #f3f4f6;
+    color: var(--text);
+    transition: background-color 0.15s ease;
+}
+
+.suggestion-item:last-child {
+    border-bottom: none;
+}
+
+.suggestion-item:hover,
+.suggestion-item:active {
+    background-color: #f3f4f6;
+}
+
+.search-results {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.search-result {
+    border: 1px solid var(--border);
+    background: #f9fafb;
+    border-radius: 10px;
+    padding: 10px;
+    text-align: left;
+}
+
+.search-result strong {
+    display: block;
+}
+
+.search-result span {
+    display: block;
+    color: var(--muted);
+    font-size: 11px;
+    margin-top: 3px;
+}
+
+/* ==========================================
+   VACÍO / CARGANDO
+========================================== */
+
+.empty {
+    text-align: center;
+    color: var(--muted);
+    padding: 30px 15px;
+    background: white;
+    border: 1px dashed var(--border);
+    border-radius: 16px;
+}
+
+.loading {
+    color: var(--muted);
+}
+
+/* ==========================================
+   NAVEGACIÓN INFERIOR
+========================================== */
+
+.bottom-nav {
+    position: fixed;
+    z-index: 4000;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: 760px;
+    background: rgba(255,255,255,.97);
+    border-top: 1px solid var(--border);
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    padding:
+        7px
+        7px
+        calc(7px + env(safe-area-inset-bottom));
+    backdrop-filter: blur(12px);
+}
+
+.nav-button {
+    border: 0;
+    background: transparent;
+    color: var(--muted);
+    padding: 6px 2px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+}
+
+.nav-button span {
+    font-size: 21px;
+}
+
+.nav-button small {
+    font-size: 9px;
+}
+
+.nav-button.active {
+    color: var(--accent);
+    font-weight: 800;
+}
+
+/* ==========================================
+   FILTROS DEL PLAN
+========================================== */
+
+.plan-filters {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding: 4px 0 12px;
+    margin-bottom: 8px;
+    scrollbar-width: none;
+}
+
+.plan-filters::-webkit-scrollbar {
+    display: none;
+}
+
+.plan-filter {
+    flex: 0 0 auto;
+    border: 1px solid #d1d5db;
+    background: #ffffff;
+    color: #374151;
+    border-radius: 999px;
+    padding: 9px 13px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.plan-filter.active {
+    background: #111827;
+    color: #ffffff;
+    border-color: #111827;
+}
+
+.plan-filter:active {
+    transform: scale(0.97);
+}
+
+/* ==========================================
+   MÓVIL
+========================================== */
+
+@media (max-width: 480px) {
+
+    .quick-grid {
+        grid-template-columns: repeat(2, 1fr);
     }
 
-    updateWeather();
-    updateCurrency();
-}
-
-function showLoginScreen() {
-    document.getElementById("login-screen")?.classList.remove("hidden");
-    document.getElementById("login-screen")?.removeAttribute("hidden");
-    document.getElementById("app")?.classList.add("hidden");
-}
-
-function hideLoginScreen() {
-    document.getElementById("login-screen")?.classList.add("hidden");
-    document.getElementById("app")?.classList.remove("hidden");
-    document.getElementById("app")?.removeAttribute("hidden");
-}
-
-function handleLoginSuccess(user) {
-    state.currentUser = user;
-    const userEmailEl = document.getElementById("current-user-email");
-    if (userEmailEl) userEmailEl.textContent = user.email || "Viajero";
-    hideLoginScreen();
-    loadAllData();
-}
-
-function setupForms() {
-    const loginForm = document.getElementById("login-form");
-    if (loginForm) {
-        console.log("✅ Formulario de login vinculado");
-        loginForm.addEventListener("submit", async (e) => {
-            e.preventDefault();
-            console.log("🔑 Intentando login...");
-            
-            const email = document.getElementById("login-email")?.value.trim();
-            const password = document.getElementById("login-password")?.value.trim();
-            const errorDiv = document.getElementById("login-error");
-            const submitBtn = document.getElementById("login-submit-btn");
-
-            if (errorDiv) {
-                errorDiv.hidden = true;
-                errorDiv.textContent = "";
-            }
-
-            if (!supabaseApp) {
-                alert("Error: Supabase no está cargado.");
-                return;
-            }
-
-            try {
-                if (submitBtn) {
-                    submitBtn.disabled = true;
-                    submitBtn.textContent = "Cargando...";
-                }
-
-                const { data, error } = await supabaseApp.auth.signInWithPassword({ email, password });
-
-                if (error) {
-                    console.warn("⚠️ Error devuelto por Supabase:", error.message);
-                    if (errorDiv) {
-                        errorDiv.textContent = "Error: " + error.message;
-                        errorDiv.hidden = false;
-                    } else {
-                        alert("Error: " + error.message);
-                    }
-                } else if (data && data.user) {
-                    console.log("✅ Login exitoso para:", data.user.email);
-                    handleLoginSuccess(data.user);
-                }
-            } catch (err) {
-                console.error("💥 Error crítico en submit login:", err);
-                alert("Error de conexión al intentar iniciar sesión.");
-            } finally {
-                if (submitBtn) {
-                    submitBtn.disabled = false;
-                    submitBtn.textContent = "Iniciar Sesión";
-                }
-            }
-        });
-    } else {
-        console.error("❌ No se encontró el elemento #login-form en la página");
+    .hero-card {
+        flex-direction: column;
     }
 
-    document.getElementById("logout-button")?.addEventListener("click", async () => {
-        if (supabaseApp) await supabaseApp.auth.signOut();
-        state.currentUser = null;
-        showLoginScreen();
-    });
-
-    document.getElementById("plan-form")?.addEventListener("submit", async (e) => {
-        e.preventDefault();
-        const id = document.getElementById("plan-id").value;
-        const titleVal = document.getElementById("plan-title").value.trim();
-        const planData = {
-            title: titleVal,
-            category: document.getElementById("plan-category").value || "other",
-            description: document.getElementById("plan-description").value || null,
-            date: document.getElementById("plan-date").value || null,
-            time: document.getElementById("plan-time").value || null,
-            location_name: document.getElementById("plan-location").value || null,
-            created_by: state.currentUser ? state.currentUser.email : "invitado"
-        };
-
-        if (supabaseApp) {
-            if (id) await supabaseApp.from("plans").update(planData).eq("id", id);
-            else await supabaseApp.from("plans").insert([planData]);
-        }
-        closeModal("plan-modal");
-        loadAllData();
-    });
-
-    document.getElementById("expense-form")?.addEventListener("submit", async (e) => {
-        e.preventDefault();
-        const expData = {
-            title: document.getElementById("expense-title").value,
-            amount: parseFloat(document.getElementById("expense-amount").value),
-            currency: document.getElementById("expense-currency").value,
-            paid_by: document.getElementById("expense-paid-by").value,
-            date: document.getElementById("expense-date").value || new Date().toISOString().split("T")[0]
-        };
-        if (supabaseApp) await supabaseApp.from("expenses").insert([expData]);
-        closeModal("expense-modal");
-        loadAllData();
-    });
-}
-
-function startClocksAndCountdown() {
-    updateClocksAndCountdown();
-    setInterval(updateClocksAndCountdown, 1000);
-}
-
-function updateClocksAndCountdown() {
-    const now = new Date();
-    const malagaTimeStr = now.toLocaleTimeString('es-ES', { timeZone: 'Europe/Madrid', hour: '2-digit', minute: '2-digit' });
-    const nyTimeStr = now.toLocaleTimeString('es-ES', { timeZone: 'America/New_York', hour: '2-digit', minute: '2-digit' });
-
-    const clocksEl = document.getElementById("header-clocks");
-    if (clocksEl) {
-        clocksEl.innerHTML = `<span>🗽 ${nyTimeStr}</span> | <span>💃 ${malagaTimeStr}</span>`;
+    .hero-location {
+        align-items: flex-start;
     }
 
-    const dayEl = document.getElementById("trip-day");
-    if (dayEl) {
-        const startDate = new Date(2026, 11, 26);
-        const diffDays = Math.round((startDate - now) / (1000 * 60 * 60 * 24));
-        dayEl.textContent = diffDays > 0 ? `Faltan ${diffDays} días` : "¡En NY!";
+    .screen-title {
+        align-items: flex-start;
     }
-}
 
-function setupLocationSearch() {}
-async function loadAllData() {
-    if (!supabaseApp) return;
-    const [plansRes, resRes, expRes] = await Promise.all([
-        supabaseApp.from("plans").select("*"),
-        supabaseApp.from("reservations").select("*"),
-        supabaseApp.from("expenses").select("*")
-    ]);
-    if (plansRes.data) state.plans = plansRes.data;
-    if (resRes.data) state.reservations = resRes.data;
-    if (expRes.data) state.expenses = expRes.data;
-    renderAll();
-}
-
-function renderAll() {
-    renderPlans();
-    renderExpenses();
-    renderReservations();
-    renderFlights();
-    renderHotel();
-}
-
-function setupNavigation() {
-    document.querySelectorAll("[data-screen]").forEach(btn => {
-        btn.addEventListener("click", () => switchScreen(btn.getAttribute("data-screen")));
-    });
-}
-
-function switchScreen(screenName) {
-    document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
-    document.querySelectorAll(".nav-button").forEach(b => b.classList.remove("active"));
-    document.getElementById(`screen-${screenName}`)?.classList.add("active");
-    document.querySelector(`.bottom-nav .nav-button[data-screen="${screenName}"]`)?.classList.add("active");
-    if (screenName === 'map') initOrRefreshMap();
-}
-
-function setupModals() {
-    document.getElementById("open-plan-form")?.addEventListener("click", () => openModal("plan-modal"));
-    document.getElementById("open-expense-form")?.addEventListener("click", () => openModal("expense-modal"));
-    document.querySelectorAll("[data-close]").forEach(btn => {
-        btn.addEventListener("click", () => closeModal(btn.getAttribute("data-close")));
-    });
-}
-
-function openModal(id) { document.getElementById(id)?.classList.remove("hidden"); }
-function closeModal(id) { document.getElementById(id)?.classList.add("hidden"); }
-
-function setupFilters() {}
-function renderPlans() {
-    const listEl = document.getElementById("plan-list");
-    if (!listEl) return;
-    if (state.plans.length === 0) {
-        listEl.innerHTML = `<div class="empty-state">No hay planes.</div>`;
-        return;
+    .screen-title .primary-button {
+        padding: 9px 11px;
+        font-size: 12px;
     }
-    listEl.innerHTML = state.plans.map(p => `
-        <div class="card">
-            <h3>${p.title}</h3>
-            <p>${p.description || ''}</p>
-        </div>
-    `).join('');
-}
 
-function renderNextActivity() {}
-async function updateWeather() {}
-async function updateCurrency() {}
-function renderReservations() {}
-function renderExpenses() {}
-function renderFlights() {}
-function renderHotel() {}
-function initOrRefreshMap() {}
+}
