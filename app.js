@@ -1,31 +1,25 @@
 /* ==========================================================================
-   🗽 NY TRIP 
+   🗽 NY TRIP - APP.JS
    ========================================================================== */
 
+// Configuración de Supabase
 const SUPABASE_URL = "https://rtbrnbyosrtxeayqmvwc.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ0YnJuYnlvc3J0eGVheXFtdndjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY0NTUwODQsImV4cCI6MjEwMjAzMTA4NH0.W3mCe1yAehFd0bz_XNVJ83YR-dNz-8VZnnhgj-cQEss";
 
+// Inicialización de Supabase
 var supabaseApp = null;
-
-function initSupabaseClient() {
-    if (supabaseApp) return true;
-    if (window.supabase && typeof window.supabase.createClient === 'function') {
-        try {
-            supabaseApp = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-            return true;
-        } catch (e) {
-            console.error("Error al crear cliente Supabase:", e);
-        }
-    }
-    return false;
+if (window.supabase) {
+    supabaseApp = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 }
 
+// ESTADO GLOBAL
 const state = {
     currentUser: null,
     currentScreen: 'home',
     plans: [],
     reservations: [],
     expenses: [],
+    // HOTEL ACTUALIZADO: Courtyard Upper East Side
     hotel: {
         name: "Courtyard by Marriott New York Manhattan/Upper East Side",
         address: "410 East 92nd Street, Upper East Side, New York, NY 10128",
@@ -43,20 +37,26 @@ const state = {
     activePlanFilter: 'all'
 };
 
+// MAPEO UNIFICADO Y FLEXIBLE DE CATEGORÍAS
 const CATEGORIES = {
     food: { name: "Restaurantes", icon: "🍽️" },
     restaurant: { name: "Restaurantes", icon: "🍽️" },
     restaurantes: { name: "Restaurantes", icon: "🍽️" },
+    
     sweet: { name: "Dulces", icon: "🍪" },
     dulces: { name: "Dulces", icon: "🍪" },
     dulce: { name: "Dulces", icon: "🍪" },
+    
     activity: { name: "Spots", icon: "📍" },
     spot: { name: "Spots", icon: "📍" },
     spots: { name: "Spots", icon: "📍" },
+    
     shopping: { name: "Tiendas", icon: "🛍️" },
     tiendas: { name: "Tiendas", icon: "🛍️" },
+    
     sightseeing: { name: "Turisteo", icon: "🗽" },
     turisteo: { name: "Turisteo", icon: "🗽" },
+    
     other: { name: "Otros", icon: "📌" },
     otros: { name: "Otros", icon: "📌" }
 };
@@ -68,142 +68,22 @@ function getCategoryIcon(category) {
 }
 
 /* ==========================================================================
-   INICIALIZACIÓN Y ARRANQUE
+   INICIALIZACIÓN
    ========================================================================== */
-document.addEventListener("DOMContentLoaded", async () => {
-    let retries = 0;
-    while (!initSupabaseClient() && retries < 15) {
-        await new Promise(res => setTimeout(res, 100));
-        retries++;
-    }
+document.addEventListener("DOMContentLoaded", () => {
+    initApp();
+});
 
-    setupAuthListeners();
+async function initApp() {
     setupNavigation();
     setupModals();
     setupForms();
     setupFilters();
     setupLocationSearch();
+
     startClocksAndCountdown();
 
-    await checkSession();
-
-    updateWeather();
-    updateCurrency();
-});
-
-/* ==========================================================================
-   AUTENTICACIÓN Y CONTROL VISUAL PANTALLAS
-   ========================================================================== */
-function setupAuthListeners() {
-    const loginForm = document.getElementById("login-form");
-    if (loginForm) {
-        loginForm.onsubmit = async (e) => {
-            if (e) e.preventDefault();
-            await executeLogin();
-            return false;
-        };
-    }
-
-    const logoutBtn = document.getElementById("logout-button");
-    if (logoutBtn) {
-        logoutBtn.onclick = async () => {
-            if (supabaseApp) await supabaseApp.auth.signOut();
-            state.currentUser = null;
-            showLoginScreen();
-        };
-    }
-}
-
-// FUNCIÓN DE LOGIN PRINCIPAL
-window.executeLogin = async function(e) {
-    // Si viene de un evento de formulario (submit), detenemos la recarga de página
-    if (e && typeof e.preventDefault === 'function') {
-        e.preventDefault();
-    }
-
-    const emailEl = document.getElementById("login-email");
-    const passwordEl = document.getElementById("login-password");
-    const errorDiv = document.getElementById("login-error");
-    
-    // Intenta buscar el botón por ID, o en su defecto, el primer botón dentro del formulario de login
-    const submitBtn = document.getElementById("login-submit-btn") || 
-                      document.querySelector("#login-form button") || 
-                      document.querySelector("#login-screen button");
-
-    const email = emailEl ? emailEl.value.trim() : "";
-    const password = passwordEl ? passwordEl.value.trim() : "";
-
-    if (errorDiv) {
-        errorDiv.style.display = "none";
-        errorDiv.hidden = true;
-        errorDiv.textContent = "";
-    }
-
-    if (!email || !password) {
-        if (errorDiv) {
-            errorDiv.textContent = "Por favor, ingresa tu email y contraseña.";
-            errorDiv.style.display = "block";
-            errorDiv.hidden = false;
-        }
-        return;
-    }
-
-    if (!supabaseApp) initSupabaseClient();
-
-    if (!supabaseApp) {
-        if (errorDiv) {
-            errorDiv.textContent = "Error: El cliente de Supabase no cargó correctamente.";
-            errorDiv.style.display = "block";
-            errorDiv.hidden = false;
-        }
-        return;
-    }
-
-    try {
-        if (submitBtn) {
-            submitBtn.disabled = true;
-            submitBtn.dataset.originalText = submitBtn.textContent;
-            submitBtn.textContent = "Entrando...";
-        }
-
-        const { data, error } = await supabaseApp.auth.signInWithPassword({ email, password });
-
-        if (error) {
-            console.error("Error Login:", error);
-            if (errorDiv) {
-                let msg = error.message;
-                if (msg.includes("Invalid login credentials")) {
-                    msg = "Email o contraseña incorrectos.";
-                }
-                errorDiv.textContent = msg;
-                errorDiv.style.display = "block";
-                errorDiv.hidden = false;
-            }
-        } else if (data && data.user) {
-            handleLoginSuccess(data.user);
-        }
-    } catch (err) {
-        console.error("Error inesperado en login:", err);
-        if (errorDiv) {
-            errorDiv.textContent = "Error inesperado: " + err.message;
-            errorDiv.style.display = "block";
-            errorDiv.hidden = false;
-        }
-    } finally {
-        if (submitBtn) {
-            submitBtn.disabled = false;
-            submitBtn.textContent = submitBtn.dataset.originalText || "Iniciar Sesión";
-        }
-    }
-};
-
-async function checkSession() {
-    if (!supabaseApp) {
-        showLoginScreen();
-        return;
-    }
-
-    try {
+    if (supabaseApp) {
         supabaseApp.auth.onAuthStateChange((event, session) => {
             if (session && session.user) {
                 handleLoginSuccess(session.user);
@@ -218,42 +98,30 @@ async function checkSession() {
         } else {
             showLoginScreen();
         }
-    } catch (e) {
+    } else {
+        console.error("No se pudo inicializar el cliente de Supabase.");
         showLoginScreen();
     }
+
+    updateWeather();
+    updateCurrency();
 }
 
-// MOSTRAR Y OCULTAR PANTALLAS
+/* ==========================================================================
+   AUTENTICACIÓN
+   ========================================================================== */
 function showLoginScreen() {
     const loginScreen = document.getElementById("login-screen");
     const appScreen = document.getElementById("app");
-    
-    if (loginScreen) {
-        loginScreen.classList.remove("hidden");
-        loginScreen.hidden = false;
-        loginScreen.style.display = ""; 
-    }
-    if (appScreen) {
-        appScreen.classList.add("hidden");
-        appScreen.hidden = true;
-        appScreen.style.display = "none";
-    }
+    if (loginScreen) loginScreen.hidden = false;
+    if (appScreen) appScreen.hidden = true;
 }
 
 function hideLoginScreen() {
     const loginScreen = document.getElementById("login-screen");
     const appScreen = document.getElementById("app");
-    
-    if (loginScreen) {
-        loginScreen.classList.add("hidden");
-        loginScreen.hidden = true;
-        loginScreen.style.display = "none";
-    }
-    if (appScreen) {
-        appScreen.classList.remove("hidden");
-        appScreen.hidden = false;
-        appScreen.style.display = ""; // Deja que tu CSS controle la maquetación bonita
-    }
+    if (loginScreen) loginScreen.hidden = true;
+    if (appScreen) appScreen.hidden = false;
 }
 
 function handleLoginSuccess(user) {
@@ -263,10 +131,63 @@ function handleLoginSuccess(user) {
         userEmailEl.textContent = user.email || "Viajero";
     }
     hideLoginScreen();
-    if (typeof loadAllData === 'function') {
-        loadAllData();
-    }
+    loadAllData();
 }
+
+document.addEventListener("DOMContentLoaded", () => {
+    const loginForm = document.getElementById("login-form");
+    if (loginForm) {
+        loginForm.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            
+            const emailEl = document.getElementById("login-email");
+            const passwordEl = document.getElementById("login-password");
+            const errorDiv = document.getElementById("login-error");
+
+            const email = emailEl ? emailEl.value.trim() : "";
+            const password = passwordEl ? passwordEl.value.trim() : "";
+
+            if (errorDiv) {
+                errorDiv.hidden = true;
+                errorDiv.textContent = "";
+            }
+
+            if (!supabaseApp) {
+                if (errorDiv) {
+                    errorDiv.textContent = "Error de conexión con Supabase.";
+                    errorDiv.hidden = false;
+                }
+                return;
+            }
+
+            try {
+                const { data, error } = await supabaseApp.auth.signInWithPassword({ email, password });
+
+                if (error) {
+                    if (errorDiv) {
+                        let msg = error.message;
+                        if (msg.includes("Invalid login credentials")) msg = "Usuario o contraseña incorrectos.";
+                        errorDiv.textContent = msg;
+                        errorDiv.hidden = false;
+                    }
+                } else if (data && data.user) {
+                    handleLoginSuccess(data.user);
+                }
+            } catch (err) {
+                console.error("Error en login:", err);
+            }
+        });
+    }
+
+    const logoutBtn = document.getElementById("logout-button");
+    if (logoutBtn) {
+        logoutBtn.addEventListener("click", async () => {
+            if (supabaseApp) await supabaseApp.auth.signOut();
+            state.currentUser = null;
+            showLoginScreen();
+        });
+    }
+});
 
 /* ==========================================================================
    RELOJES Y CONTADOR
@@ -312,7 +233,7 @@ function updateClocksAndCountdown() {
 }
 
 /* ==========================================================================
-   BÚSQUEDA Y GEOCODIFICACIÓN
+   BÚSQUEDA Y GEOCODIFICACIÓN (PHOTON)
    ========================================================================== */
 function setupLocationSearch() {
     initPhotonAutocomplete("plan-location", "plan-location-results");
@@ -360,7 +281,7 @@ function initPhotonAutocomplete(inputId, resultsContainerId) {
 
                 data.features.forEach(feature => {
                     const props = feature.properties;
-                    const coords = feature.geometry.coordinates;
+                    const coords = feature.geometry.coordinates; // [lon, lat]
                     const name = props.name || query;
                     const city = props.city || props.state || "New York";
                     const fullAddress = `${props.street ? props.street + ', ' : ''}${city}`;
@@ -379,7 +300,7 @@ function initPhotonAutocomplete(inputId, resultsContainerId) {
                     container.appendChild(item);
                 });
             } catch (err) {
-                console.error("Error autocompletado:", err);
+                console.error("Error en autocompletado Photon:", err);
             }
         }, 250);
     });
@@ -411,7 +332,9 @@ async function geocodeAddress(query) {
             const coords = data.features[0].geometry.coordinates;
             return { lat: coords[1], lng: coords[0] };
         }
-    } catch (e) {}
+    } catch (e) {
+        console.warn("No se pudo geocodificar:", query, e);
+    }
     return { lat: 40.7128, lng: -74.0060 };
 }
 
@@ -439,7 +362,9 @@ async function loadAllData() {
             supabaseApp.from("expenses").select("*")
         ]);
 
+        if (plansRes.error) console.error("Error cargando planes:", plansRes.error);
         if (plansRes.data) state.plans = plansRes.data;
+
         if (resRes.data) state.reservations = resRes.data;
         if (expRes.data) state.expenses = expRes.data;
 
@@ -472,10 +397,10 @@ function renderAll() {
 function setupNavigation() {
     const buttons = document.querySelectorAll("[data-screen]");
     buttons.forEach(btn => {
-        btn.onclick = () => {
+        btn.addEventListener("click", () => {
             const screen = btn.getAttribute("data-screen");
             switchScreen(screen);
-        };
+        });
     });
 }
 
@@ -499,12 +424,12 @@ function switchScreen(screenName) {
    GESTIÓN DE MODALES
    ========================================================================== */
 function setupModals() {
-    document.getElementById("open-plan-form")?.onclick = () => openPlanModal();
-    document.getElementById("open-reservation-form")?.onclick = () => openModal("reservation-modal");
-    document.getElementById("open-expense-form")?.onclick = () => openModal("expense-modal");
+    document.getElementById("open-plan-form")?.addEventListener("click", () => openPlanModal());
+    document.getElementById("open-reservation-form")?.addEventListener("click", () => openModal("reservation-modal"));
+    document.getElementById("open-expense-form")?.addEventListener("click", () => openModal("expense-modal"));
 
     document.querySelectorAll("[data-close]").forEach(btn => {
-        btn.onclick = () => closeModal(btn.getAttribute("data-close"));
+        btn.addEventListener("click", () => closeModal(btn.getAttribute("data-close")));
     });
 }
 
@@ -550,8 +475,11 @@ function openPlanModal(planToEdit = null) {
     openModal("plan-modal");
 }
 
+/* ==========================================================================
+   FORMULARIO DE PLANES
+   ========================================================================== */
 function setupForms() {
-    document.getElementById("plan-form")?.onsubmit = async (e) => {
+    document.getElementById("plan-form")?.addEventListener("submit", async (e) => {
         e.preventDefault();
         
         const submitBtn = e.target.querySelector('button[type="submit"]');
@@ -583,6 +511,7 @@ function setupForms() {
                 }
             }
 
+            // MAPEO TIPO CHECK CONSTRAINT SEGÚN NOMBRES ESPAÑOL/INGLÉS
             const CATEGORY_TO_DB = {
                 food: "Restaurantes",
                 sweet: "Dulces",
@@ -616,12 +545,15 @@ function setupForms() {
                 result = await supabaseApp.from("plans").insert([planData]);
             }
 
-            if (result.error) throw new Error(result.error.message);
+            if (result.error) {
+                throw new Error(result.error.message);
+            }
 
             closeModal("plan-modal");
             await loadAllData();
 
         } catch (err) {
+            console.error("Error al guardar plan:", err);
             alert("⚠️ No se pudo guardar el plan: " + err.message);
         } finally {
             if (submitBtn) {
@@ -629,9 +561,9 @@ function setupForms() {
                 submitBtn.textContent = "Guardar Plan";
             }
         }
-    };
+    });
 
-    document.getElementById("reservation-form")?.onsubmit = async (e) => {
+    document.getElementById("reservation-form")?.addEventListener("submit", async (e) => {
         e.preventDefault();
         const resData = {
             type: document.getElementById("reservation-type").value,
@@ -646,15 +578,18 @@ function setupForms() {
 
         closeModal("reservation-modal");
         loadAllData();
-    };
+    });
 
-    document.getElementById("expense-form")?.onsubmit = async (e) => {
+    document.getElementById("expense-form")?.addEventListener("submit", async (e) => {
         e.preventDefault();
+        const participants = Array.from(document.querySelectorAll("input[name='participant']:checked")).map(cb => cb.value);
+        
         const expData = {
             title: document.getElementById("expense-title").value,
             amount: parseFloat(document.getElementById("expense-amount").value),
             currency: document.getElementById("expense-currency").value,
             paid_by: document.getElementById("expense-paid-by").value,
+            participants: participants,
             date: document.getElementById("expense-date").value || new Date().toISOString().split("T")[0]
         };
 
@@ -662,11 +597,11 @@ function setupForms() {
 
         closeModal("expense-modal");
         loadAllData();
-    };
+    });
 }
 
 /* ==========================================================================
-   RENDERIZADO DE COMPONENTES
+   RENDERIZADO DE VISTAS DE PLANES CON CHECK COMPLETADO Y FILTROS
    ========================================================================== */
 function renderPlans() {
     const listEl = document.getElementById("plan-list");
@@ -674,9 +609,11 @@ function renderPlans() {
 
     let filtered = state.plans;
 
+    // 1. Filtrado por categoría
     if (state.activePlanFilter !== 'all') {
         filtered = filtered.filter(p => {
             if (!p.category) return state.activePlanFilter === 'other';
+            
             const cat = p.category.toString().trim().toLowerCase();
             const filter = state.activePlanFilter.toLowerCase();
 
@@ -696,16 +633,21 @@ function renderPlans() {
         return;
     }
 
+    // 2. Ordenación: Pendientes arriba (por fecha), Completados abajo (por fecha)
     filtered.sort((a, b) => {
         const aDone = a.completed ? 1 : 0;
         const bDone = b.completed ? 1 : 0;
 
-        if (aDone !== bDone) return aDone - bDone;
+        if (aDone !== bDone) {
+            return aDone - bDone;
+        }
+
         if (!a.date) return 1;
         if (!b.date) return -1;
         return new Date(a.date) - new Date(b.date);
     });
 
+    // 3. Renderizado HTML
     listEl.innerHTML = filtered.map(plan => {
         const catKey = plan.category ? plan.category.toString().trim().toLowerCase() : 'other';
         const cat = CATEGORIES[catKey] || CATEGORIES.other;
@@ -760,8 +702,13 @@ window.togglePlanCompleted = async function(id, isChecked) {
     }
 
     if (supabaseApp) {
-        const { error } = await supabaseApp.from("plans").update({ completed: isChecked }).eq("id", id);
+        const { error } = await supabaseApp
+            .from("plans")
+            .update({ completed: isChecked })
+            .eq("id", id);
+
         if (error) {
+            console.error("Error actualizando estado completado:", error);
             if (plan) plan.completed = !isChecked;
             renderPlans();
         }
@@ -775,19 +722,22 @@ window.editPlan = function(id) {
 
 window.deletePlan = async function(id) {
     if (!confirm("¿Seguro que deseas borrar este plan?")) return;
-    if (supabaseApp) await supabaseApp.from("plans").delete().eq("id", id);
+
+    if (supabaseApp) {
+        await supabaseApp.from("plans").delete().eq("id", id);
+    }
     loadAllData();
 };
 
 function setupFilters() {
     const filterBtns = document.querySelectorAll("[data-plan-filter]");
     filterBtns.forEach(btn => {
-        btn.onclick = () => {
+        btn.addEventListener("click", () => {
             filterBtns.forEach(b => b.classList.remove("active"));
             btn.classList.add("active");
             state.activePlanFilter = btn.getAttribute("data-plan-filter");
             renderPlans();
-        };
+        });
     });
 }
 
@@ -823,6 +773,9 @@ function renderNextActivity() {
     }
 }
 
+/* ==========================================================================
+   TIEMPO Y DIVISAS
+   ========================================================================== */
 async function updateWeather() {
     try {
         const res = await fetch("https://api.open-meteo.com/v1/forecast?latitude=40.7143&longitude=-74.006&current_weather=true");
@@ -833,7 +786,9 @@ async function updateWeather() {
             document.getElementById("weather-wind").textContent = `Viento: ${Math.round(data.current_weather.windspeed)} km/h`;
             document.getElementById("weather-update").textContent = "Actualizado";
         }
-    } catch (e) {}
+    } catch (e) {
+        console.warn("Error tiempo:", e);
+    }
 }
 
 async function updateCurrency() {
@@ -844,7 +799,9 @@ async function updateCurrency() {
             document.getElementById("currency-value").textContent = `1 € = ${data.rates.USD.toFixed(2)} $`;
             document.getElementById("currency-update").textContent = "Tiempo real";
         }
-    } catch (e) {}
+    } catch (e) {
+        console.warn("Error divisas:", e);
+    }
 }
 
 function renderReservations() {
@@ -885,7 +842,7 @@ function renderExpenses() {
         summaryEl.innerHTML = `
             <div class="info-card">
                 <strong>Gasto Total Aprox:</strong> $${totalUSD.toFixed(2)} USD
-                <small>(${state.expenses.length} pagos registrados)</small>
+                <small>(${state.expenses.length} pagos realizados)</small>
             </div>
         `;
     }
@@ -897,6 +854,7 @@ function renderExpenses() {
                 <span class="badge-amount">${e.amount} ${e.currency}</span>
             </div>
             <p>Pagó: <strong>${escapeHTML(e.paid_by)}</strong></p>
+            <small>Para: ${e.participants ? e.participants.map(p => escapeHTML(p)).join(", ") : "Todos"}</small>
         </div>
     `).join("");
 }
@@ -929,6 +887,9 @@ function renderHotel() {
     `;
 }
 
+/* ==========================================================================
+   MAPA LEAFLET
+   ========================================================================== */
 function initOrRefreshMap() {
     if (typeof L === 'undefined') return;
 
