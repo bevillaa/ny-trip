@@ -1,5 +1,5 @@
 /* ==========================================
-   🗽 NY TRIP — DISEÑO COMPLETO
+   🗽 NY TRIP — DISEÑO 
 ========================================== */
 
 * {
@@ -25,23 +25,14 @@ body {
     min-height: 100%;
     background: var(--bg);
     color: var(--text);
-    font-family:
-        -apple-system,
-        BlinkMacSystemFont,
-        "Segoe UI",
-        Roboto,
-        Arial,
-        sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
 }
 
 body {
     padding-bottom: 82px;
 }
 
-button,
-input,
-textarea,
-select {
+button, input, textarea, select {
     font: inherit;
 }
 
@@ -61,17 +52,63 @@ a {
 }
 
 /* ==========================================
+   LOGIN SCREEN
+========================================== */
+.login-screen {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    background: #111827;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.login-card {
+    background: #ffffff;
+    width: 100%;
+    max-width: 380px;
+    border-radius: 24px;
+    padding: 32px 24px;
+    text-align: center;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
+}
+
+.login-logo {
+    font-size: 48px;
+    margin-bottom: 8px;
+}
+
+.login-card h1 {
+    margin: 0;
+    font-size: 24px;
+    color: #111827;
+}
+
+.login-subtitle {
+    margin: 4px 0 24px 0;
+    font-size: 13px;
+    color: var(--muted);
+}
+
+.login-error {
+    margin-top: 14px;
+    padding: 10px;
+    background: #fee2e2;
+    color: var(--danger);
+    border-radius: 10px;
+    font-size: 13px;
+}
+
+/* ==========================================
    CABECERA
 ========================================== */
 
 .app-header {
     background: #111827;
     color: white;
-    padding:
-        calc(18px + env(safe-area-inset-top))
-        20px
-        20px;
-
+    padding: calc(18px + env(safe-area-inset-top)) 20px 20px;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -104,7 +141,7 @@ a {
 }
 
 /* ==========================================
-   PANTALLAS
+   PANTALLAS & TARJETAS
 ========================================== */
 
 main {
@@ -120,30 +157,15 @@ main {
     display: block;
 }
 
-/* ==========================================
-   HERO
-========================================== */
-
 .hero-card {
-    background:
-        linear-gradient(
-            135deg,
-            #111827,
-            #273449
-        );
-
+    background: linear-gradient(135deg, #111827, #273449);
     color: white;
-
     border-radius: 22px;
-
     padding: 22px;
-
     display: flex;
     justify-content: space-between;
     gap: 15px;
-
-    box-shadow:
-        0 10px 25px rgba(0,0,0,.12);
+    box-shadow: 0 10px 25px rgba(0,0,0,.12);
 }
 
 .small-label {
@@ -174,10 +196,7 @@ main {
     font-size: 13px;
 }
 
-/* ==========================================
-   WEATHER & CURRENCY
-========================================== */
-
+/* WEATHER & CURRENCY */
 .weather-card,
 .currency-card {
     margin-top: 12px;
@@ -221,19 +240,7 @@ main {
     justify-content: space-between;
 }
 
-.currency-card strong {
-    display: block;
-}
-
-.currency-card > span {
-    font-size: 18px;
-    font-weight: 700;
-}
-
-/* ==========================================
-   SECCIONES
-========================================== */
-
+/* SECCIONES */
 .section-heading {
     margin: 25px 2px 10px;
 }
@@ -247,10 +254,7 @@ main {
     font-size: 15px;
 }
 
-/* ==========================================
-   TARJETAS
-========================================== */
-
+/* TARJETAS GENERICAS */
 .next-card,
 .info-card,
 .activity-card,
@@ -258,11 +262,13 @@ main {
 .expense-card,
 .flight-card,
 .debt-card,
-.balance-card {
+.balance-card,
+.card {
     background: var(--card);
     border: 1px solid var(--border);
     border-radius: 17px;
     padding: 16px;
+    margin-bottom: 10px;
 }
 
 .next-card {
@@ -275,25 +281,7 @@ main {
     font-size: 30px;
 }
 
-.next-card strong {
-    display: block;
-}
-
-.next-card p,
-.info-card p,
-.activity-card p,
-.reservation-card p,
-.expense-card p,
-.flight-card p {
-    color: var(--muted);
-    margin: 5px 0 0;
-    font-size: 13px;
-}
-
-/* ==========================================
-   ACCIONES
-========================================== */
-
+/* ACCIONES RAPIDAS */
 .quick-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
@@ -313,18 +301,10 @@ main {
     color: var(--text);
 }
 
-.quick-button span {
-    font-size: 25px;
-}
+.quick-button span { font-size: 25px; }
+.quick-button strong { font-size: 11px; }
 
-.quick-button strong {
-    font-size: 11px;
-}
-
-/* ==========================================
-   VIAJERAS
-========================================== */
-
+/* VIAJERAS */
 .travelers-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -345,56 +325,7 @@ main {
     margin-bottom: 6px;
 }
 
-/* ==========================================
-   INFO
-========================================== */
-
-.info-card {
-    display: flex;
-    gap: 13px;
-}
-
-.info-icon {
-    font-size: 30px;
-}
-
-/* ==========================================
-   TITULO PANTALLA
-========================================== */
-
-.screen-title {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 18px;
-}
-
-.screen-title > div:first-child {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
-.screen-title > div:first-child > span {
-    font-size: 28px;
-}
-
-.screen-title h2 {
-    margin: 0;
-    font-size: 21px;
-}
-
-.screen-title p {
-    margin: 3px 0 0;
-    color: var(--muted);
-    font-size: 12px;
-}
-
-/* ==========================================
-   BOTONES
-========================================== */
-
+/* BOTONES */
 .primary-button,
 .secondary-button {
     border: 0;
@@ -418,456 +349,7 @@ main {
     margin-top: 10px;
 }
 
-.danger-button {
-    border: 0;
-    background: #fee2e2;
-    color: var(--danger);
-    border-radius: 10px;
-    padding: 8px 11px;
-}
-
-/* ==========================================
-   LISTAS
-========================================== */
-
-.list {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-
-.activity-card,
-.reservation-card,
-.expense-card,
-.flight-card {
-    display: flex;
-    justify-content: space-between;
-    gap: 12px;
-}
-
-.card-main {
-    min-width: 0;
-    flex: 1;
-}
-
-.card-actions {
-    display: flex;
-    align-items: flex-start;
-}
-
-.date-badge {
-    flex: 0 0 60px;
-    background: #f3f4f6;
-    border-radius: 12px;
-    text-align: center;
-    padding: 8px 4px;
-}
-
-.date-badge strong {
-    display: block;
-    font-size: 17px;
-}
-
-.date-badge span {
-    font-size: 10px;
-    color: var(--muted);
-}
-
-.type-badge {
-    display: inline-block;
-    padding: 4px 7px;
-    background: #f3f4f6;
-    border-radius: 7px;
-    font-size: 10px;
-    margin-bottom: 6px;
-}
-
-/* ==========================================
-   GASTOS
-========================================== */
-
-.expense-summary {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 8px;
-}
-
-.balance-card {
-    padding: 13px 8px;
-    text-align: center;
-}
-
-.balance-card span {
-    display: block;
-    color: var(--muted);
-    font-size: 11px;
-}
-
-.balance-card strong {
-    display: block;
-    margin-top: 5px;
-    font-size: 16px;
-}
-
-.positive {
-    color: var(--success);
-}
-
-.negative {
-    color: var(--danger);
-}
-
-.debts {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.debt-card {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.debt-card strong {
-    font-size: 14px;
-}
-
-.debt-amount {
-    font-weight: 800;
-}
-
-/* ==========================================
-   VUELOS
-========================================== */
-
-.flight-route {
-    display: flex;
-    align-items: center;
-    gap: 9px;
-    margin: 9px 0;
-}
-
-.flight-airport {
-    font-weight: 800;
-    font-size: 20px;
-}
-
-.flight-arrow {
-    color: var(--muted);
-}
-
-/* ==========================================
-   MÁS
-========================================== */
-
-.more-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-}
-
-.more-card {
-    border: 1px solid var(--border);
-    background: white;
-    border-radius: 17px;
-    padding: 20px 14px;
-    text-align: left;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-}
-
-.more-card:first-child {
-    font-size: 27px;
-}
-
-.more-card strong {
-    font-size: 15px;
-}
-
-.more-card span {
-    color: var(--muted);
-    font-size: 11px;
-}
-
-/* ==========================================
-   MAPA
-========================================== */
-
-.map-screen {
-    padding-left: 0;
-    padding-right: 0;
-}
-
-.map-screen .screen-title {
-    padding: 0 16px;
-}
-
-#map {
-    width: 100%;
-    height: 60vh;
-    min-height: 420px;
-}
-
-.map-list {
-    padding: 12px 16px 20px;
-}
-
-.map-item {
-    background: white;
-    border: 1px solid var(--border);
-    border-radius: 13px;
-    padding: 12px;
-    margin-bottom: 8px;
-}
-
-.map-item strong {
-    display: block;
-}
-
-.map-item span {
-    display: block;
-    color: var(--muted);
-    font-size: 11px;
-    margin-top: 3px;
-}
-
-/* ==========================================
-   MODALES
-========================================== */
-
-.modal {
-    position: fixed;
-    inset: 0;
-    z-index: 5000;
-    background: rgba(0,0,0,.55);
-    display: flex;
-    align-items: flex-end;
-    justify-content: center;
-}
-
-.modal.hidden {
-    display: none;
-}
-
-.modal-content {
-    width: 100%;
-    max-width: 760px;
-    max-height: 92vh;
-    overflow-y: auto;
-    background: white;
-    border-radius: 22px 22px 0 0;
-    padding: 20px 17px 30px;
-}
-
-.modal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 15px;
-}
-
-.modal-header h2 {
-    margin: 0;
-    font-size: 20px;
-}
-
-.close-modal {
-    border: 0;
-    background: #f3f4f6;
-    width: 35px;
-    height: 35px;
-    border-radius: 50%;
-    font-size: 23px;
-}
-
-/* ==========================================
-   FORMULARIOS
-========================================== */
-
-form {
-    display: flex;
-    flex-direction: column;
-    gap: 13px;
-}
-
-label,
-fieldset legend {
-    font-size: 12px;
-    font-weight: 700;
-}
-
-input,
-textarea,
-select {
-    display: block;
-    width: 100%;
-    margin-top: 6px;
-    border: 1px solid #d1d5db;
-    border-radius: 11px;
-    padding: 12px;
-    background: white;
-    color: var(--text);
-}
-
-textarea {
-    min-height: 80px;
-    resize: vertical;
-}
-
-.form-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-}
-
-fieldset {
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 12px;
-}
-
-.check-label {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-top: 8px;
-    font-weight: 500;
-}
-
-.check-label input {
-    width: auto;
-    margin: 0;
-}
-
-/* Sugerencias de Autocompletado Gratis (Nominatim/OSM) */
-#nominatim-suggestions {
-    position: absolute;
-    top: 100%;
-    left: 0;
-    right: 0;
-    background: #ffffff;
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    max-height: 200px;
-    overflow-y: auto;
-    z-index: 6000;
-    box-shadow: 0 10px 20px rgba(0,0,0,0.12);
-    margin-top: 4px;
-}
-
-.suggestion-item {
-    padding: 11px 14px;
-    cursor: pointer;
-    font-size: 13px;
-    border-bottom: 1px solid #f3f4f6;
-    color: var(--text);
-    transition: background-color 0.15s ease;
-}
-
-.suggestion-item:last-child {
-    border-bottom: none;
-}
-
-.suggestion-item:hover,
-.suggestion-item:active {
-    background-color: #f3f4f6;
-}
-
-.search-results {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-}
-
-.search-result {
-    border: 1px solid var(--border);
-    background: #f9fafb;
-    border-radius: 10px;
-    padding: 10px;
-    text-align: left;
-}
-
-.search-result strong {
-    display: block;
-}
-
-.search-result span {
-    display: block;
-    color: var(--muted);
-    font-size: 11px;
-    margin-top: 3px;
-}
-
-/* ==========================================
-   VACÍO / CARGANDO
-========================================== */
-
-.empty {
-    text-align: center;
-    color: var(--muted);
-    padding: 30px 15px;
-    background: white;
-    border: 1px dashed var(--border);
-    border-radius: 16px;
-}
-
-.loading {
-    color: var(--muted);
-}
-
-/* ==========================================
-   NAVEGACIÓN INFERIOR
-========================================== */
-
-.bottom-nav {
-    position: fixed;
-    z-index: 4000;
-    bottom: 0;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 100%;
-    max-width: 760px;
-    background: rgba(255,255,255,.97);
-    border-top: 1px solid var(--border);
-    display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    padding:
-        7px
-        7px
-        calc(7px + env(safe-area-inset-bottom));
-    backdrop-filter: blur(12px);
-}
-
-.nav-button {
-    border: 0;
-    background: transparent;
-    color: var(--muted);
-    padding: 6px 2px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 3px;
-}
-
-.nav-button span {
-    font-size: 21px;
-}
-
-.nav-button small {
-    font-size: 9px;
-}
-
-.nav-button.active {
-    color: var(--accent);
-    font-weight: 800;
-}
-
-/* ==========================================
-   FILTROS DEL PLAN
-========================================== */
-
+/* FILTROS PLAN */
 .plan-filters {
     display: flex;
     gap: 8px;
@@ -900,35 +382,116 @@ fieldset {
     border-color: #111827;
 }
 
-.plan-filter:active {
-    transform: scale(0.97);
+/* MODALES Y FORMULARIOS */
+.modal {
+    position: fixed;
+    inset: 0;
+    z-index: 5000;
+    background: rgba(0,0,0,.55);
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
 }
 
-/* ==========================================
-   MÓVIL
-========================================== */
+.modal.hidden {
+    display: none;
+}
+
+.modal-content {
+    width: 100%;
+    max-width: 760px;
+    max-height: 92vh;
+    overflow-y: auto;
+    background: white;
+    border-radius: 22px 22px 0 0;
+    padding: 20px 17px 30px;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.close-modal {
+    border: 0;
+    background: #f3f4f6;
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    font-size: 23px;
+}
+
+form {
+    display: flex;
+    flex-direction: column;
+    gap: 13px;
+}
+
+label {
+    font-size: 12px;
+    font-weight: 700;
+}
+
+input, textarea, select {
+    display: block;
+    width: 100%;
+    margin-top: 6px;
+    border: 1px solid #d1d5db;
+    border-radius: 11px;
+    padding: 12px;
+    background: white;
+    color: var(--text);
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+/* NAVEGACIÓN INFERIOR */
+.bottom-nav {
+    position: fixed;
+    z-index: 4000;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: 760px;
+    background: rgba(255,255,255,.97);
+    border-top: 1px solid var(--border);
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    padding: 7px 7px calc(7px + env(safe-area-inset-bottom));
+    backdrop-filter: blur(12px);
+}
+
+.nav-button {
+    border: 0;
+    background: transparent;
+    color: var(--muted);
+    padding: 6px 2px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+}
+
+.nav-button.active {
+    color: var(--accent);
+    font-weight: 800;
+}
+
+#map {
+    width: 100%;
+    height: 60vh;
+    min-height: 420px;
+}
 
 @media (max-width: 480px) {
-
-    .quick-grid {
-        grid-template-columns: repeat(2, 1fr);
-    }
-
-    .hero-card {
-        flex-direction: column;
-    }
-
-    .hero-location {
-        align-items: flex-start;
-    }
-
-    .screen-title {
-        align-items: flex-start;
-    }
-
-    .screen-title .primary-button {
-        padding: 9px 11px;
-        font-size: 12px;
-    }
-
+    .quick-grid { grid-template-columns: repeat(2, 1fr); }
+    .hero-card { flex-direction: column; }
+    .hero-location { align-items: flex-start; }
 }
