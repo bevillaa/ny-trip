@@ -54,7 +54,7 @@
             <h1>NY TRIP</h1>
             <p class="login-subtitle">El tridente en Nueva York 😈😇🤪</p>
 
-            <form id="login-form" onsubmit="return false;">
+            <form id="login-form" onsubmit="executeLogin(event); return false;">
                 <label>
                     Email
                     <input id="login-email" type="email" autocomplete="username" inputmode="email" placeholder="Tu email" required>
@@ -65,13 +65,14 @@
                     <input id="login-password" type="password" autocomplete="current-password" placeholder="Tu contraseña" required>
                 </label>
 
-                <button id="login-button" class="primary-button full" type="submit">
+                <button id="login-button" class="primary-button full" type="submit" onclick="executeLogin(event)">
                     Entrar
                 </button>
 
                 <div id="login-error" class="login-error" hidden></div>
             </form>
         </div>
+    </div>
     </div>
 
     <!-- APP -->
