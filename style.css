@@ -1,5 +1,5 @@
 /* ==========================================
-    🗽 NY TRIP 
+   🗽 NY TRIP — DISEÑO GLOBAL Y COMPONENTES
 ========================================== */
 
 * {
@@ -27,13 +27,7 @@ body {
     min-height: 100%;
     background: var(--bg);
     color: var(--text);
-    font-family:
-        -apple-system,
-        BlinkMacSystemFont,
-        "Segoe UI",
-        Roboto,
-        Arial,
-        sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
     -webkit-tap-highlight-color: transparent;
 }
 
@@ -69,17 +63,56 @@ a {
 }
 
 /* ==========================================
-    CABECERA
+   CABECERA & LOGIN
 ========================================== */
+
+.login-screen {
+    position: fixed;
+    inset: 0;
+    background: #111827;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    z-index: 9999;
+}
+
+.login-card {
+    background: white;
+    width: 100%;
+    max-width: 380px;
+    padding: 28px 24px;
+    border-radius: 20px;
+    text-align: center;
+}
+
+.login-logo {
+    font-size: 42px;
+    margin-bottom: 8px;
+}
+
+.login-card h1 {
+    margin: 0;
+    font-size: 24px;
+}
+
+.login-subtitle {
+    margin: 4px 0 20px;
+    color: var(--muted);
+    font-size: 13px;
+}
+
+.login-error {
+    margin-top: 12px;
+    color: var(--danger);
+    font-size: 13px;
+    font-weight: 600;
+}
 
 .app-header {
     background: #111827;
     color: white;
-    padding:
-        calc(18px + env(safe-area-inset-top))
-        20px
-        20px;
-
+    padding: calc(18px + env(safe-area-inset-top)) 20px 20px;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -95,27 +128,19 @@ a {
 
 .app-header p {
     margin: 5px 0 0;
-    opacity: .72;
+    opacity: 0.72;
     font-size: 13px;
 }
 
 .connection-status {
     font-size: 11px;
     white-space: nowrap;
-    opacity: .8;
+    opacity: 0.8;
     font-weight: 600;
 }
 
-.connection-status.ok {
-    color: #86efac;
-}
-
-.connection-status.error {
-    color: #fca5a5;
-}
-
 /* ==========================================
-    PANTALLAS
+   PANTALLAS & TARJETAS
 ========================================== */
 
 main {
@@ -137,35 +162,22 @@ main {
     to { opacity: 1; transform: translateY(0); }
 }
 
-/* ==========================================
-    HERO
-========================================== */
-
 .hero-card {
-    background:
-        linear-gradient(
-            135deg,
-            #111827,
-            #273449
-        );
-
+    background: linear-gradient(135deg, #111827, #273449);
     color: white;
     border-radius: 22px;
     padding: 22px;
-
     display: flex;
     justify-content: space-between;
     gap: 15px;
-
-    box-shadow:
-        0 10px 25px rgba(0,0,0,.12);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12);
 }
 
 .small-label {
     display: block;
     font-size: 11px;
-    opacity: .7;
-    letter-spacing: .08em;
+    opacity: 0.7;
+    letter-spacing: 0.08em;
     margin-bottom: 6px;
     text-transform: uppercase;
 }
@@ -178,7 +190,7 @@ main {
 .hero-card p {
     margin: 8px 0 0;
     font-size: 12px;
-    opacity: .7;
+    opacity: 0.7;
 }
 
 .hero-location {
@@ -190,18 +202,26 @@ main {
     font-size: 13px;
 }
 
-/* ==========================================
-    WEATHER & CURRENCY
-========================================== */
-
 .weather-card,
-.currency-card {
-    margin-top: 12px;
+.currency-card,
+.next-card,
+.info-card,
+.reservation-card,
+.expense-card,
+.flight-card,
+.debt-card,
+.balance-card,
+.card {
     background: var(--card);
     border: 1px solid var(--border);
     border-radius: 18px;
     padding: 16px;
     box-shadow: var(--shadow-sm);
+}
+
+.weather-card,
+.currency-card {
+    margin-top: 12px;
 }
 
 .weather-main {
@@ -219,11 +239,6 @@ main {
     font-size: 25px;
 }
 
-.weather-main span {
-    color: var(--muted);
-    font-size: 12px;
-}
-
 .weather-extra {
     display: flex;
     justify-content: space-between;
@@ -237,19 +252,6 @@ main {
     align-items: center;
     justify-content: space-between;
 }
-
-.currency-card strong {
-    display: block;
-}
-
-.currency-card > span {
-    font-size: 18px;
-    font-weight: 700;
-}
-
-/* ==========================================
-    SECCIONES
-========================================== */
 
 .section-heading {
     margin: 25px 2px 10px;
@@ -265,133 +267,6 @@ main {
     font-weight: 700;
 }
 
-/* ==========================================
-    TARJETAS Y VISTA DE PLANES (REDISEÑADO)
-========================================== */
-
-.next-card,
-.info-card,
-.activity-card,
-.reservation-card,
-.expense-card,
-.flight-card,
-.debt-card,
-.balance-card,
-.plan-card {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 18px;
-    padding: 16px 18px;
-    box-shadow: var(--shadow-sm);
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-/* Estilos específicos para las tarjetas de planes */
-.plan-card {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    margin-bottom: 12px;
-}
-
-.plan-card:hover {
-    box-shadow: var(--shadow-md);
-}
-
-/* Encabezado interno con badges de categoría y fecha */
-.plan-card-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-}
-
-.plan-badge-category {
-    background: #eff6ff;
-    color: #1d4ed8;
-    font-size: 11px;
-    font-weight: 700;
-    padding: 4px 10px;
-    border-radius: 20px;
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-}
-
-.plan-badge-date {
-    background: #f3f4f6;
-    color: var(--muted);
-    font-size: 11px;
-    font-weight: 600;
-    padding: 4px 9px;
-    border-radius: 8px;
-}
-
-/* Título y descripción */
-.plan-card h3 {
-    margin: 4px 0 0 0;
-    font-size: 17px;
-    font-weight: 700;
-    color: var(--text);
-    line-height: 1.3;
-}
-
-.plan-card p {
-    margin: 4px 0 0 0;
-    font-size: 13px;
-    color: var(--muted);
-    line-height: 1.4;
-}
-
-.plan-location {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    font-size: 12px;
-    color: #4b5563;
-    font-weight: 500;
-    margin-top: 2px;
-}
-
-/* Acciones (Botones Editar / Borrar) */
-.plan-card-actions {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    gap: 8px;
-    margin-top: 6px;
-    padding-top: 10px;
-    border-top: 1px dashed var(--border);
-}
-
-.btn-icon-action {
-    background: #f8fafc;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 6px 12px;
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--text);
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    cursor: pointer;
-}
-
-.btn-icon-action:hover {
-    background: #f1f5f9;
-}
-
-.btn-icon-action.danger {
-    background: #fef2f2;
-    border-color: #fecaca;
-    color: var(--danger);
-}
-
-.btn-icon-action.danger:hover {
-    background: #fee2e2;
-}
-
 .next-card {
     display: flex;
     gap: 14px;
@@ -402,23 +277,78 @@ main {
     font-size: 30px;
 }
 
-.next-card strong {
-    display: block;
+/* ==========================================
+   TARJETAS DE PLANES
+========================================== */
+
+.plan-card {
+    position: relative;
+    padding: 16px;
+    padding-right: 80px;
+    margin-bottom: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
 }
 
-.next-card p,
-.info-card p,
-.activity-card p,
-.reservation-card p,
-.expense-card p,
-.flight-card p {
+.plan-card-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.plan-badge-category {
+    background: #eff6ff;
+    color: #1d4ed8;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 9px;
+    border-radius: 20px;
+}
+
+.plan-badge-date {
+    background: #f3f4f6;
     color: var(--muted);
-    margin: 5px 0 0;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 4px 8px;
+    border-radius: 8px;
+}
+
+.plan-card h3 {
+    margin: 4px 0 2px 0;
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.plan-location {
+    font-size: 12px;
+    color: var(--muted);
+}
+
+.card-actions {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    display: flex;
+    gap: 6px;
+}
+
+.card-actions .icon-button {
+    background: #f1f5f9;
+    border: none;
+    border-radius: 8px;
+    padding: 6px 8px;
     font-size: 13px;
 }
 
+.card-actions .icon-button.danger:hover {
+    background: #fee2e2;
+    color: var(--danger);
+}
+
 /* ==========================================
-    ACCIONES
+   GRID ACCIONES Y EQUIPO
 ========================================== */
 
 .quick-grid {
@@ -440,18 +370,6 @@ main {
     color: var(--text);
     box-shadow: var(--shadow-sm);
 }
-
-.quick-button span {
-    font-size: 25px;
-}
-
-.quick-button strong {
-    font-size: 11px;
-}
-
-/* ==========================================
-    VIAJERAS
-========================================== */
 
 .travelers-grid {
     display: grid;
@@ -475,54 +393,7 @@ main {
 }
 
 /* ==========================================
-    INFO
-========================================== */
-
-.info-card {
-    display: flex;
-    gap: 13px;
-}
-
-.info-icon {
-    font-size: 30px;
-}
-
-/* ==========================================
-    TITULO PANTALLA
-========================================== */
-
-.screen-title {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 18px;
-}
-
-.screen-title > div:first-child {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
-.screen-title > div:first-child > span {
-    font-size: 28px;
-}
-
-.screen-title h2 {
-    margin: 0;
-    font-size: 21px;
-    font-weight: 800;
-}
-
-.screen-title p {
-    margin: 3px 0 0;
-    color: var(--muted);
-    font-size: 12px;
-}
-
-/* ==========================================
-    BOTONES
+   BOTONES Y FORMULARIOS
 ========================================== */
 
 .primary-button,
@@ -548,302 +419,13 @@ main {
     margin-top: 10px;
 }
 
-.danger-button {
-    border: 0;
-    background: #fee2e2;
-    color: var(--danger);
-    border-radius: 10px;
-    padding: 8px 11px;
-    font-weight: 600;
-}
-
-/* ==========================================
-    LISTAS
-========================================== */
-
-.list {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-
-.activity-card,
-.reservation-card,
-.expense-card,
-.flight-card {
-    display: flex;
-    justify-content: space-between;
-    gap: 12px;
-}
-
-.card-main {
-    min-width: 0;
-    flex: 1;
-}
-
-.card-actions {
-    display: flex;
-    align-items: flex-start;
-}
-
-.date-badge {
-    flex: 0 0 60px;
-    background: #f3f4f6;
-    border-radius: 12px;
-    text-align: center;
-    padding: 8px 4px;
-}
-
-.date-badge strong {
-    display: block;
-    font-size: 17px;
-}
-
-.date-badge span {
-    font-size: 10px;
-    color: var(--muted);
-}
-
-.type-badge {
-    display: inline-block;
-    padding: 4px 7px;
-    background: #f3f4f6;
-    border-radius: 7px;
-    font-size: 10px;
-    margin-bottom: 6px;
-    font-weight: 600;
-}
-
-/* ==========================================
-    GASTOS
-========================================== */
-
-.expense-summary {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 8px;
-}
-
-.balance-card {
-    padding: 13px 8px;
-    text-align: center;
-}
-
-.balance-card span {
-    display: block;
-    color: var(--muted);
-    font-size: 11px;
-}
-
-.balance-card strong {
-    display: block;
-    margin-top: 5px;
-    font-size: 16px;
-}
-
-.positive {
-    color: var(--success);
-}
-
-.negative {
-    color: var(--danger);
-}
-
-.debts {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.debt-card {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.debt-card strong {
-    font-size: 14px;
-}
-
-.debt-amount {
-    font-weight: 800;
-}
-
-/* ==========================================
-    VUELOS
-========================================== */
-
-.flight-route {
-    display: flex;
-    align-items: center;
-    gap: 9px;
-    margin: 9px 0;
-}
-
-.flight-airport {
-    font-weight: 800;
-    font-size: 20px;
-}
-
-.flight-arrow {
-    color: var(--muted);
-}
-
-/* ==========================================
-    MÁS
-========================================== */
-
-.more-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-}
-
-.more-card {
-    border: 1px solid var(--border);
-    background: white;
-    border-radius: 17px;
-    padding: 20px 14px;
-    text-align: left;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    box-shadow: var(--shadow-sm);
-}
-
-.more-card:first-child {
-    font-size: 27px;
-}
-
-.more-card strong {
-    font-size: 15px;
-}
-
-.more-card span {
-    color: var(--muted);
-    font-size: 11px;
-}
-
-/* ==========================================
-    MAPA
-========================================== */
-
-.map-screen {
-    padding-left: 0;
-    padding-right: 0;
-}
-
-.map-screen .screen-title {
-    padding: 0 16px;
-}
-
-#map {
-    width: 100%;
-    height: 60vh;
-    min-height: 420px;
-    border-radius: 16px;
-    overflow: hidden;
-    border: 1px solid var(--border);
-}
-
-.map-list {
-    padding: 12px 16px 20px;
-}
-
-.map-item {
-    background: white;
-    border: 1px solid var(--border);
-    border-radius: 13px;
-    padding: 12px;
-    margin-bottom: 8px;
-    box-shadow: var(--shadow-sm);
-}
-
-.map-item strong {
-    display: block;
-}
-
-.map-item span {
-    display: block;
-    color: var(--muted);
-    font-size: 11px;
-    margin-top: 3px;
-}
-
-/* ==========================================
-    MODALES
-========================================== */
-
-.modal {
-    position: fixed;
-    inset: 0;
-    z-index: 5000;
-    background: rgba(0,0,0,.55);
-    display: flex;
-    align-items: flex-end;
-    justify-content: center;
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
-}
-
-.modal.hidden {
-    display: none;
-}
-
-.modal-content {
-    width: 100%;
-    max-width: 760px;
-    max-height: 92vh;
-    overflow-y: auto;
-    background: white;
-    border-radius: 22px 22px 0 0;
-    padding: 20px 17px 30px;
-    box-shadow: var(--shadow-md);
-    animation: slideUp 0.25s ease-out;
-}
-
-@keyframes slideUp {
-    from { transform: translateY(100%); }
-    to { transform: translateY(0); }
-}
-
-.modal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 15px;
-}
-
-.modal-header h2 {
-    margin: 0;
-    font-size: 20px;
-    font-weight: 800;
-}
-
-.close-modal {
-    border: 0;
-    background: #f3f4f6;
-    width: 35px;
-    height: 35px;
-    border-radius: 50%;
-    font-size: 23px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-/* ==========================================
-    FORMULARIOS
-========================================== */
-
 form {
     display: flex;
     flex-direction: column;
     gap: 13px;
 }
 
-label,
-fieldset legend {
+label {
     font-size: 12px;
     font-weight: 700;
 }
@@ -860,7 +442,6 @@ select {
     background: white;
     color: var(--text);
     outline: none;
-    transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 input:focus,
@@ -870,115 +451,107 @@ select:focus {
     box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
 }
 
-textarea {
-    min-height: 80px;
-    resize: vertical;
-}
-
 .form-row {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 10px;
 }
 
-fieldset {
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 12px;
-}
-
-.check-label {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-top: 8px;
-    font-weight: 500;
-}
-
-.check-label input {
-    width: auto;
-    margin: 0;
-}
-
-/* Sugerencias de Autocompletado Gratis (Nominatim/OSM) */
-#nominatim-suggestions {
+.search-results-dropdown {
     position: absolute;
     top: 100%;
     left: 0;
     right: 0;
-    background: #ffffff;
+    background: white;
     border: 1px solid var(--border);
     border-radius: 12px;
-    max-height: 200px;
+    max-height: 180px;
     overflow-y: auto;
     z-index: 6000;
-    box-shadow: 0 10px 20px rgba(0,0,0,0.12);
+    box-shadow: var(--shadow-md);
     margin-top: 4px;
 }
 
-.suggestion-item {
-    padding: 11px 14px;
-    cursor: pointer;
-    font-size: 13px;
+.search-result-item {
+    padding: 10px 12px;
     border-bottom: 1px solid #f3f4f6;
-    color: var(--text);
-    transition: background-color 0.15s ease;
+    cursor: pointer;
 }
 
-.suggestion-item:last-child {
-    border-bottom: none;
-}
-
-.suggestion-item:hover,
-.suggestion-item:active {
-    background-color: #f3f4f6;
-}
-
-.search-results {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-}
-
-.search-result {
-    border: 1px solid var(--border);
-    background: #f9fafb;
-    border-radius: 10px;
-    padding: 10px;
-    text-align: left;
-}
-
-.search-result strong {
-    display: block;
-}
-
-.search-result span {
-    display: block;
-    color: var(--muted);
-    font-size: 11px;
-    margin-top: 3px;
+.search-result-item:hover {
+    background-color: #f8fafc;
 }
 
 /* ==========================================
-    VACÍO / CARGANDO
+   MAPA LEAFLET
 ========================================== */
 
-.empty {
-    text-align: center;
-    color: var(--muted);
-    padding: 30px 15px;
-    background: white;
-    border: 1px dashed var(--border);
+#map {
+    width: 100%;
+    height: 60vh;
+    min-height: 420px;
     border-radius: 16px;
+    overflow: hidden;
+    border: 1px solid var(--border);
 }
 
-.loading {
-    color: var(--muted);
+.custom-map-marker .marker-pin {
+    width: 36px;
+    height: 36px;
+    background: #ffffff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
+    border: 2px solid #ffffff;
 }
 
 /* ==========================================
-    NAVEGACIÓN INFERIOR
+   MODALES Y NAVEGACIÓN
 ========================================== */
+
+.modal {
+    position: fixed;
+    inset: 0;
+    z-index: 5000;
+    background: rgba(0, 0, 0, 0.55);
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    backdrop-filter: blur(4px);
+}
+
+.modal.hidden {
+    display: none;
+}
+
+.modal-content {
+    width: 100%;
+    max-width: 760px;
+    max-height: 92vh;
+    overflow-y: auto;
+    background: white;
+    border-radius: 22px 22px 0 0;
+    padding: 20px 17px 30px;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.close-modal {
+    border: 0;
+    background: #f3f4f6;
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    font-size: 23px;
+}
 
 .bottom-nav {
     position: fixed;
@@ -988,16 +561,12 @@ fieldset {
     transform: translateX(-50%);
     width: 100%;
     max-width: 760px;
-    background: rgba(255,255,255,.97);
+    background: rgba(255, 255, 255, 0.97);
     border-top: 1px solid var(--border);
     display: grid;
     grid-template-columns: repeat(5, 1fr);
-    padding:
-        7px
-        7px
-        calc(7px + env(safe-area-inset-bottom));
+    padding: 7px 7px calc(7px + env(safe-area-inset-bottom));
     backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
 }
 
 .nav-button {
@@ -1011,22 +580,10 @@ fieldset {
     gap: 3px;
 }
 
-.nav-button span {
-    font-size: 21px;
-}
-
-.nav-button small {
-    font-size: 9px;
-}
-
 .nav-button.active {
     color: var(--accent);
     font-weight: 800;
 }
-
-/* ==========================================
-    FILTROS DEL PLAN
-========================================== */
 
 .plan-filters {
     display: flex;
@@ -1034,23 +591,16 @@ fieldset {
     overflow-x: auto;
     padding: 4px 0 12px;
     margin-bottom: 8px;
-    scrollbar-width: none;
-}
-
-.plan-filters::-webkit-scrollbar {
-    display: none;
 }
 
 .plan-filter {
-    flex: 0 0 auto;
     border: 1px solid #d1d5db;
     background: #ffffff;
     color: #374151;
     border-radius: 999px;
-    padding: 9px 13px;
+    padding: 8px 14px;
     font-size: 13px;
     font-weight: 600;
-    cursor: pointer;
     white-space: nowrap;
 }
 
@@ -1060,124 +610,23 @@ fieldset {
     border-color: #111827;
 }
 
-/* ==========================================
-   BOTONES TARJETA Y PINES DEL MAPA
-=========================================== */
-
-/* Posicionamiento relativo para la tarjeta y margen derecho para no pisar el texto */
-.plan-card {
-    position: relative;
-    padding-right: 90px;
+.empty {
+    text-align: center;
+    color: var(--muted);
+    padding: 30px 15px;
+    background: white;
+    border: 1px dashed var(--border);
+    border-radius: 16px;
 }
-
-/* Contenedor de botones flotantes a la derecha */
-.card-actions {
-    position: absolute;
-    top: 16px;
-    right: 16px;
-    display: flex;
-    gap: 6px;
-}
-
-/* Estilo moderno y limpio para los botones de las tarjetas */
-.card-actions .icon-button {
-    background: #f1f5f9;
-    border: none;
-    border-radius: 10px;
-    padding: 6px 10px;
-    font-size: 13px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #475569;
-}
-
-.card-actions .icon-button:hover {
-    background: #e2e8f0;
-    transform: translateY(-1px);
-}
-
-.card-actions .icon-button.danger:hover {
-    background: #fee2e2;
-    color: #ef4444;
-}
-
-/* Burbujas blancas con sombra para los iconos en el mapa */
-.custom-map-marker .marker-pin {
-    width: 36px;
-    height: 36px;
-    background: #ffffff;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 18px;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
-    border: 2px solid #ffffff;
-}
-/* ==========================================
-   PLANES COMPLETADOS
-=========================================== */
-
-/* Checkbox personalizado */
-.plan-checkbox-wrapper {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 8px;
-}
-
-.plan-checkbox {
-    width: 20px;
-    height: 20px;
-    cursor: pointer;
-    accent-color: #10b981; /* Verde éxito */
-}
-
-/* Estado de la tarjeta completada */
-.plan-card.is-completed {
-    background-color: #f8fafc;
-    border: 1px solid #e2e8f0;
-    opacity: 0.65;
-    transition: all 0.3s ease;
-}
-
-.plan-card.is-completed h3 {
-    text-decoration: line-through;
-    color: #64748b;
-}
-
-.plan-card.is-completed .badge-category {
-    background: #e2e8f0;
-    color: #475569;
-}
-/* ==========================================
-    MÓVIL
-========================================== */
 
 @media (max-width: 480px) {
-
     .quick-grid {
         grid-template-columns: repeat(2, 1fr);
     }
-
     .hero-card {
         flex-direction: column;
     }
-
     .hero-location {
         align-items: flex-start;
     }
-
-    .screen-title {
-        align-items: flex-start;
-    }
-
-    .screen-title .primary-button {
-        padding: 9px 11px;
-        font-size: 12px;
-    }
-
 }
