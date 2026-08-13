@@ -5,10 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>NY TRIP - El tridente en Nueva York 🗽</title>
     
-    <!-- Hojas de estilo externas (Leaflet para el mapa) -->
+    <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     
-    <!-- Tu archivo de estilos unificado -->
+    <!-- CSS Principal -->
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -22,7 +22,7 @@
             <h1>NY TRIP</h1>
             <p class="login-subtitle">El tridente en Nueva York 😈😇🤪</p>
 
-            <form id="login-form" onsubmit="executeLogin(event); return false;">
+            <form id="login-form">
                 <label>
                     Email
                     <input id="login-email" type="email" autocomplete="username" inputmode="email" placeholder="tu@email.com" required>
@@ -37,13 +37,13 @@
                     Iniciar Sesión
                 </button>
 
-                <div id="login-error" class="login-error" style="display: none;"></div>
+                <div id="login-error" class="login-error" hidden></div>
             </form>
         </div>
     </div>
 
     <!-- ==========================================
-        APLICACIÓN PRINCIPAL (Oculta hasta estar logueado)
+        APLICACIÓN PRINCIPAL
     ========================================== -->
     <div id="app" class="hidden">
 
@@ -51,7 +51,7 @@
         <header class="app-header">
             <div>
                 <h1>NY TRIP 🗽</h1>
-                <p>El tridente en Nueva York 😈😇🤪</p>
+                <p id="current-user-email">Cargando usuario...</p>
             </div>
             <div id="connection-status" class="connection-status ok">Conectado</div>
         </header>
@@ -65,35 +65,34 @@
                     <div>
                         <span class="small-label">Próximo Viaje</span>
                         <strong>Nueva York, EE. UU.</strong>
-                        <p id="countdown-text">Calculando cuenta atrás...</p>
+                        <p id="trip-day">Calculando cuenta atrás...</p>
                     </div>
-                    <div class="hero-location">
-                        <span>🇺🇸 EST</span>
-                        <span id="ny-time">00:00</span>
+                    <div class="hero-location" id="header-clocks">
+                        <!-- Relojes cargados dinámicamente -->
                     </div>
                 </div>
 
                 <!-- Clima y Divisa -->
                 <div class="weather-card">
                     <div class="weather-main">
-                        <span id="weather-icon">☀️</span>
+                        <span>☀️</span>
                         <div>
-                            <strong id="weather-temp">--°C</strong>
-                            <span id="weather-desc">Cargando clima...</span>
+                            <strong id="weather-temperature">--°C</strong>
+                            <span id="weather-description">Cargando clima...</span>
                         </div>
                     </div>
                     <div class="weather-extra">
-                        <span>Sensación: <b id="weather-feels">--°C</b></span>
-                        <span>Humedad: <b id="weather-humidity">--%</b></span>
+                        <span id="weather-wind">Viento: -- km/h</span>
+                        <span id="weather-update">--</span>
                     </div>
                 </div>
 
                 <div class="currency-card">
                     <div>
                         <span class="small-label">Tipo de Cambio</span>
-                        <strong>1 EUR (€)</strong>
+                        <strong id="currency-value">1 € = -- $</strong>
                     </div>
-                    <span id="currency-rate">$ -- USD</span>
+                    <span id="currency-update">Tiempo real</span>
                 </div>
 
                 <!-- Acciones Rápidas -->
@@ -101,19 +100,19 @@
                     <h2>Accesos Rápidos</h2>
                 </div>
                 <div class="quick-grid">
-                    <button class="quick-button" onclick="switchScreen('plans')">
+                    <button class="quick-button" data-screen="plans">
                         <span>🗺️</span>
                         <strong>Planes</strong>
                     </button>
-                    <button class="quick-button" onclick="switchScreen('expenses')">
+                    <button class="quick-button" data-screen="expenses">
                         <span>💸</span>
                         <strong>Gastos</strong>
                     </button>
-                    <button class="quick-button" onclick="switchScreen('map')">
+                    <button class="quick-button" data-screen="map">
                         <span>📍</span>
                         <strong>Mapa</strong>
                     </button>
-                    <button class="quick-button" onclick="switchScreen('more')">
+                    <button class="quick-button" data-screen="more">
                         <span>⚙️</span>
                         <strong>Ajustes</strong>
                     </button>
@@ -123,13 +122,11 @@
                 <div class="section-heading">
                     <h2>Próxima Actividad</h2>
                 </div>
-                <div id="next-activity-container">
-                    <div class="next-card">
-                        <span>📍</span>
-                        <div>
-                            <strong id="next-act-title">Sin actividades próximas</strong>
-                            <p id="next-act-time">Añade un plan a la lista para comenzar</p>
-                        </div>
+                <div id="next-activity" class="next-card">
+                    <span>📍</span>
+                    <div>
+                        <strong>Sin actividades próximas</strong>
+                        <p>Añade un plan a la lista para comenzar</p>
                     </div>
                 </div>
             </section>
@@ -144,19 +141,21 @@
                             <p>Itinerario y actividades</p>
                         </div>
                     </div>
-                    <button class="primary-button" onclick="openModal('modal-plan')">+ Plan</button>
+                    <button class="primary-button" id="open-plan-form">+ Plan</button>
                 </div>
 
-                <!-- Filtros por día o categoría -->
-                <div class="plan-filters" id="plan-filters-container">
-                    <button class="plan-filter active" onclick="filterPlans('all', this)">Todos</button>
-                    <button class="plan-filter" onclick="filterPlans('purgatorio', this)">🔥 Purgatorio</button>
-                    <button class="plan-filter" onclick="filterPlans('cielo', this)">☁️ Cielo</button>
-                    <button class="plan-filter" onclick="filterPlans('infierno', this)">😈 Infierno</button>
+                <!-- Filtros por categoría -->
+                <div class="plan-filters">
+                    <button class="plan-filter active" data-plan-filter="all">Todos</button>
+                    <button class="plan-filter" data-plan-filter="food">🍽️ Restaurantes</button>
+                    <button class="plan-filter" data-plan-filter="sweet">🍪 Dulces</button>
+                    <button class="plan-filter" data-plan-filter="activity">📍 Spots</button>
+                    <button class="plan-filter" data-plan-filter="shopping">🛍️ Tiendas</button>
+                    <button class="plan-filter" data-plan-filter="sightseeing">🗽 Turisteo</button>
                 </div>
 
                 <!-- Lista de Planes -->
-                <div id="plans-list" class="list">
+                <div id="plan-list" class="list">
                     <div class="empty-state">Cargando actividades...</div>
                 </div>
             </section>
@@ -171,35 +170,15 @@
                             <p>Cuentas claras entre el grupo</p>
                         </div>
                     </div>
-                    <button class="primary-button" onclick="openModal('modal-expense')">+ Gasto</button>
+                    <button class="primary-button" id="open-expense-form">+ Gasto</button>
                 </div>
 
-                <div class="expense-summary">
-                    <div class="balance-card">
-                        <span>Total</span>
-                        <strong id="total-expenses">$0.00</strong>
-                    </div>
-                    <div class="balance-card">
-                        <span>Tu Parte</span>
-                        <strong id="user-share">$0.00</strong>
-                    </div>
-                    <div class="balance-card">
-                        <span>Balance</span>
-                        <strong id="user-balance" class="positive">$0.00</strong>
-                    </div>
-                </div>
-
-                <div class="section-heading">
-                    <h2>Cuentas del Grupo</h2>
-                </div>
-                <div id="debts-list" class="debts">
-                    <!-- Balances individuales -->
-                </div>
+                <div id="expense-summary"></div>
 
                 <div class="section-heading">
                     <h2>Historial de Gastos</h2>
                 </div>
-                <div id="expenses-list" class="list">
+                <div id="expense-list" class="list">
                     <div class="empty-state">No hay gastos registrados</div>
                 </div>
             </section>
@@ -217,15 +196,6 @@
                 </div>
 
                 <div id="map"></div>
-
-                <div class="map-list">
-                    <div class="section-heading compact">
-                        <h2>Lugares Destacados</h2>
-                    </div>
-                    <div id="map-locations-list" class="list">
-                        <!-- Puntos cargados dinámicamente -->
-                    </div>
-                </div>
             </section>
 
             <!-- 5. PANTALLA MÁS / AJUSTES -->
@@ -240,21 +210,24 @@
                     </div>
                 </div>
 
-                <div class="more-grid">
-                    <div class="more-card" onclick="openModal('modal-flight')">
-                        <span>✈️</span>
-                        <strong>Vuelos</strong>
-                        <span>Info de billetes y horarios</span>
-                    </div>
-                    <div class="more-card" onclick="openModal('modal-hotel')">
-                        <span>🏨</span>
-                        <strong>Alojamiento</strong>
-                        <span>Detalles de la reserva</span>
-                    </div>
+                <div class="section-heading">
+                    <h2>Alojamiento</h2>
                 </div>
+                <div id="hotel-container"></div>
+
+                <div class="section-heading">
+                    <h2>Vuelos</h2>
+                </div>
+                <div id="flight-list" class="list"></div>
+
+                <div class="section-heading">
+                    <h2>Reservas</h2>
+                </div>
+                <button class="secondary-button full" id="open-reservation-form" style="margin-bottom: 12px;">+ Nueva Reserva</button>
+                <div id="reservation-list" class="list"></div>
 
                 <div style="margin-top: 30px;">
-                    <button class="danger-button full" onclick="executeLogout()">Cerrar Sesión</button>
+                    <button id="logout-button" class="danger-button full">Cerrar Sesión</button>
                 </div>
             </section>
 
@@ -262,23 +235,23 @@
 
         <!-- NAVEGACIÓN INFERIOR (BOTTOM NAV) -->
         <nav class="bottom-nav">
-            <button class="nav-button active" onclick="switchScreen('home')">
+            <button class="nav-button active" data-screen="home">
                 <span>🏠</span>
                 <small>Inicio</small>
             </button>
-            <button class="nav-button" onclick="switchScreen('plans')">
+            <button class="nav-button" data-screen="plans">
                 <span>📅</span>
                 <small>Planes</small>
             </button>
-            <button class="nav-button" onclick="switchScreen('expenses')">
+            <button class="nav-button" data-screen="expenses">
                 <span>💸</span>
                 <small>Gastos</small>
             </button>
-            <button class="nav-button" onclick="switchScreen('map')">
+            <button class="nav-button" data-screen="map">
                 <span>📍</span>
                 <small>Mapa</small>
             </button>
-            <button class="nav-button" onclick="switchScreen('more')">
+            <button class="nav-button" data-screen="more">
                 <span>⚙️</span>
                 <small>Más</small>
             </button>
@@ -287,17 +260,18 @@
     </div>
 
     <!-- ==========================================
-        MODALES (FORMULARIOS CREAR PLAN / GASTO)
+        MODALES
     ========================================== -->
 
-    <!-- Modal Añadir Plan -->
-    <div id="modal-plan" class="modal hidden">
+    <!-- Modal Plan -->
+    <div id="plan-modal" class="modal hidden">
         <div class="modal-content">
             <div class="modal-header">
-                <h2>Nuevo Plan</h2>
-                <button class="close-modal" onclick="closeModal('modal-plan')">&times;</button>
+                <h2>Plan de Viaje</h2>
+                <button class="close-modal" data-close="plan-modal">&times;</button>
             </div>
-            <form id="form-add-plan" onsubmit="savePlan(event)">
+            <form id="plan-form">
+                <input type="hidden" id="plan-id">
                 <label>
                     Título del Plan
                     <input type="text" id="plan-title" placeholder="Ej: Subir al Empire State" required>
@@ -305,7 +279,7 @@
                 <div class="form-row">
                     <label>
                         Fecha
-                        <input type="date" id="plan-date" required>
+                        <input type="date" id="plan-date">
                     </label>
                     <label>
                         Hora
@@ -315,56 +289,103 @@
                 <label>
                     Categoría
                     <select id="plan-category">
-                        <option value="purgatorio">🔥 Purgatorio</option>
-                        <option value="cielo">☁️ Cielo</option>
-                        <option value="infierno">😈 Infierno</option>
+                        <option value="food">🍽️ Restaurantes</option>
+                        <option value="sweet">🍪 Dulces</option>
+                        <option value="activity">📍 Spots</option>
+                        <option value="shopping">🛍️ Tiendas</option>
+                        <option value="sightseeing">🗽 Turisteo</option>
+                        <option value="other">📌 Otros</option>
                     </select>
                 </label>
                 <label>
-                    Ubicación / Dirección
-                    <input type="text" id="plan-location" placeholder="Ej: 20 W 34th St, New York">
+                    Ubicación
+                    <input type="text" id="plan-location" placeholder="Buscar lugar o dirección...">
                 </label>
                 <label>
-                    Notas
-                    <textarea id="plan-notes" placeholder="Detalles de tickets, reserva..."></textarea>
+                    Notas / Descripción
+                    <textarea id="plan-description" placeholder="Detalles, notas..."></textarea>
                 </label>
                 <button type="submit" class="primary-button full">Guardar Plan</button>
             </form>
         </div>
     </div>
 
-    <!-- Modal Añadir Gasto -->
-    <div id="modal-expense" class="modal hidden">
+    <!-- Modal Reserva -->
+    <div id="reservation-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Añadir Reserva</h2>
+                <button class="close-modal" data-close="reservation-modal">&times;</button>
+            </div>
+            <form id="reservation-form">
+                <label>
+                    Tipo
+                    <select id="reservation-type">
+                        <option value="restaurant">Restaurante</option>
+                        <option value="show">Espectáculo / Broadway</option>
+                        <option value="tour">Tour / Excursión</option>
+                        <option value="other">Otro</option>
+                    </select>
+                </label>
+                <label>
+                    Título
+                    <input type="text" id="reservation-title" placeholder="Ej: Entradas Broadway" required>
+                </label>
+
+                <div class="form-row">
+                    <label>Fecha <input type="date" id="reservation-date"></label>
+                    <label>Hora <input type="time" id="reservation-time"></label>
+                </div>
+
+                <label>Ubicación <input type="text" id="reservation-location" placeholder="Dirección..."></label>
+                <label>Notas <textarea id="reservation-description" placeholder="Detalles de confirmación..."></textarea></label>
+                <button type="submit" class="primary-button full">Guardar Reserva</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Gasto -->
+    <div id="expense-modal" class="modal hidden">
         <div class="modal-content">
             <div class="modal-header">
                 <h2>Añadir Gasto</h2>
-                <button class="close-modal" onclick="closeModal('modal-expense')">&times;</button>
+                <button class="close-modal" data-close="expense-modal">&times;</button>
             </div>
-            <form id="form-add-expense" onsubmit="saveExpense(event)">
+            <form id="expense-form">
                 <label>
                     Concepto
                     <input type="text" id="expense-title" placeholder="Ej: Cena en Shake Shack" required>
                 </label>
                 <div class="form-row">
                     <label>
-                        Importe ($ USD)
+                        Importe
                         <input type="number" step="0.01" id="expense-amount" placeholder="0.00" required>
                     </label>
                     <label>
-                        Pagado por
-                        <select id="expense-payer" required>
-                            <!-- Se rellena con JS -->
+                        Moneda
+                        <select id="expense-currency">
+                            <option value="USD">USD ($)</option>
+                            <option value="EUR">EUR (€)</option>
                         </select>
                     </label>
+                </div>
+                <label>
+                    Pagado por
+                    <select id="expense-paid-by" required>
+                        <option value="Viajero 1">Viajero 1</option>
+                        <option value="Viajero 2">Viajero 2</option>
+                        <option value="Viajero 3">Viajero 3</option>
+                    </select>
+                </label>
+                <div class="form-row" style="margin-top: 8px;">
+                    <label>Fecha <input type="date" id="expense-date"></label>
                 </div>
                 <button type="submit" class="primary-button full">Guardar Gasto</button>
             </form>
         </div>
     </div>
 
-    <!-- ==========================================
-        LIBRERÍAS JS EXTERNAS Y SCRIPT PRINCIPAL
-    ========================================== -->
+    <!-- SDKs JS externas y Tu Script -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="app.js"></script>
