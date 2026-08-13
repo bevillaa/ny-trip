@@ -6,20 +6,21 @@
 const SUPABASE_URL = "https://rtbrnbyosrtxeayqmvwc.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ0YnJuYnlvc3J0eGVheXFtdndjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY0NTUwODQsImV4cCI6MjEwMjAzMTA4NH0.W3mCe1yAehFd0bz_XNVJ83YR-dNz-8VZnnhgj-cQEss";
 
-// Inicialización de Supabase con fallback seguro
 var supabaseApp = null;
+
+// Inicialización asíncrona y segura del cliente de Supabase
 function initSupabaseClient() {
-    try {
-        if (window.supabase) {
+    if (supabaseApp) return true;
+    if (window.supabase && typeof window.supabase.createClient === 'function') {
+        try {
             supabaseApp = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-        } else {
-            console.error("El script SDK de Supabase no está disponible en window.supabase.");
+            return true;
+        } catch (e) {
+            console.error("Error al crear cliente Supabase:", e);
         }
-    } catch (e) {
-        console.error("Error inicializando Supabase:", e);
     }
+    return false;
 }
-initSupabaseClient();
 
 // ESTADO GLOBAL
 const state = {
@@ -78,7 +79,14 @@ function getCategoryIcon(category) {
 /* ==========================================================================
    INICIALIZACIÓN
    ========================================================================== */
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
+    // Intentar inicializar Supabase (con espera si el CDN tardó)
+    let retries = 0;
+    while (!initSupabaseClient() && retries < 10) {
+        await new Promise(res => setTimeout(res, 100));
+        retries++;
+    }
+
     setupAuthListeners();
     setupNavigation();
     setupModals();
@@ -87,7 +95,7 @@ document.addEventListener("DOMContentLoaded", () => {
     setupLocationSearch();
     startClocksAndCountdown();
 
-    checkSession();
+    await checkSession();
 
     updateWeather();
     updateCurrency();
@@ -99,7 +107,6 @@ document.addEventListener("DOMContentLoaded", () => {
 function setupAuthListeners() {
     const loginForm = document.getElementById("login-form");
     if (loginForm) {
-        // Clonar para limpiar eventos acumulados
         const newForm = loginForm.cloneNode(true);
         loginForm.parentNode.replaceChild(newForm, loginForm);
 
@@ -119,13 +126,12 @@ function setupAuthListeners() {
                 errorDiv.textContent = "";
             }
 
-            if (!supabaseApp) {
-                initSupabaseClient();
-            }
+            // Forzar intento de reconexión si falló al principio
+            if (!supabaseApp) initSupabaseClient();
 
             if (!supabaseApp) {
                 if (errorDiv) {
-                    errorDiv.textContent = "Error: No se puede conectar con Supabase. Revisa si cargaste el SDK en index.html.";
+                    errorDiv.textContent = "Error: El SDK de Supabase no terminó de cargar. Revisa la conexión.";
                     errorDiv.hidden = false;
                 }
                 return;
@@ -134,18 +140,20 @@ function setupAuthListeners() {
             try {
                 if (submitBtn) {
                     submitBtn.disabled = true;
-                    submitBtn.textContent = "Verificando...";
+                    submitBtn.textContent = "Iniciando...";
                 }
 
                 const { data, error } = await supabaseApp.auth.signInWithPassword({ email, password });
 
                 if (error) {
-                    console.error("Error Auth Supabase:", error);
+                    console.error("Error Supabase Login:", error);
                     if (errorDiv) {
                         let msg = error.message;
-                        if (msg.includes("Invalid login credentials")) msg = "Usuario o contraseña incorrectos.";
-                        else if (msg.includes("rate limit")) msg = "Demasiados intentos. Espera unos minutos.";
-                        
+                        if (msg.includes("Invalid login credentials")) {
+                            msg = "Email o contraseña incorrectos.";
+                        } else if (msg.includes("rate limit")) {
+                            msg = "Demasiados intentos. Espera 2 minutos.";
+                        }
                         errorDiv.textContent = msg;
                         errorDiv.hidden = false;
                     }
@@ -153,9 +161,9 @@ function setupAuthListeners() {
                     handleLoginSuccess(data.user);
                 }
             } catch (err) {
-                console.error("Error en login:", err);
+                console.error("Error inesperado:", err);
                 if (errorDiv) {
-                    errorDiv.textContent = "Ocurrió un fallo de conexión: " + err.message;
+                    errorDiv.textContent = "Error de red: " + err.message;
                     errorDiv.hidden = false;
                 }
             } finally {
@@ -199,7 +207,7 @@ async function checkSession() {
             showLoginScreen();
         }
     } catch (e) {
-        console.warn("Fallo comprobando sesión:", e);
+        console.warn("Fallo al verificar sesión:", e);
         showLoginScreen();
     }
 }
@@ -320,7 +328,7 @@ function initPhotonAutocomplete(inputId, resultsContainerId) {
 
                 data.features.forEach(feature => {
                     const props = feature.properties;
-                    const coords = feature.geometry.coordinates; // [lon, lat]
+                    const coords = feature.geometry.coordinates;
                     const name = props.name || query;
                     const city = props.city || props.state || "New York";
                     const fullAddress = `${props.street ? props.street + ', ' : ''}${city}`;
@@ -339,7 +347,7 @@ function initPhotonAutocomplete(inputId, resultsContainerId) {
                     container.appendChild(item);
                 });
             } catch (err) {
-                console.error("Error en autocompletado Photon:", err);
+                console.error("Error autocompletado:", err);
             }
         }, 250);
     });
