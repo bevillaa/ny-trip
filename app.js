@@ -80,7 +80,7 @@ function getCategoryIcon(category) {
    INICIALIZACIÓN
    ========================================================================== */
 document.addEventListener("DOMContentLoaded", async () => {
-    // Intentar inicializar Supabase (con espera si el CDN tardó)
+    // Intentar inicializar Supabase (espera activa por si el CDN tarda)
     let retries = 0;
     while (!initSupabaseClient() && retries < 10) {
         await new Promise(res => setTimeout(res, 100));
@@ -126,12 +126,12 @@ function setupAuthListeners() {
                 errorDiv.textContent = "";
             }
 
-            // Forzar intento de reconexión si falló al principio
+            // Intento de re-inicialización por seguridad
             if (!supabaseApp) initSupabaseClient();
 
             if (!supabaseApp) {
                 if (errorDiv) {
-                    errorDiv.textContent = "Error: El SDK de Supabase no terminó de cargar. Revisa la conexión.";
+                    errorDiv.textContent = "Error: El SDK de Supabase no cargó a tiempo. Revisa tu conexión.";
                     errorDiv.hidden = false;
                 }
                 return;
@@ -163,7 +163,7 @@ function setupAuthListeners() {
             } catch (err) {
                 console.error("Error inesperado:", err);
                 if (errorDiv) {
-                    errorDiv.textContent = "Error de red: " + err.message;
+                    errorDiv.textContent = "Error de conexión: " + err.message;
                     errorDiv.hidden = false;
                 }
             } finally {
