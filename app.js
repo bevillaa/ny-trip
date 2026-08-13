@@ -765,6 +765,7 @@ async function updateCurrency() {
         const data = await res.json();
         if (data && data.rates && data.rates.USD) {
             document.getElementById("currency-value").textContent = `1 € = ${data.rates.USD.toFixed(2)} $`;
+            document.getElementById("currency-value").textContent = `1 $ = €{data.rates.EUR.toFixed(2)} €`;
             document.getElementById("currency-update").textContent = "Tiempo real";
         }
     } catch (e) {
