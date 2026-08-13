@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>NY TRIP</title>
+    <title>NY TRIP 🗽</title>
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="style.css">
     <!-- Leaflet CSS -->
@@ -11,9 +11,7 @@
 </head>
 <body>
 
-    <!-- ==========================================
-       PANTALLA DE LOGIN
-    ========================================== -->
+    <!-- PANTALLA DE LOGIN -->
     <div id="login-screen" style="max-width: 400px; margin: 60px auto 20px; padding: 25px 20px; display: block;">
         <div style="text-align: center; margin-bottom: 25px;">
             <span style="font-size: 50px;">🗽</span>
@@ -30,18 +28,14 @@
                 <label for="login-password">Contraseña</label>
                 <input type="password" id="login-password" required placeholder="••••••••" autocomplete="current-password">
             </div>
-            <div id="login-error" style="color: var(--danger); font-size: 13px; margin-top: 12px; text-align: center; background: #fee2e2; padding: 8px; border-radius: 8px;" hidden></div>
+            <div id="login-error" style="color: #ef4444; font-size: 13px; margin-top: 12px; text-align: center; background: #fee2e2; padding: 8px; border-radius: 8px;" hidden></div>
             <button type="submit" class="primary-button full" style="margin-top: 15px;">Iniciar Sesión</button>
         </form>
     </div>
 
-
-    <!-- ==========================================
-       APLICACIÓN PRINCIPAL
-    ========================================== -->
+    <!-- APLICACIÓN PRINCIPAL -->
     <div id="app" style="display: none;">
 
-        <!-- CABECERA PRINCIPAL -->
         <header class="app-header">
             <div>
                 <h1>NY TRIP 🗽</h1>
@@ -54,7 +48,7 @@
         </header>
 
         <main>
-            <!-- 1. PANTALLA INICIO (HOME) -->
+            <!-- 1. HOME -->
             <section id="screen-home" class="screen active">
                 <div class="hero-card">
                     <div>
@@ -124,8 +118,7 @@
                 </div>
             </section>
 
-
-            <!-- 2. PANTALLA PLANES -->
+            <!-- 2. PLANES -->
             <section id="screen-plans" class="screen">
                 <div class="screen-title">
                     <div>
@@ -153,8 +146,7 @@
                 </div>
             </section>
 
-
-            <!-- 3. PANTALLA MAPA -->
+            <!-- 3. MAPA -->
             <section id="screen-map" class="screen map-screen">
                 <div class="screen-title">
                     <div>
@@ -165,11 +157,10 @@
                         </div>
                     </div>
                 </div>
-                <div id="map"></div>
+                <div id="map" style="width: 100%; height: calc(100vh - 180px); border-radius: 12px; min-height: 350px;"></div>
             </section>
 
-
-            <!-- 4. PANTALLA GASTOS -->
+            <!-- 4. GASTOS -->
             <section id="screen-expenses" class="screen">
                 <div class="screen-title">
                     <div>
@@ -189,8 +180,7 @@
                 </div>
             </section>
 
-
-            <!-- 5. PANTALLA MÁS -->
+            <!-- 5. MÁS INFO -->
             <section id="screen-more" class="screen">
                 <div class="screen-title">
                     <div>
@@ -221,7 +211,7 @@
                 <div class="section-heading compact" style="margin-top: 30px;">
                     <h2>Usuario</h2>
                 </div>
-                <div class="info-card" style="align-items: center; justify-content: space-between;">
+                <div class="info-card" style="display:flex; align-items: center; justify-content: space-between;">
                     <div>
                         <strong id="current-user-email" style="display: block;">Viajero</strong>
                         <span style="font-size: 12px; color: var(--muted);">Sesión iniciada</span>
@@ -230,7 +220,6 @@
                 </div>
             </section>
         </main>
-
 
         <!-- NAVEGACIÓN INFERIOR -->
         <nav class="bottom-nav">
@@ -258,8 +247,7 @@
 
     </div>
 
-
-    <!-- MODALES -->
+    <!-- MODAL PLAN -->
     <div id="plan-modal" class="modal hidden">
         <div class="modal-content">
             <div class="modal-header">
@@ -294,9 +282,9 @@
                         <label for="plan-time">Hora</label>
                         <input type="time" id="plan-time">
                     </div>
-                    <div>
-                        <label for="plan-location">Ubicación</label>
-                        <input type="text" id="plan-location" placeholder="Buscar lugar..." autocomplete="off">
+                    <div style="position: relative;">
+                        <label for="plan-location">Ubicación (Busca un lugar)</label>
+                        <input type="text" id="plan-location" placeholder="Escribe para buscar..." autocomplete="off">
                         <div id="plan-location-results"></div>
                     </div>
                 </div>
@@ -309,6 +297,7 @@
         </div>
     </div>
 
+    <!-- MODAL RESERVA -->
     <div id="reservation-modal" class="modal hidden">
         <div class="modal-content">
             <div class="modal-header">
@@ -327,7 +316,7 @@
                 </div>
                 <div>
                     <label for="reservation-title">Título *</label>
-                    <input type="text" id="reservation-title" required placeholder="Ej: Reserva Summit One Vanderbilt">
+                    <input type="text" id="reservation-title" required placeholder="Ej: Summit One Vanderbilt">
                 </div>
                 <div class="form-row">
                     <div>
@@ -339,12 +328,13 @@
                         <input type="time" id="reservation-time">
                     </div>
                 </div>
-                <div>
+                <div style="position: relative;">
                     <label for="reservation-location">Lugar / Dirección</label>
-                    <input type="text" id="reservation-location" placeholder="Dirección...">
+                    <input type="text" id="reservation-location" placeholder="Dirección..." autocomplete="off">
+                    <div id="reservation-location-results"></div>
                 </div>
                 <div>
-                    <label for="reservation-description">Detalles / Código de Confirmación</label>
+                    <label for="reservation-description">Detalles / Código</label>
                     <textarea id="reservation-description" placeholder="Localizador, notas..."></textarea>
                 </div>
                 <button type="submit" class="primary-button full">Guardar Reserva</button>
@@ -352,6 +342,7 @@
         </div>
     </div>
 
+    <!-- MODAL GASTO -->
     <div id="expense-modal" class="modal hidden">
         <div class="modal-content">
             <div class="modal-header">
@@ -386,18 +377,18 @@
                         <input type="date" id="expense-date">
                     </div>
                 </div>
-                <fieldset>
-                    <legend>Participantes</legend>
-                    <label class="check-label"><input type="checkbox" name="participant" value="Viajero 1" checked> Viajero 1</label>
-                    <label class="check-label"><input type="checkbox" name="participant" value="Viajero 2" checked> Viajero 2</label>
-                    <label class="check-label"><input type="checkbox" name="participant" value="Viajero 3" checked> Viajero 3</label>
+                <fieldset style="border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:10px; margin-bottom:15px;">
+                    <legend style="padding:0 5px; font-size:12px; color:var(--muted);">Participantes</legend>
+                    <label class="check-label" style="display:inline-flex; align-items:center; gap:5px; margin-right:12px; font-size:13px;"><input type="checkbox" name="participant" value="Viajero 1" checked> Viajero 1</label>
+                    <label class="check-label" style="display:inline-flex; align-items:center; gap:5px; margin-right:12px; font-size:13px;"><input type="checkbox" name="participant" value="Viajero 2" checked> Viajero 2</label>
+                    <label class="check-label" style="display:inline-flex; align-items:center; gap:5px; font-size:13px;"><input type="checkbox" name="participant" value="Viajero 3" checked> Viajero 3</label>
                 </fieldset>
                 <button type="submit" class="primary-button full">Registrar Gasto</button>
             </form>
         </div>
     </div>
 
-    <!-- Carga de librerías en el orden adecuado -->
+    <!-- Librerías Externas -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="app.js"></script>
