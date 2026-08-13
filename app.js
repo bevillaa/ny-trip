@@ -50,6 +50,7 @@
     markers: [],
     activePlanFilter: "all",
     editingExpenseId: null, // ID del gasto en edición
+    _loadingData: false // lock para evitar cargas concurrentes
   };
 
   // CATEGORÍAS DE PLANES
@@ -133,15 +134,34 @@
     if (appScreen) appScreen.hidden = false;
   }
 
+  // handleLoginSuccess idempotente y con lock para evitar cargas concurrentes
   function handleLoginSuccess(user) {
+    if (!user) return;
+    // Si ya tenemos el mismo usuario activo, ignorar llamadas repetidas
+    if (state.currentUser && state.currentUser.id === user.id) {
+      console.log("handleLoginSuccess: mismo usuario ya establecido — ignorando duplicado.");
+      return;
+    }
+
     console.log("handleLoginSuccess llamado con user:", user);
     state.currentUser = user;
+
     const userEmailEl = document.getElementById("current-user-email");
     if (userEmailEl) {
       userEmailEl.textContent = user.email || "Viajero";
     }
+
     hideLoginScreen();
-    loadAllData();
+
+    // Evitar múltiples cargas de datos concurrentes
+    if (!state._loadingData) {
+      state._loadingData = true;
+      loadAllData()
+        .catch(err => console.error("Error en loadAllData tras login:", err))
+        .finally(() => { state._loadingData = false; });
+    } else {
+      console.log("loadAllData ya en curso, no se lanzará otra carga.");
+    }
   }
 
   document.addEventListener("DOMContentLoaded", () => {
