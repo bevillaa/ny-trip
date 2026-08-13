@@ -33,7 +33,8 @@ const state = {
     ],
     map: null,
     markers: [],
-    activePlanFilter: 'all'
+    activePlanFilter: 'all',
+    editingExpenseId: null // ID del gasto en edición
 };
 
 // CATEGORÍAS DE PLANES
@@ -45,6 +46,9 @@ const CATEGORIES = {
     sightseeing: { name: "Turisteo", icon: "🗽" },
     other: { name: "Otros", icon: "📌" }
 };
+
+// Lista de integrantes
+const USERS = ["Laura", "Sara", "Belén"];
 
 // Función auxiliar para obtener el icono según la categoría
 function getCategoryIcon(category) {
@@ -67,6 +71,7 @@ async function initApp() {
     setupForms();
     setupFilters();
     setupLocationSearch();
+    setupTravelersClick(); // Evento para que "El Equipo" lleve a Gastos
 
     startClocksAndCountdown();
 
@@ -379,7 +384,7 @@ function renderAll() {
 }
 
 /* ==========================================================================
-   NAVEGACIÓN DE PANTALLAS
+   NAVEGACIÓN DE PANTALLAS Y NAVEGACIÓN DESDE EL EQUIPO
    ========================================================================== */
 function setupNavigation() {
     const buttons = document.querySelectorAll("[data-screen]");
@@ -387,6 +392,16 @@ function setupNavigation() {
         btn.addEventListener("click", () => {
             const screen = btn.getAttribute("data-screen");
             switchScreen(screen);
+        });
+    });
+}
+
+function setupTravelersClick() {
+    const cards = document.querySelectorAll(".traveler-card");
+    cards.forEach(card => {
+        card.style.cursor = "pointer";
+        card.addEventListener("click", () => {
+            switchScreen("expenses");
         });
     });
 }
@@ -408,12 +423,12 @@ function switchScreen(screenName) {
 }
 
 /* ==========================================================================
-   GESTIÓN DE MODALES
+   GESTIÓN DE MODALES Y GASTOS (NUEVO / EDICIÓN)
    ========================================================================== */
 function setupModals() {
     document.getElementById("open-plan-form")?.addEventListener("click", () => openPlanModal());
     document.getElementById("open-reservation-form")?.addEventListener("click", () => openModal("reservation-modal"));
-    document.getElementById("open-expense-form")?.addEventListener("click", () => openModal("expense-modal"));
+    document.getElementById("open-expense-form")?.addEventListener("click", () => openExpenseModal());
 
     document.querySelectorAll("[data-close]").forEach(btn => {
         btn.addEventListener("click", () => closeModal(btn.getAttribute("data-close")));
@@ -462,8 +477,37 @@ function openPlanModal(planToEdit = null) {
     openModal("plan-modal");
 }
 
+function openExpenseModal(expenseToEdit = null) {
+    const form = document.getElementById("expense-form");
+    if (form) form.reset();
+
+    if (expenseToEdit) {
+        state.editingExpenseId = expenseToEdit.id;
+        document.getElementById("expense-title").value = expenseToEdit.title || "";
+        document.getElementById("expense-amount").value = expenseToEdit.amount || "";
+        document.getElementById("expense-currency").value = expenseToEdit.currency || "EUR";
+        document.getElementById("expense-paid-by").value = expenseToEdit.paid_by || "Laura";
+        document.getElementById("expense-date").value = expenseToEdit.date || new Date().toISOString().split("T")[0];
+        
+        const notesInput = document.getElementById("expense-notes");
+        if (notesInput) notesInput.value = expenseToEdit.notes || "";
+
+        const checkboxes = document.querySelectorAll("input[name='participant']");
+        const parts = expenseToEdit.participants || USERS;
+        checkboxes.forEach(cb => {
+            cb.checked = parts.includes(cb.value);
+        });
+    } else {
+        state.editingExpenseId = null;
+        document.querySelectorAll("input[name='participant']").forEach(cb => cb.checked = true);
+        document.getElementById("expense-date").value = new Date().toISOString().split("T")[0];
+    }
+
+    openModal("expense-modal");
+}
+
 /* ==========================================================================
-   FORMULARIO DE PLANES
+   FORMULARIOS (INCLUYENDO ACTUALIZAR/CREAR GASTOS)
    ========================================================================== */
 function setupForms() {
     document.getElementById("plan-form")?.addEventListener("submit", async (e) => {
@@ -558,16 +602,30 @@ function setupForms() {
         e.preventDefault();
         const participants = Array.from(document.querySelectorAll("input[name='participant']:checked")).map(cb => cb.value);
         
+        if (participants.length === 0) {
+            alert("Selecciona al menos a un participante para el gasto.");
+            return;
+        }
+
+        const notesVal = document.getElementById("expense-notes")?.value || "";
+
         const expData = {
             title: document.getElementById("expense-title").value,
             amount: parseFloat(document.getElementById("expense-amount").value),
             currency: document.getElementById("expense-currency").value,
             paid_by: document.getElementById("expense-paid-by").value,
             participants: participants,
-            date: document.getElementById("expense-date").value || new Date().toISOString().split("T")[0]
+            date: document.getElementById("expense-date").value || new Date().toISOString().split("T")[0],
+            notes: notesVal
         };
 
-        if (supabaseApp) await supabaseApp.from("expenses").insert([expData]);
+        if (supabaseApp) {
+            if (state.editingExpenseId) {
+                await supabaseApp.from("expenses").update(expData).eq("id", state.editingExpenseId);
+            } else {
+                await supabaseApp.from("expenses").insert([expData]);
+            }
+        }
 
         closeModal("expense-modal");
         loadAllData();
@@ -575,7 +633,7 @@ function setupForms() {
 }
 
 /* ==========================================================================
-   RENDERIZADO DE VISTAS DE PLANES (CON BOTONES A LA DERECHA)
+   RENDERIZADO DE VISTAS DE PLANES
    ========================================================================== */
 function renderPlans() {
     const listEl = document.getElementById("plan-list");
@@ -587,7 +645,7 @@ function renderPlans() {
     }
 
     if (!filtered || filtered.length === 0) {
-        listEl.innerHTML = `<div class="empty-state">No hay planes registrados en esta categoría.</div>`;
+        listEl.innerHTML = `<div class="empty">No hay planes registrados en esta categoría.</div>`;
         return;
     }
 
@@ -719,7 +777,7 @@ function renderReservations() {
     if (!listEl) return;
 
     if (state.reservations.length === 0) {
-        listEl.innerHTML = `<div class="empty-state">No hay reservas registradas.</div>`;
+        listEl.innerHTML = `<div class="empty">No hay reservas registradas.</div>`;
         return;
     }
 
@@ -732,42 +790,128 @@ function renderReservations() {
     `).join("");
 }
 
+/* ==========================================================================
+   TRICOUNT Y RESUMEN DE GASTOS / DEUDAS
+   ========================================================================== */
 function renderExpenses() {
     const listEl = document.getElementById("expense-list");
     const summaryEl = document.getElementById("expense-summary");
+    const debtsEl = document.getElementById("debts");
     if (!listEl) return;
 
     if (state.expenses.length === 0) {
-        listEl.innerHTML = `<div class="empty-state">No hay gastos registrados.</div>`;
+        listEl.innerHTML = `<div class="empty">No hay gastos registrados.</div>`;
         if (summaryEl) summaryEl.innerHTML = "";
+        if (debtsEl) debtsEl.innerHTML = "<div class='empty'>No hay deudas calculadas.</div>";
         return;
     }
 
-    let totalUSD = 0;
+    // 1. Cálculo de Balances y Ajuste de Divisas (€ como base)
+    const balances = { Laura: 0, Sara: 0, Belén: 0 };
+
     state.expenses.forEach(e => {
-        totalUSD += e.currency === 'EUR' ? e.amount * 1.08 : e.amount;
+        const amountEUR = e.currency === 'USD' ? e.amount / 1.08 : e.amount;
+        const payer = e.paid_by;
+        const participants = (e.participants && e.participants.length > 0) ? e.participants : USERS;
+        const splitAmount = amountEUR / participants.length;
+
+        if (balances[payer] !== undefined) {
+            balances[payer] += amountEUR;
+        }
+
+        participants.forEach(p => {
+            if (balances[p] !== undefined) {
+                balances[p] -= splitAmount;
+            }
+        });
     });
 
+    // Renderizado de Resumen por Usuario
     if (summaryEl) {
-        summaryEl.innerHTML = `
-            <div class="info-card">
-                <strong>Gasto Total Aprox:</strong> $${totalUSD.toFixed(2)} USD
-                <small>(${state.expenses.length} pagos realizados)</small>
-            </div>
-        `;
+        summaryEl.innerHTML = USERS.map(user => {
+            const bal = balances[user] || 0;
+            const isPos = bal >= 0;
+            const cls = isPos ? "positive" : "negative";
+            const sign = isPos ? "+" : "";
+            return `
+                <div class="balance-card">
+                    <span>${user}</span>
+                    <strong class="${cls}">${sign}${bal.toFixed(2)} €</strong>
+                </div>
+            `;
+        }).join("");
     }
 
+    // 2. Cálculo Simplificado de Deudas
+    if (debtsEl) {
+        const debtors = [];
+        const creditors = [];
+
+        USERS.forEach(u => {
+            const b = balances[u] || 0;
+            if (b < -0.01) debtors.push({ user: u, amount: -b });
+            else if (b > 0.01) creditors.push({ user: u, amount: b });
+        });
+
+        const debtList = [];
+        let i = 0, j = 0;
+
+        while (i < debtors.length && j < creditors.length) {
+            const debtor = debtors[i];
+            const creditor = creditors[j];
+            const payment = Math.min(debtor.amount, creditor.amount);
+
+            debtList.push(`
+                <div class="debt-card">
+                    <div>
+                        <strong>${debtor.user}</strong> debe a <strong>${creditor.user}</strong>
+                    </div>
+                    <span class="debt-amount positive">${payment.toFixed(2)} €</span>
+                </div>
+            `);
+
+            debtor.amount -= payment;
+            creditor.amount -= payment;
+
+            if (debtor.amount < 0.01) i++;
+            if (creditor.amount < 0.01) j++;
+        }
+
+        debtsEl.innerHTML = debtList.length > 0 ? debtList.join("") : "<div class='empty'>¡Cuentas al día! Nadie debe nada. 🎉</div>";
+    }
+
+    // 3. Renderizado de la Lista de Gastos con Opciones de Editar y Eliminar
     listEl.innerHTML = state.expenses.map(e => `
-        <div class="card">
-            <div class="card-header">
-                <strong>${escapeHTML(e.title)}</strong>
-                <span class="badge-amount">${e.amount} ${e.currency}</span>
+        <div class="expense-card">
+            <div class="card-main">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <strong style="font-size:15px;">${escapeHTML(e.title)}</strong>
+                    <strong style="font-size:15px;">${e.amount} ${e.currency}</strong>
+                </div>
+                <p>Pagó: <strong>${escapeHTML(e.paid_by)}</strong> • Para: ${e.participants ? e.participants.map(p => escapeHTML(p)).join(", ") : "Todos"}</p>
+                ${e.date ? `<small style="color:var(--muted); font-size:11px;">📅 ${e.date}</small>` : ''}
             </div>
-            <p>Pagó: <strong>${escapeHTML(e.paid_by)}</strong></p>
-            <small>Para: ${e.participants ? e.participants.map(p => escapeHTML(p)).join(", ") : "Todos"}</small>
+            <div class="card-actions" style="position:static; margin-left:10px;">
+                <button class="icon-button" onclick="editExpense('${e.id}')" title="Editar gasto">✏️</button>
+                <button class="icon-button danger" onclick="deleteExpense('${e.id}')" title="Borrar gasto">🗑️</button>
+            </div>
         </div>
     `).join("");
 }
+
+window.editExpense = function(id) {
+    const exp = state.expenses.find(e => e.id == id);
+    if (exp) openExpenseModal(exp);
+};
+
+window.deleteExpense = async function(id) {
+    if (!confirm("¿Seguro que deseas eliminar este gasto?")) return;
+
+    if (supabaseApp) {
+        await supabaseApp.from("expenses").delete().eq("id", id);
+    }
+    loadAllData();
+};
 
 function renderFlights() {
     const listEl = document.getElementById("flight-list");
@@ -844,7 +988,7 @@ function renderMap() {
         state.markers.push(hotelMarker);
     }
 
-    // 2. Marcadores de Planes (🗽 para Turisteo, 📍 para Spots, etc.)
+    // 2. Marcadores de Planes
     state.plans.forEach(plan => {
         const lat = parseFloat(plan.latitude);
         const lng = parseFloat(plan.longitude);
