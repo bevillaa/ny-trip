@@ -4,12 +4,79 @@
 
 // Configuración de Supabase
 const SUPABASE_URL = "https://rtbrnbyosrtxeayqmvwc.supabase.co";
-const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ0YnJuYnlvc3J0eGVheXFtdndjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY0NTUwODQsImV4cCI6MjEwMjAzMTA4NH0.W3mCe1yAehFd0bz_XNVJ83YR-dNz-8VZnnhgj-cQEss";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ0YnJuYnlvc3J0eGVheXFtdndjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY0NTUwODQsImV4cCI6MjEwMjAzMTA4NH0.W3mCe1yAehFd0[...]";
 
 // Variable global del cliente
 var supabaseApp = null;
 
-// ESTADO GLOBAL
+/* ==========================================================================
+   Helper: inicialización robusta de Supabase (intenta varios enfoques)
+   ========================================================================== */
+async function ensureSupabaseClient() {
+    if (supabaseApp) return supabaseApp;
+
+    // 1) Si el SDK UMD ya está disponible en window.supabase
+    if (window.supabase && typeof window.supabase.createClient === 'function') {
+        try {
+            supabaseApp = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+            console.debug("Supabase: cliente inicializado desde window.supabase");
+            return supabaseApp;
+        } catch (e) {
+            console.warn("Supabase: fallo creando cliente desde window.supabase:", e);
+        }
+    }
+
+    // 2) Algunos entornos podrían exponer createClient globalmente (muy raro)
+    if (typeof window.createClient === 'function') {
+        try {
+            supabaseApp = window.createClient(SUPABASE_URL, SUPABASE_KEY);
+            console.debug("Supabase: cliente inicializado desde window.createClient");
+            return supabaseApp;
+        } catch (e) {
+            console.warn("Supabase: fallo creando cliente desde window.createClient:", e);
+        }
+    }
+
+    // 3) Intentar cargar el UMD desde CDN (fallback)
+    const UMD_URL = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/dist/umd/supabase.umd.min.js";
+
+    if (!document.querySelector(`script[src="${UMD_URL}"]`)) {
+        try {
+            await new Promise((resolve, reject) => {
+                const s = document.createElement("script");
+                s.src = UMD_URL;
+                s.async = true;
+                s.onload = () => {
+                    console.debug("Supabase UMD cargado desde CDN");
+                    resolve();
+                };
+                s.onerror = (err) => {
+                    reject(new Error("No se pudo cargar el SDK de Supabase desde CDN."));
+                };
+                document.head.appendChild(s);
+            });
+        } catch (err) {
+            console.warn("Supabase: fallo al cargar UMD desde CDN:", err);
+        }
+    }
+
+    if (window.supabase && typeof window.supabase.createClient === 'function') {
+        try {
+            supabaseApp = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+            console.debug("Supabase: cliente inicializado después de cargar UMD");
+            return supabaseApp;
+        } catch (e) {
+            console.error("Supabase: error creando cliente tras cargar UMD:", e);
+        }
+    }
+
+    console.error("No se pudo inicializar Supabase: SDK no encontrado o createClient falló.");
+    return null;
+}
+
+/* ==========================================================================
+   ESTADO GLOBAL
+   ========================================================================== */
 const state = {
     currentUser: null,
     currentScreen: 'home',
@@ -62,16 +129,8 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 async function initApp() {
-    // 1. Inicializar cliente de Supabase garantizando que el SDK esté disponible
-    if (window.supabase) {
-        try {
-            supabaseApp = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-        } catch (e) {
-            console.error("Error al crear el cliente de Supabase:", e);
-        }
-    } else {
-        console.error("El SDK de Supabase no está cargado en window.supabase.");
-    }
+    // Intentar inicializar cliente de Supabase de forma robusta
+    await ensureSupabaseClient();
 
     // 2. Configurar componentes UI y listeners
     setupLogin();
@@ -84,15 +143,19 @@ async function initApp() {
 
     startClocksAndCountdown();
 
-    // 3. Comprobar sesión existente
+    // 3. Comprobar sesión existente (si tenemos cliente)
     if (supabaseApp) {
-        supabaseApp.auth.onAuthStateChange((event, session) => {
-            if (session && session.user) {
-                handleLoginSuccess(session.user);
-            } else if (event === 'SIGNED_OUT') {
-                showLoginScreen();
-            }
-        });
+        try {
+            supabaseApp.auth.onAuthStateChange((event, session) => {
+                if (session && session.user) {
+                    handleLoginSuccess(session.user);
+                } else if (event === 'SIGNED_OUT') {
+                    showLoginScreen();
+                }
+            });
+        } catch (e) {
+            console.warn("onAuthStateChange no disponible o falló:", e);
+        }
 
         try {
             const { data: { session } } = await supabaseApp.auth.getSession();
@@ -134,14 +197,12 @@ function setupLogin() {
                 errorDiv.textContent = "";
             }
 
-            // Re-verificar cliente si no existía previamente
-            if (!supabaseApp && window.supabase) {
-                supabaseApp = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-            }
+            // Asegurarnos de tener cliente antes de intentar el login
+            await ensureSupabaseClient();
 
             if (!supabaseApp) {
                 if (errorDiv) {
-                    errorDiv.textContent = "Error de conexión con la base de datos (Supabase no listo).";
+                    errorDiv.textContent = "Error de conexión con la base de datos (Supabase no listo). Comprueba la consola.";
                     errorDiv.hidden = false;
                 }
                 return;
@@ -151,8 +212,9 @@ function setupLogin() {
                 const { data, error } = await supabaseApp.auth.signInWithPassword({ email, password });
 
                 if (error) {
+                    console.error("SignIn error raw:", error);
                     if (errorDiv) {
-                        let msg = error.message;
+                        let msg = error.message || "Error en autenticación";
                         if (msg.includes("Invalid login credentials")) msg = "Usuario o contraseña incorrectos.";
                         errorDiv.textContent = msg;
                         errorDiv.hidden = false;
@@ -173,7 +235,13 @@ function setupLogin() {
     const logoutBtn = document.getElementById("logout-button");
     if (logoutBtn) {
         logoutBtn.addEventListener("click", async () => {
-            if (supabaseApp) await supabaseApp.auth.signOut();
+            if (supabaseApp) {
+                try {
+                    await supabaseApp.auth.signOut();
+                } catch (e) {
+                    console.warn("Error al hacer signOut:", e);
+                }
+            }
             state.currentUser = null;
             showLoginScreen();
         });
@@ -368,7 +436,11 @@ function escapeHTML(str) {
    ========================================================================== */
 async function loadAllData() {
     updateStatus("● Sincronizando...");
-    if (!supabaseApp) return;
+    await ensureSupabaseClient();
+    if (!supabaseApp) {
+        updateStatus("⚠️ No conectado");
+        return;
+    }
 
     try {
         const [plansRes, resRes, expRes] = await Promise.all([
@@ -577,6 +649,7 @@ function setupForms() {
                 created_by: state.currentUser ? (state.currentUser.email || state.currentUser.id) : "invitado"
             };
 
+            await ensureSupabaseClient();
             if (!supabaseApp) throw new Error("No hay conexión con Supabase.");
 
             let result;
@@ -595,7 +668,7 @@ function setupForms() {
 
         } catch (err) {
             console.error("Error al guardar plan:", err);
-            alert("⚠️ No se pudo guardar el plan: " + err.message);
+            alert("⚠️ No se pudo guardar el plan: " + (err.message || err));
         } finally {
             if (submitBtn) {
                 submitBtn.disabled = false;
@@ -615,6 +688,7 @@ function setupForms() {
             location: document.getElementById("reservation-location").value || null
         };
 
+        await ensureSupabaseClient();
         if (supabaseApp) await supabaseApp.from("reservations").insert([resData]);
 
         closeModal("reservation-modal");
@@ -642,6 +716,7 @@ function setupForms() {
             notes: notesVal
         };
 
+        await ensureSupabaseClient();
         if (supabaseApp) {
             if (state.editingExpenseId) {
                 await supabaseApp.from("expenses").update(expData).eq("id", state.editingExpenseId);
@@ -714,6 +789,7 @@ window.editPlan = function(id) {
 window.deletePlan = async function(id) {
     if (!confirm("¿Seguro que deseas borrar este plan?")) return;
 
+    await ensureSupabaseClient();
     if (supabaseApp) {
         await supabaseApp.from("plans").delete().eq("id", id);
     }
@@ -927,6 +1003,7 @@ window.editExpense = function(id) {
 window.deleteExpense = async function(id) {
     if (!confirm("¿Seguro que deseas eliminar este gasto?")) return;
 
+    await ensureSupabaseClient();
     if (supabaseApp) {
         await supabaseApp.from("expenses").delete().eq("id", id);
     }
