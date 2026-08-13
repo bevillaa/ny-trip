@@ -6,10 +6,16 @@
 const SUPABASE_URL = "https://rtbrnbyosrtxeayqmvwc.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ0YnJuYnlvc3J0eGVheXFtdndjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY0NTUwODQsImV4cCI6MjEwMjAzMTA4NH0.W3mCe1yAehFd0bz_XNVJ83YR-dNz-8VZnnhgj-cQEss";
 
-// Inicialización de Supabase
+// Inicialización de Supabase con fallback seguro
 var supabaseApp = null;
-if (window.supabase) {
-    supabaseApp = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+try {
+    if (window.supabase) {
+        supabaseApp = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    } else {
+        console.error("El SDK de Supabase no está cargado en window.supabase.");
+    }
+} catch (e) {
+    console.error("Error al inicializar cliente de Supabase:", e);
 }
 
 // ESTADO GLOBAL
@@ -67,13 +73,11 @@ function getCategoryIcon(category) {
 }
 
 /* ==========================================================================
-   INICIALIZACIÓN
+   INICIALIZACIÓN DE LA APLICACIÓN
    ========================================================================== */
-document.addEventListener("DOMContentLoaded", () => {
-    // 1. Vincular eventos de Login ANTES de cualquier llamada asíncrona
-    setupAuthListeners();
-    
-    // 2. Iniciar componentes visuales e interfaz
+document.addEventListener("DOMContentLoaded", async () => {
+    // 1. Configurar eventos de botones y formulario de login
+    setupAuthForm();
     setupNavigation();
     setupModals();
     setupForms();
@@ -81,27 +85,31 @@ document.addEventListener("DOMContentLoaded", () => {
     setupLocationSearch();
     startClocksAndCountdown();
 
-    // 3. Comprobar sesión activa de Supabase
-    checkInitialSession();
+    // 2. Revisar si hay una sesión activa de Supabase
+    await checkSession();
 
-    // 4. Clima y Divisas
+    // 3. Clima y Divisas
     updateWeather();
     updateCurrency();
 });
 
 /* ==========================================================================
-   AUTENTICACIÓN Y LISTENERS (LOGIN Y LOGOUT)
+   SISTEMA DE AUTENTICACIÓN (LOGIN Y LOGOUT)
    ========================================================================== */
-function setupAuthListeners() {
+function setupAuthForm() {
     const loginForm = document.getElementById("login-form");
     if (loginForm) {
-        loginForm.addEventListener("submit", async (e) => {
+        // Reemplazar event listener viejo para evitar duplicados
+        const newForm = loginForm.cloneNode(true);
+        loginForm.parentNode.replaceChild(newForm, loginForm);
+
+        newForm.addEventListener("submit", async (e) => {
             e.preventDefault();
             
             const emailEl = document.getElementById("login-email");
             const passwordEl = document.getElementById("login-password");
             const errorDiv = document.getElementById("login-error");
-            const submitBtn = document.getElementById("login-button");
+            const submitBtn = newForm.querySelector('button[type="submit"]');
 
             const email = emailEl ? emailEl.value.trim() : "";
             const password = passwordEl ? passwordEl.value.trim() : "";
@@ -113,21 +121,29 @@ function setupAuthListeners() {
 
             if (!supabaseApp) {
                 if (errorDiv) {
-                    errorDiv.textContent = "Error de conexión con Supabase.";
+                    errorDiv.textContent = "Error: El SDK de Supabase no está disponible.";
                     errorDiv.hidden = false;
                 }
                 return;
             }
 
             try {
-                if (submitBtn) submitBtn.disabled = true;
+                if (submitBtn) {
+                    submitBtn.disabled = true;
+                    submitBtn.textContent = "Iniciando sesión...";
+                }
 
                 const { data, error } = await supabaseApp.auth.signInWithPassword({ email, password });
 
                 if (error) {
+                    console.error("Error de Supabase Auth:", error);
                     if (errorDiv) {
                         let msg = error.message;
-                        if (msg.includes("Invalid login credentials")) msg = "Usuario o contraseña incorrectos.";
+                        if (msg.includes("Invalid login credentials")) {
+                            msg = "Usuario o contraseña incorrectos.";
+                        } else if (msg.includes("JWT") || msg.includes("apiKey")) {
+                            msg = "Error de clave de Supabase. Revisa la SUPABASE_KEY.";
+                        }
                         errorDiv.textContent = msg;
                         errorDiv.hidden = false;
                     }
@@ -135,13 +151,16 @@ function setupAuthListeners() {
                     handleLoginSuccess(data.user);
                 }
             } catch (err) {
-                console.error("Error en login:", err);
+                console.error("Excepción inesperada en login:", err);
                 if (errorDiv) {
-                    errorDiv.textContent = "Ocurrió un error al procesar el inicio de sesión.";
+                    errorDiv.textContent = "Error inesperado al conectar: " + err.message;
                     errorDiv.hidden = false;
                 }
             } finally {
-                if (submitBtn) submitBtn.disabled = false;
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = "Iniciar Sesión";
+                }
             }
         });
     }
@@ -156,25 +175,35 @@ function setupAuthListeners() {
     }
 }
 
-async function checkInitialSession() {
+async function checkSession() {
     if (!supabaseApp) {
-        console.error("No se pudo inicializar el cliente de Supabase.");
         showLoginScreen();
         return;
     }
 
-    supabaseApp.auth.onAuthStateChange((event, session) => {
+    try {
+        supabaseApp.auth.onAuthStateChange((event, session) => {
+            if (session && session.user) {
+                handleLoginSuccess(session.user);
+            } else if (event === 'SIGNED_OUT') {
+                showLoginScreen();
+            }
+        });
+
+        const { data: { session }, error } = await supabaseApp.auth.getSession();
+        if (error) {
+            console.warn("Error obteniendo sesión:", error);
+            showLoginScreen();
+            return;
+        }
+
         if (session && session.user) {
             handleLoginSuccess(session.user);
-        } else if (event === 'SIGNED_OUT') {
+        } else {
             showLoginScreen();
         }
-    });
-
-    const { data: { session } } = await supabaseApp.auth.getSession();
-    if (session && session.user) {
-        handleLoginSuccess(session.user);
-    } else {
+    } catch (e) {
+        console.error("Error comprobando sesión inicial:", e);
         showLoginScreen();
     }
 }
