@@ -6,11 +6,8 @@
 const SUPABASE_URL = "https://rtbrnbyosrtxeayqmvwc.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ0YnJuYnlvc3J0eGVheXFtdndjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY0NTUwODQsImV4cCI6MjEwMjAzMTA4NH0.W3mCe1yAehFd0bz_XNVJ83YR-dNz-8VZnnhgj-cQEss";
 
-// Inicialización de Supabase
+// Variable global del cliente
 var supabaseApp = null;
-if (window.supabase) {
-    supabaseApp = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-}
 
 // ESTADO GLOBAL
 const state = {
@@ -50,7 +47,6 @@ const CATEGORIES = {
 // Lista de integrantes
 const USERS = ["Laura", "Sara", "Belén"];
 
-// Función auxiliar para obtener el icono según la categoría
 function getCategoryIcon(category) {
     if (CATEGORIES[category]) {
         return CATEGORIES[category].icon;
@@ -59,13 +55,25 @@ function getCategoryIcon(category) {
 }
 
 /* ==========================================================================
-   INICIALIZACIÓN
+   INICIALIZACIÓN SECURIZADA
    ========================================================================== */
 document.addEventListener("DOMContentLoaded", () => {
     initApp();
 });
 
 async function initApp() {
+    // 1. Inicializar cliente de Supabase garantizando que el SDK esté disponible
+    if (window.supabase) {
+        try {
+            supabaseApp = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        } catch (e) {
+            console.error("Error al crear el cliente de Supabase:", e);
+        }
+    } else {
+        console.error("El SDK de Supabase no está cargado en window.supabase.");
+    }
+
+    // 2. Configurar componentes UI y listeners
     setupLogin();
     setupNavigation();
     setupModals();
@@ -76,6 +84,7 @@ async function initApp() {
 
     startClocksAndCountdown();
 
+    // 3. Comprobar sesión existente
     if (supabaseApp) {
         supabaseApp.auth.onAuthStateChange((event, session) => {
             if (session && session.user) {
@@ -85,14 +94,18 @@ async function initApp() {
             }
         });
 
-        const { data: { session } } = await supabaseApp.auth.getSession();
-        if (session && session.user) {
-            handleLoginSuccess(session.user);
-        } else {
+        try {
+            const { data: { session } } = await supabaseApp.auth.getSession();
+            if (session && session.user) {
+                handleLoginSuccess(session.user);
+            } else {
+                showLoginScreen();
+            }
+        } catch (err) {
+            console.error("Error comprobando la sesión:", err);
             showLoginScreen();
         }
     } else {
-        console.error("No se pudo inicializar el cliente de Supabase.");
         showLoginScreen();
     }
 
@@ -121,9 +134,14 @@ function setupLogin() {
                 errorDiv.textContent = "";
             }
 
+            // Re-verificar cliente si no existía previamente
+            if (!supabaseApp && window.supabase) {
+                supabaseApp = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+            }
+
             if (!supabaseApp) {
                 if (errorDiv) {
-                    errorDiv.textContent = "Error de conexión con Supabase.";
+                    errorDiv.textContent = "Error de conexión con la base de datos (Supabase no listo).";
                     errorDiv.hidden = false;
                 }
                 return;
@@ -144,6 +162,10 @@ function setupLogin() {
                 }
             } catch (err) {
                 console.error("Error en login:", err);
+                if (errorDiv) {
+                    errorDiv.textContent = "Ocurrió un error al procesar el inicio de sesión.";
+                    errorDiv.hidden = false;
+                }
             }
         });
     }
@@ -807,7 +829,7 @@ function renderExpenses() {
         return;
     }
 
-    // 1. Balances por integrante
+    // Balances
     const balances = { Laura: 0, Sara: 0, Belén: 0 };
 
     state.expenses.forEach(e => {
@@ -827,7 +849,6 @@ function renderExpenses() {
         });
     });
 
-    // Renderizado de Resumen por Usuario
     if (summaryEl) {
         summaryEl.innerHTML = USERS.map(user => {
             const bal = balances[user] || 0;
@@ -843,7 +864,6 @@ function renderExpenses() {
         }).join("");
     }
 
-    // 2. Cálculo Simplificado de Deudas
     if (debtsEl) {
         const debtors = [];
         const creditors = [];
@@ -881,7 +901,6 @@ function renderExpenses() {
         debtsEl.innerHTML = debtList.length > 0 ? debtList.join("") : "<div class='empty'>¡Cuentas al día! Nadie debe nada. 🎉</div>";
     }
 
-    // 3. Renderizado de la Lista de Gastos
     listEl.innerHTML = state.expenses.map(e => `
         <div class="expense-card">
             <div class="card-main">
@@ -970,7 +989,6 @@ function renderMap() {
 
     const bounds = [];
 
-    // Hotel
     if (state.hotel && state.hotel.lat && state.hotel.lng) {
         bounds.push([state.hotel.lat, state.hotel.lng]);
         
@@ -989,7 +1007,6 @@ function renderMap() {
         state.markers.push(hotelMarker);
     }
 
-    // Planes
     state.plans.forEach(plan => {
         const lat = parseFloat(plan.latitude);
         const lng = parseFloat(plan.longitude);
