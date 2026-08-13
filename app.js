@@ -4,79 +4,19 @@
 
 // Configuración de Supabase
 const SUPABASE_URL = "https://rtbrnbyosrtxeayqmvwc.supabase.co";
-const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ0YnJuYnlvc3J0eGVheXFtdndjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY0NTUwODQsImV4cCI6MjEwMjAzMTA4NH0.W3mCe1yAehFd0[...]";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ0YnJuYnlvc3J0eGVheXFtdndjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY0NTUwODQsImV4cCI6MjEwMjAzMTA4NH0.W3mCe1yAehFd0bz_XNVJ83YR-dNz-8VZnnhgj-cQEss";
 
-// Variable global del cliente
+// Inicialización de Supabase
 var supabaseApp = null;
-
-/* ==========================================================================
-   Helper: inicialización robusta de Supabase (intenta varios enfoques)
-   ========================================================================== */
-async function ensureSupabaseClient() {
-    if (supabaseApp) return supabaseApp;
-
-    // 1) Si el SDK UMD ya está disponible en window.supabase
-    if (window.supabase && typeof window.supabase.createClient === 'function') {
-        try {
-            supabaseApp = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-            console.debug("Supabase: cliente inicializado desde window.supabase");
-            return supabaseApp;
-        } catch (e) {
-            console.warn("Supabase: fallo creando cliente desde window.supabase:", e);
-        }
+if (window.supabase && typeof window.supabase.createClient === 'function') {
+    try {
+        supabaseApp = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    } catch (e) {
+        console.warn("No se pudo crear supabaseApp desde window.supabase:", e);
     }
-
-    // 2) Algunos entornos podrían exponer createClient globalmente (muy raro)
-    if (typeof window.createClient === 'function') {
-        try {
-            supabaseApp = window.createClient(SUPABASE_URL, SUPABASE_KEY);
-            console.debug("Supabase: cliente inicializado desde window.createClient");
-            return supabaseApp;
-        } catch (e) {
-            console.warn("Supabase: fallo creando cliente desde window.createClient:", e);
-        }
-    }
-
-    // 3) Intentar cargar el UMD desde CDN (fallback)
-    const UMD_URL = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/dist/umd/supabase.umd.min.js";
-
-    if (!document.querySelector(`script[src="${UMD_URL}"]`)) {
-        try {
-            await new Promise((resolve, reject) => {
-                const s = document.createElement("script");
-                s.src = UMD_URL;
-                s.async = true;
-                s.onload = () => {
-                    console.debug("Supabase UMD cargado desde CDN");
-                    resolve();
-                };
-                s.onerror = (err) => {
-                    reject(new Error("No se pudo cargar el SDK de Supabase desde CDN."));
-                };
-                document.head.appendChild(s);
-            });
-        } catch (err) {
-            console.warn("Supabase: fallo al cargar UMD desde CDN:", err);
-        }
-    }
-
-    if (window.supabase && typeof window.supabase.createClient === 'function') {
-        try {
-            supabaseApp = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-            console.debug("Supabase: cliente inicializado después de cargar UMD");
-            return supabaseApp;
-        } catch (e) {
-            console.error("Supabase: error creando cliente tras cargar UMD:", e);
-        }
-    }
-
-    console.error("No se pudo inicializar Supabase: SDK no encontrado o createClient falló.");
-    return null;
 }
 
-/* ==========================================================================
-   ESTADO GLOBAL
-   ========================================================================== */
+// ESTADO GLOBAL
 const state = {
     currentUser: null,
     currentScreen: 'home',
@@ -98,7 +38,9 @@ const state = {
     map: null,
     markers: [],
     activePlanFilter: 'all',
-    editingExpenseId: null
+    editingExpenseId: null,
+    // usuario seleccionado desde la pantalla principal (para resaltar en gastos)
+    selectedExpenseUser: null
 };
 
 // CATEGORÍAS DE PLANES
@@ -122,18 +64,13 @@ function getCategoryIcon(category) {
 }
 
 /* ==========================================================================
-   INICIALIZACIÓN SECURIZADA
+   INICIALIZACIÓN
    ========================================================================== */
 document.addEventListener("DOMContentLoaded", () => {
     initApp();
 });
 
 async function initApp() {
-    // Intentar inicializar cliente de Supabase de forma robusta
-    await ensureSupabaseClient();
-
-    // 2. Configurar componentes UI y listeners
-    setupLogin();
     setupNavigation();
     setupModals();
     setupForms();
@@ -143,7 +80,6 @@ async function initApp() {
 
     startClocksAndCountdown();
 
-    // 3. Comprobar sesión existente (si tenemos cliente)
     if (supabaseApp) {
         try {
             supabaseApp.auth.onAuthStateChange((event, session) => {
@@ -154,7 +90,7 @@ async function initApp() {
                 }
             });
         } catch (e) {
-            console.warn("onAuthStateChange no disponible o falló:", e);
+            console.warn("onAuthStateChange no disponible:", e);
         }
 
         try {
@@ -169,6 +105,7 @@ async function initApp() {
             showLoginScreen();
         }
     } else {
+        console.error("No se pudo inicializar el cliente de Supabase.");
         showLoginScreen();
     }
 
@@ -179,7 +116,34 @@ async function initApp() {
 /* ==========================================================================
    AUTENTICACIÓN
    ========================================================================== */
-function setupLogin() {
+function showLoginScreen() {
+    const loginScreen = document.getElementById("login-screen");
+    const appScreen = document.getElementById("app");
+    if (loginScreen) loginScreen.hidden = false;
+    if (appScreen) appScreen.hidden = true;
+}
+
+function hideLoginScreen() {
+    const loginScreen = document.getElementById("login-screen");
+    const appScreen = document.getElementById("app");
+    if (loginScreen) loginScreen.hidden = true;
+    if (appScreen) appScreen.hidden = false;
+}
+
+function handleLoginSuccess(user) {
+    state.currentUser = user;
+    const userEmailEl = document.getElementById("current-user-email");
+    if (userEmailEl) {
+        userEmailEl.textContent = user.email || "Viajero";
+    }
+    hideLoginScreen();
+    loadAllData();
+}
+
+/* ==========================================================================
+   LOGIN HANDLERS (form submit + logout)
+   ========================================================================== */
+document.addEventListener("DOMContentLoaded", () => {
     const loginForm = document.getElementById("login-form");
     if (loginForm) {
         loginForm.addEventListener("submit", async (e) => {
@@ -197,12 +161,9 @@ function setupLogin() {
                 errorDiv.textContent = "";
             }
 
-            // Asegurarnos de tener cliente antes de intentar el login
-            await ensureSupabaseClient();
-
             if (!supabaseApp) {
                 if (errorDiv) {
-                    errorDiv.textContent = "Error de conexión con la base de datos (Supabase no listo). Comprueba la consola.";
+                    errorDiv.textContent = "Error de conexión con Supabase.";
                     errorDiv.hidden = false;
                 }
                 return;
@@ -212,7 +173,6 @@ function setupLogin() {
                 const { data, error } = await supabaseApp.auth.signInWithPassword({ email, password });
 
                 if (error) {
-                    console.error("SignIn error raw:", error);
                     if (errorDiv) {
                         let msg = error.message || "Error en autenticación";
                         if (msg.includes("Invalid login credentials")) msg = "Usuario o contraseña incorrectos.";
@@ -246,31 +206,7 @@ function setupLogin() {
             showLoginScreen();
         });
     }
-}
-
-function showLoginScreen() {
-    const loginScreen = document.getElementById("login-screen");
-    const appScreen = document.getElementById("app");
-    if (loginScreen) loginScreen.hidden = false;
-    if (appScreen) appScreen.hidden = true;
-}
-
-function hideLoginScreen() {
-    const loginScreen = document.getElementById("login-screen");
-    const appScreen = document.getElementById("app");
-    if (loginScreen) loginScreen.hidden = true;
-    if (appScreen) appScreen.hidden = false;
-}
-
-function handleLoginSuccess(user) {
-    state.currentUser = user;
-    const userEmailEl = document.getElementById("current-user-email");
-    if (userEmailEl) {
-        userEmailEl.textContent = user.email || "Viajero";
-    }
-    hideLoginScreen();
-    loadAllData();
-}
+});
 
 /* ==========================================================================
    RELOJES Y CONTADOR
@@ -436,11 +372,7 @@ function escapeHTML(str) {
    ========================================================================== */
 async function loadAllData() {
     updateStatus("● Sincronizando...");
-    await ensureSupabaseClient();
-    if (!supabaseApp) {
-        updateStatus("⚠️ No conectado");
-        return;
-    }
+    if (!supabaseApp) return;
 
     try {
         const [plansRes, resRes, expRes] = await Promise.all([
@@ -472,14 +404,14 @@ function renderAll() {
     renderNextActivity();
     renderPlans();
     renderReservations();
-    renderExpenses();
+    renderExpenses(); // ahora con resumen y acciones
     renderFlights();
     renderHotel();
     if (state.currentScreen === 'map') renderMap();
 }
 
 /* ==========================================================================
-   NAVEGACIÓN DE PANTALLAS Y NAVEGACIÓN DESDE EL EQUIPO
+   NAVEGACIÓN DE PANTALLAS
    ========================================================================== */
 function setupNavigation() {
     const buttons = document.querySelectorAll("[data-screen]");
@@ -487,16 +419,6 @@ function setupNavigation() {
         btn.addEventListener("click", () => {
             const screen = btn.getAttribute("data-screen");
             switchScreen(screen);
-        });
-    });
-}
-
-function setupTravelersClick() {
-    const cards = document.querySelectorAll(".traveler-card");
-    cards.forEach(card => {
-        card.style.cursor = "pointer";
-        card.addEventListener("click", () => {
-            switchScreen("expenses");
         });
     });
 }
@@ -514,6 +436,22 @@ function switchScreen(screenName) {
 
     if (screenName === "map") {
         setTimeout(initOrRefreshMap, 150);
+    }
+
+    // Si cambiamos a "expenses" y tenemos un usuario seleccionado, desplazamos y resaltamos
+    if (screenName === "expenses") {
+        setTimeout(() => {
+            if (state.selectedExpenseUser) {
+                const el = document.getElementById(`balance-${cssId(state.selectedExpenseUser)}`);
+                if (el) {
+                    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    // efecto visual temporal
+                    const prev = el.style.boxShadow;
+                    el.style.boxShadow = "0 6px 20px rgba(37,99,235,0.12)";
+                    setTimeout(() => { el.style.boxShadow = prev; }, 2200);
+                }
+            }
+        }, 200);
     }
 }
 
@@ -572,24 +510,28 @@ function openPlanModal(planToEdit = null) {
     openModal("plan-modal");
 }
 
+/* ==========================================================================
+   GASTOS: modal de gasto (abrir/editar) y helpers
+   ========================================================================== */
 function openExpenseModal(expenseToEdit = null) {
     const form = document.getElementById("expense-form");
     if (form) form.reset();
+
+    // reset participants checkboxes
+    document.querySelectorAll("input[name='participant']").forEach(cb => cb.checked = true);
 
     if (expenseToEdit) {
         state.editingExpenseId = expenseToEdit.id;
         document.getElementById("expense-title").value = expenseToEdit.title || "";
         document.getElementById("expense-amount").value = expenseToEdit.amount || "";
         document.getElementById("expense-currency").value = expenseToEdit.currency || "EUR";
-        document.getElementById("expense-paid-by").value = expenseToEdit.paid_by || "Laura";
+        document.getElementById("expense-paid-by").value = expenseToEdit.paid_by || USERS[0];
         document.getElementById("expense-date").value = expenseToEdit.date || new Date().toISOString().split("T")[0];
-        
         const notesInput = document.getElementById("expense-notes");
         if (notesInput) notesInput.value = expenseToEdit.notes || "";
 
-        const checkboxes = document.querySelectorAll("input[name='participant']");
         const parts = expenseToEdit.participants || USERS;
-        checkboxes.forEach(cb => {
+        document.querySelectorAll("input[name='participant']").forEach(cb => {
             cb.checked = parts.includes(cb.value);
         });
     } else {
@@ -649,7 +591,6 @@ function setupForms() {
                 created_by: state.currentUser ? (state.currentUser.email || state.currentUser.id) : "invitado"
             };
 
-            await ensureSupabaseClient();
             if (!supabaseApp) throw new Error("No hay conexión con Supabase.");
 
             let result;
@@ -688,7 +629,6 @@ function setupForms() {
             location: document.getElementById("reservation-location").value || null
         };
 
-        await ensureSupabaseClient();
         if (supabaseApp) await supabaseApp.from("reservations").insert([resData]);
 
         closeModal("reservation-modal");
@@ -697,36 +637,56 @@ function setupForms() {
 
     document.getElementById("expense-form")?.addEventListener("submit", async (e) => {
         e.preventDefault();
-        const participants = Array.from(document.querySelectorAll("input[name='participant']:checked")).map(cb => cb.value);
-        
-        if (participants.length === 0) {
-            alert("Selecciona al menos a un participante para el gasto.");
-            return;
+
+        const submitBtn = e.target.querySelector('button[type="submit"]');
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.textContent = "Guardando...";
         }
 
-        const notesVal = document.getElementById("expense-notes")?.value || "";
+        try {
+            const participants = Array.from(document.querySelectorAll("input[name='participant']:checked")).map(cb => cb.value);
+            
+            if (participants.length === 0) {
+                alert("Selecciona al menos a un participante para el gasto.");
+                return;
+            }
 
-        const expData = {
-            title: document.getElementById("expense-title").value,
-            amount: parseFloat(document.getElementById("expense-amount").value),
-            currency: document.getElementById("expense-currency").value,
-            paid_by: document.getElementById("expense-paid-by").value,
-            participants: participants,
-            date: document.getElementById("expense-date").value || new Date().toISOString().split("T")[0],
-            notes: notesVal
-        };
+            const notesVal = document.getElementById("expense-notes")?.value || "";
 
-        await ensureSupabaseClient();
-        if (supabaseApp) {
-            if (state.editingExpenseId) {
-                await supabaseApp.from("expenses").update(expData).eq("id", state.editingExpenseId);
+            const expData = {
+                title: document.getElementById("expense-title").value,
+                amount: parseFloat(document.getElementById("expense-amount").value) || 0,
+                currency: document.getElementById("expense-currency").value,
+                paid_by: document.getElementById("expense-paid-by").value,
+                participants: participants,
+                date: document.getElementById("expense-date").value || new Date().toISOString().split("T")[0],
+                notes: notesVal
+            };
+
+            if (supabaseApp) {
+                if (state.editingExpenseId) {
+                    await supabaseApp.from("expenses").update(expData).eq("id", state.editingExpenseId);
+                    state.editingExpenseId = null;
+                } else {
+                    await supabaseApp.from("expenses").insert([expData]);
+                }
             } else {
-                await supabaseApp.from("expenses").insert([expData]);
+                throw new Error("No conectado a la base de datos (Supabase).");
+            }
+
+            closeModal("expense-modal");
+            await loadAllData();
+
+        } catch (err) {
+            console.error("Error guardando gasto:", err);
+            alert("⚠️ No se pudo guardar el gasto: " + (err.message || err));
+        } finally {
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.textContent = "Guardar gasto";
             }
         }
-
-        closeModal("expense-modal");
-        loadAllData();
     });
 }
 
@@ -789,7 +749,6 @@ window.editPlan = function(id) {
 window.deletePlan = async function(id) {
     if (!confirm("¿Seguro que deseas borrar este plan?")) return;
 
-    await ensureSupabaseClient();
     if (supabaseApp) {
         await supabaseApp.from("plans").delete().eq("id", id);
     }
@@ -871,26 +830,10 @@ async function updateCurrency() {
     }
 }
 
-function renderReservations() {
-    const listEl = document.getElementById("reservation-list");
-    if (!listEl) return;
-
-    if (state.reservations.length === 0) {
-        listEl.innerHTML = `<div class="empty">No hay reservas registradas.</div>`;
-        return;
-    }
-
-    listEl.innerHTML = state.reservations.map(r => `
-        <div class="card">
-            <h3>📋 ${escapeHTML(r.title)}</h3>
-            ${r.description ? `<p>${escapeHTML(r.description)}</p>` : ''}
-            <small>${r.date || 'Sin fecha'} ${r.time || ''} ${r.location ? '— ' + escapeHTML(r.location) : ''}</small>
-        </div>
-    `).join("");
-}
-
 /* ==========================================================================
-   TRICOUNT Y RESUMEN DE GASTOS / DEUDAS
+   RENDERIZADO Y GESTIÓN DE GASTOS (TRICOUNT)
+   - Permite editar y borrar
+   - Muestra resumen por usuario y lista de deudas
    ========================================================================== */
 function renderExpenses() {
     const listEl = document.getElementById("expense-list");
@@ -898,33 +841,32 @@ function renderExpenses() {
     const debtsEl = document.getElementById("debts");
     if (!listEl) return;
 
-    if (state.expenses.length === 0) {
+    if (!state.expenses || state.expenses.length === 0) {
         listEl.innerHTML = `<div class="empty">No hay gastos registrados.</div>`;
         if (summaryEl) summaryEl.innerHTML = "";
         if (debtsEl) debtsEl.innerHTML = "<div class='empty'>No hay deudas calculadas.</div>";
         return;
     }
 
-    // Balances
-    const balances = { Laura: 0, Sara: 0, Belén: 0 };
+    // Calcular balances por usuario (convertimos USD->EUR con un factor aproximado si procede)
+    const balances = {};
+    USERS.forEach(u => balances[u] = 0);
 
     state.expenses.forEach(e => {
-        const amountEUR = e.currency === 'USD' ? e.amount / 1.08 : e.amount;
+        // Si la moneda es USD, aplicamos un factor de conversión aproximado (USD -> EUR)
+        // Aquí vamos a tratar internamente todo en EUR para consistencia (factor inverso de 1.08 usado antes)
+        const amountEUR = (e.currency === 'USD') ? (e.amount / 1.08) : e.amount;
         const payer = e.paid_by;
         const participants = (e.participants && e.participants.length > 0) ? e.participants : USERS;
         const splitAmount = amountEUR / participants.length;
 
-        if (balances[payer] !== undefined) {
-            balances[payer] += amountEUR;
-        }
-
+        if (balances[payer] !== undefined) balances[payer] += amountEUR;
         participants.forEach(p => {
-            if (balances[p] !== undefined) {
-                balances[p] -= splitAmount;
-            }
+            if (balances[p] !== undefined) balances[p] -= splitAmount;
         });
     });
 
+    // Resumen por usuario
     if (summaryEl) {
         summaryEl.innerHTML = USERS.map(user => {
             const bal = balances[user] || 0;
@@ -932,14 +874,15 @@ function renderExpenses() {
             const cls = isPos ? "positive" : "negative";
             const sign = isPos ? "+" : "";
             return `
-                <div class="balance-card">
-                    <span>${user}</span>
-                    <strong class="${cls}">${sign}${bal.toFixed(2)} €</strong>
+                <div id="balance-${cssId(user)}" class="balance-card" style="padding:12px; border-radius:12px; background:#fff; border:1px solid #e6e6e6;">
+                    <span style="display:block; color:var(--muted); font-size:12px;">${escapeHTML(user)}</span>
+                    <strong class="${cls}" style="font-size:16px; display:block; margin-top:6px;">${sign}${bal.toFixed(2)} €</strong>
                 </div>
             `;
         }).join("");
     }
 
+    // Calcular deudas simples (greedy matching debtors/creditors)
     if (debtsEl) {
         const debtors = [];
         const creditors = [];
@@ -959,11 +902,11 @@ function renderExpenses() {
             const payment = Math.min(debtor.amount, creditor.amount);
 
             debtList.push(`
-                <div class="debt-card">
+                <div class="debt-card" style="background:white; border:1px solid #eee; padding:10px; border-radius:10px;">
                     <div>
-                        <strong>${debtor.user}</strong> debe a <strong>${creditor.user}</strong>
+                        <strong>${escapeHTML(debtor.user)}</strong> debe a <strong>${escapeHTML(creditor.user)}</strong>
                     </div>
-                    <span class="debt-amount positive">${payment.toFixed(2)} €</span>
+                    <span class="debt-amount positive" style="font-weight:800; color:var(--success)">${payment.toFixed(2)} €</span>
                 </div>
             `);
 
@@ -977,38 +920,109 @@ function renderExpenses() {
         debtsEl.innerHTML = debtList.length > 0 ? debtList.join("") : "<div class='empty'>¡Cuentas al día! Nadie debe nada. 🎉</div>";
     }
 
+    // Lista de gastos con botones editar / borrar
     listEl.innerHTML = state.expenses.map(e => `
-        <div class="expense-card">
-            <div class="card-main">
+        <div class="expense-card" style="display:flex; justify-content:space-between; align-items:center;">
+            <div class="card-main" style="min-width:0; flex:1;">
                 <div style="display:flex; justify-content:space-between; align-items:center;">
                     <strong style="font-size:15px;">${escapeHTML(e.title)}</strong>
                     <strong style="font-size:15px;">${e.amount} ${e.currency}</strong>
                 </div>
-                <p>Pagó: <strong>${escapeHTML(e.paid_by)}</strong> • Para: ${e.participants ? e.participants.map(p => escapeHTML(p)).join(", ") : "Todos"}</p>
+                <p style="margin:6px 0 0;">Pagó: <strong>${escapeHTML(e.paid_by)}</strong> • Para: ${e.participants ? e.participants.map(p => escapeHTML(p)).join(", ") : "Todos"}</p>
                 ${e.date ? `<small style="color:var(--muted); font-size:11px;">📅 ${e.date}</small>` : ''}
             </div>
-            <div class="card-actions" style="position:static; margin-left:10px;">
+            <div class="card-actions" style="position:static; margin-left:10px; display:flex; gap:6px;">
                 <button class="icon-button" onclick="editExpense('${e.id}')" title="Editar gasto">✏️</button>
                 <button class="icon-button danger" onclick="deleteExpense('${e.id}')" title="Borrar gasto">🗑️</button>
             </div>
         </div>
     `).join("");
+
+    // Si hemos seleccionado un usuario desde la pantalla principal, aplicamos estilo de resaltado temporal
+    if (state.selectedExpenseUser) {
+        setTimeout(() => {
+            const el = document.getElementById(`balance-${cssId(state.selectedExpenseUser)}`);
+            if (el) {
+                el.style.boxShadow = "0 8px 30px rgba(37,99,235,0.12)";
+                el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                setTimeout(() => { el.style.boxShadow = ""; }, 2000);
+            }
+        }, 120);
+    }
 }
 
 window.editExpense = function(id) {
     const exp = state.expenses.find(e => e.id == id);
-    if (exp) openExpenseModal(exp);
+    if (exp) {
+        openExpenseModal(exp);
+    } else {
+        alert("No se encontró el gasto para editar.");
+    }
 };
 
 window.deleteExpense = async function(id) {
     if (!confirm("¿Seguro que deseas eliminar este gasto?")) return;
 
-    await ensureSupabaseClient();
-    if (supabaseApp) {
-        await supabaseApp.from("expenses").delete().eq("id", id);
+    if (!supabaseApp) {
+        alert("No conectado a la base de datos.");
+        return;
     }
-    loadAllData();
+
+    try {
+        await supabaseApp.from("expenses").delete().eq("id", id);
+        await loadAllData();
+    } catch (e) {
+        console.error("Error borrando gasto:", e);
+        alert("No se pudo eliminar el gasto.");
+    }
 };
+
+/* ==========================================================================
+   UTILS PARA NAVEGACIÓN DESDE TRAVELERS (clic en la lista de personas)
+   ========================================================================== */
+function setupTravelersClick() {
+    const cards = document.querySelectorAll(".traveler-card");
+    cards.forEach(card => {
+        card.style.cursor = "pointer";
+        card.addEventListener("click", () => {
+            // Extraer nombre desde el strong dentro de la tarjeta
+            const nameEl = card.querySelector("strong");
+            const name = nameEl ? nameEl.textContent.trim() : null;
+            if (name) {
+                state.selectedExpenseUser = name;
+            } else {
+                state.selectedExpenseUser = null;
+            }
+            switchScreen("expenses");
+        });
+    });
+}
+
+// Helper: crea id CSS seguro a partir del nombre (Laura -> laura)
+function cssId(name) {
+    return name.replace(/\s+/g, '-').replace(/[^a-zA-Z0-9-_]/g, '').toLowerCase();
+}
+
+/* ==========================================================================
+   RENDERIZADO RESERVAS, VUELOS, HOTEL (sin cambios)
+   ========================================================================== */
+function renderReservations() {
+    const listEl = document.getElementById("reservation-list");
+    if (!listEl) return;
+
+    if (state.reservations.length === 0) {
+        listEl.innerHTML = `<div class="empty">No hay reservas registradas.</div>`;
+        return;
+    }
+
+    listEl.innerHTML = state.reservations.map(r => `
+        <div class="card">
+            <h3>📋 ${escapeHTML(r.title)}</h3>
+            ${r.description ? `<p>${escapeHTML(r.description)}</p>` : ''}
+            <small>${r.date || 'Sin fecha'} ${r.time || ''} ${r.location ? '— ' + escapeHTML(r.location) : ''}</small>
+        </div>
+    `).join("");
+}
 
 function renderFlights() {
     const listEl = document.getElementById("flight-list");
@@ -1039,7 +1053,7 @@ function renderHotel() {
 }
 
 /* ==========================================================================
-   MAPA LEAFLET
+   MAPA LEAFLET (sin cambios)
    ========================================================================== */
 function initOrRefreshMap() {
     if (typeof L === 'undefined') return;
