@@ -6,11 +6,18 @@
 const SUPABASE_URL = "https://rtbrnbyosrtxeayqmvwc.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ0YnJuYnlvc3J0eGVheXFtdndjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY0NTUwODQsImV4cCI6MjEwMjAzMTA4NH0.W3mCe1yAehFd0bz_XNVJ83YR-dNz-8VZnnhgj-cQEss";
 
-// Inicialización limpia y directa del cliente
+// Inicialización limpia y directa del cliente (más robusta)
 var supabaseApp = null;
-if (window.supabase) {
+if (typeof createClient === 'function') {
+    // cuando se usa import o CDN que expone createClient directamente
+    supabaseApp = createClient(SUPABASE_URL, SUPABASE_KEY);
+} else if (window.supabase && typeof window.supabase.createClient === 'function') {
+    // cuando la librería expone window.supabase.createClient
     supabaseApp = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+} else {
+    console.error("Supabase JS no encontrado. Añade el script CDN o importa '@supabase/supabase-js'.");
 }
+console.log("supabaseApp:", supabaseApp);
 
 // ESTADO GLOBAL
 const state = {
@@ -153,11 +160,13 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             try {
+                console.log("Intentando login con", email);
                 const { data, error } = await supabaseApp.auth.signInWithPassword({ email, password });
+                console.log("signInWithPassword result:", { data, error });
 
                 if (error) {
                     if (errorDiv) {
-                        let msg = error.message;
+                        let msg = error.message || String(error);
                         if (msg.includes("Invalid login credentials")) msg = "Usuario o contraseña incorrectos.";
                         errorDiv.textContent = msg;
                         errorDiv.hidden = false;
@@ -765,7 +774,7 @@ async function updateCurrency() {
         const data = await res.json();
         if (data && data.rates && data.rates.USD) {
             document.getElementById("currency-value").textContent = `1 € = ${data.rates.USD.toFixed(2)} $`;
-            document.getElementById("currency-value").textContent = `1 $ = €{data.rates.EUR.toFixed(2)} €`;
+            document.getElementById("currency-value").textContent = `1 $ = ${data.rates.EUR.toFixed(2)} €`;
             document.getElementById("currency-update").textContent = "Tiempo real";
         }
     } catch (e) {
