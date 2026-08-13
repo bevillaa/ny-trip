@@ -227,9 +227,16 @@ function hideLoginScreen() {
     
     if (loginScreen) {
         loginScreen.style.display = "none";
+        loginScreen.classList.add("hidden");
+        loginScreen.hidden = true;
     }
     if (appScreen) {
-        appScreen.style.display = "block";
+        // Quitamos las capas de ocultación
+        appScreen.classList.remove("hidden");
+        appScreen.hidden = false;
+        
+        // Vaciamos el display inline para que tu CSS original tome el control total (flex, grid, block, etc.)
+        appScreen.style.display = ""; 
     }
 }
 
