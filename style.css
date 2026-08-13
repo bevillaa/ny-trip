@@ -1,5 +1,5 @@
 /* ==========================================
-    🗽 NY TRIP 
+    🗽 NY TRIP
 ========================================== */
 
 * {
@@ -99,19 +99,26 @@ a {
     font-size: 13px;
 }
 
+/* Indicador Conectado (Verde / Rojo) */
 .connection-status {
-    font-size: 11px;
+    font-size: 12px;
     white-space: nowrap;
-    opacity: .8;
-    font-weight: 600;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 20px;
+    transition: all 0.3s ease;
 }
 
 .connection-status.ok {
-    color: #86efac;
+    color: #15803d;
+    background-color: #dcfce7;
+    border: 1px solid #86efac;
 }
 
 .connection-status.error {
-    color: #fca5a5;
+    color: #b91c1c;
+    background-color: #fee2e2;
+    border: 1px solid #fca5a5;
 }
 
 /* ==========================================
@@ -191,7 +198,7 @@ main {
 }
 
 /* ==========================================
-    WEATHER & CURRENCY
+    WEATHER & CURRENCY & RELOJES
 ========================================== */
 
 .weather-card,
@@ -232,6 +239,19 @@ main {
     font-size: 12px;
 }
 
+.header-clocks-container {
+    margin-top: 12px;
+    padding-top: 10px;
+    border-top: 1px dashed var(--border);
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    font-size: 0.88rem;
+    background: #f8fafc;
+    border-radius: 10px;
+    padding: 8px 12px;
+}
+
 .currency-card {
     display: flex;
     align-items: center;
@@ -266,7 +286,7 @@ main {
 }
 
 /* ==========================================
-    TARJETAS Y VISTA DE PLANES (REDISEÑADO)
+    TARJETAS Y VISTA DE PLANES
 ========================================== */
 
 .next-card,
@@ -277,7 +297,8 @@ main {
 .flight-card,
 .debt-card,
 .balance-card,
-.plan-card {
+.plan-card,
+.card {
     background: var(--card);
     border: 1px solid var(--border);
     border-radius: 18px;
@@ -286,27 +307,52 @@ main {
     transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-/* Estilos específicos para las tarjetas de planes */
 .plan-card {
     display: flex;
     flex-direction: column;
     gap: 10px;
     margin-bottom: 12px;
+    position: relative;
+    padding-right: 90px;
 }
 
 .plan-card:hover {
     box-shadow: var(--shadow-md);
 }
 
-/* Encabezado interno con badges de categoría y fecha */
-.plan-card-header {
+.card-actions {
+    position: absolute;
+    top: 16px;
+    right: 16px;
     display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
+    gap: 6px;
 }
 
-.plan-badge-category {
+.card-actions .icon-button {
+    background: #f1f5f9;
+    border: none;
+    border-radius: 10px;
+    padding: 6px 10px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #475569;
+}
+
+.card-actions .icon-button:hover {
+    background: #e2e8f0;
+    transform: translateY(-1px);
+}
+
+.card-actions .icon-button.danger:hover {
+    background: #fee2e2;
+    color: #ef4444;
+}
+
+.badge-category {
     background: #eff6ff;
     color: #1d4ed8;
     font-size: 11px;
@@ -316,80 +362,6 @@ main {
     display: inline-flex;
     align-items: center;
     gap: 4px;
-}
-
-.plan-badge-date {
-    background: #f3f4f6;
-    color: var(--muted);
-    font-size: 11px;
-    font-weight: 600;
-    padding: 4px 9px;
-    border-radius: 8px;
-}
-
-/* Título y descripción */
-.plan-card h3 {
-    margin: 4px 0 0 0;
-    font-size: 17px;
-    font-weight: 700;
-    color: var(--text);
-    line-height: 1.3;
-}
-
-.plan-card p {
-    margin: 4px 0 0 0;
-    font-size: 13px;
-    color: var(--muted);
-    line-height: 1.4;
-}
-
-.plan-location {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    font-size: 12px;
-    color: #4b5563;
-    font-weight: 500;
-    margin-top: 2px;
-}
-
-/* Acciones (Botones Editar / Borrar) */
-.plan-card-actions {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    gap: 8px;
-    margin-top: 6px;
-    padding-top: 10px;
-    border-top: 1px dashed var(--border);
-}
-
-.btn-icon-action {
-    background: #f8fafc;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 6px 12px;
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--text);
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    cursor: pointer;
-}
-
-.btn-icon-action:hover {
-    background: #f1f5f9;
-}
-
-.btn-icon-action.danger {
-    background: #fef2f2;
-    border-color: #fecaca;
-    color: var(--danger);
-}
-
-.btn-icon-action.danger:hover {
-    background: #fee2e2;
 }
 
 .next-card {
@@ -450,7 +422,7 @@ main {
 }
 
 /* ==========================================
-    VIAJERAS
+    VIAJERAS (EQUIPO)
 ========================================== */
 
 .travelers-grid {
@@ -466,6 +438,19 @@ main {
     padding: 17px 8px;
     text-align: center;
     box-shadow: var(--shadow-sm);
+}
+
+.clickable-traveler {
+    cursor: pointer;
+    transition: all 0.2s ease;
+    width: 100%;
+}
+
+.clickable-traveler:hover {
+    border-color: var(--accent);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+    background: #f8fafc;
 }
 
 .traveler-card span {
@@ -548,17 +533,8 @@ main {
     margin-top: 10px;
 }
 
-.danger-button {
-    border: 0;
-    background: #fee2e2;
-    color: var(--danger);
-    border-radius: 10px;
-    padding: 8px 11px;
-    font-weight: 600;
-}
-
 /* ==========================================
-    LISTAS
+    LISTAS & GASTOS
 ========================================== */
 
 .list {
@@ -567,86 +543,10 @@ main {
     gap: 10px;
 }
 
-.activity-card,
-.reservation-card,
-.expense-card,
-.flight-card {
-    display: flex;
-    justify-content: space-between;
-    gap: 12px;
-}
-
-.card-main {
-    min-width: 0;
-    flex: 1;
-}
-
-.card-actions {
-    display: flex;
-    align-items: flex-start;
-}
-
-.date-badge {
-    flex: 0 0 60px;
-    background: #f3f4f6;
-    border-radius: 12px;
-    text-align: center;
-    padding: 8px 4px;
-}
-
-.date-badge strong {
-    display: block;
-    font-size: 17px;
-}
-
-.date-badge span {
-    font-size: 10px;
-    color: var(--muted);
-}
-
-.type-badge {
-    display: inline-block;
-    padding: 4px 7px;
-    background: #f3f4f6;
-    border-radius: 7px;
-    font-size: 10px;
-    margin-bottom: 6px;
-    font-weight: 600;
-}
-
-/* ==========================================
-    GASTOS
-========================================== */
-
 .expense-summary {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(1, 1fr);
     gap: 8px;
-}
-
-.balance-card {
-    padding: 13px 8px;
-    text-align: center;
-}
-
-.balance-card span {
-    display: block;
-    color: var(--muted);
-    font-size: 11px;
-}
-
-.balance-card strong {
-    display: block;
-    margin-top: 5px;
-    font-size: 16px;
-}
-
-.positive {
-    color: var(--success);
-}
-
-.negative {
-    color: var(--danger);
 }
 
 .debts {
@@ -663,30 +563,6 @@ main {
 
 .debt-card strong {
     font-size: 14px;
-}
-
-.debt-amount {
-    font-weight: 800;
-}
-
-/* ==========================================
-    VUELOS
-========================================== */
-
-.flight-route {
-    display: flex;
-    align-items: center;
-    gap: 9px;
-    margin: 9px 0;
-}
-
-.flight-airport {
-    font-weight: 800;
-    font-size: 20px;
-}
-
-.flight-arrow {
-    color: var(--muted);
 }
 
 /* ==========================================
@@ -746,32 +622,8 @@ main {
     border: 1px solid var(--border);
 }
 
-.map-list {
-    padding: 12px 16px 20px;
-}
-
-.map-item {
-    background: white;
-    border: 1px solid var(--border);
-    border-radius: 13px;
-    padding: 12px;
-    margin-bottom: 8px;
-    box-shadow: var(--shadow-sm);
-}
-
-.map-item strong {
-    display: block;
-}
-
-.map-item span {
-    display: block;
-    color: var(--muted);
-    font-size: 11px;
-    margin-top: 3px;
-}
-
 /* ==========================================
-    MODALES
+    MODALES & FORMULARIOS
 ========================================== */
 
 .modal {
@@ -832,10 +684,6 @@ main {
     justify-content: center;
 }
 
-/* ==========================================
-    FORMULARIOS
-========================================== */
-
 form {
     display: flex;
     flex-direction: column;
@@ -863,18 +711,6 @@ select {
     transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
-input:focus,
-textarea:focus,
-select:focus {
-    border-color: var(--accent);
-    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
-}
-
-textarea {
-    min-height: 80px;
-    resize: vertical;
-}
-
 .form-row {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -900,86 +736,57 @@ fieldset {
     margin: 0;
 }
 
-/* Sugerencias de Autocompletado Gratis (Nominatim/OSM) */
-#nominatim-suggestions {
-    position: absolute;
-    top: 100%;
-    left: 0;
-    right: 0;
-    background: #ffffff;
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    max-height: 200px;
-    overflow-y: auto;
-    z-index: 6000;
-    box-shadow: 0 10px 20px rgba(0,0,0,0.12);
-    margin-top: 4px;
-}
-
-.suggestion-item {
-    padding: 11px 14px;
-    cursor: pointer;
-    font-size: 13px;
-    border-bottom: 1px solid #f3f4f6;
-    color: var(--text);
-    transition: background-color 0.15s ease;
-}
-
-.suggestion-item:last-child {
-    border-bottom: none;
-}
-
-.suggestion-item:hover,
-.suggestion-item:active {
-    background-color: #f3f4f6;
-}
-
-.search-results {
+/* LOGIN */
+.login-screen {
+    position: fixed;
+    inset: 0;
+    background: #111827;
+    z-index: 9999;
     display: flex;
-    flex-direction: column;
-    gap: 6px;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
 }
 
-.search-result {
-    border: 1px solid var(--border);
-    background: #f9fafb;
-    border-radius: 10px;
-    padding: 10px;
+.login-card {
+    background: white;
+    width: 100%;
+    max-width: 400px;
+    padding: 30px 24px;
+    border-radius: 20px;
+    text-align: center;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+}
+
+.login-logo {
+    font-size: 45px;
+    margin-bottom: 8px;
+}
+
+.login-card h1 {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 800;
+}
+
+.login-subtitle {
+    margin: 6px 0 20px;
+    color: var(--muted);
+    font-size: 13px;
+}
+
+.login-card label {
     text-align: left;
 }
 
-.search-result strong {
-    display: block;
+.login-error {
+    margin-top: 12px;
+    color: var(--danger);
+    font-size: 13px;
+    font-weight: 600;
 }
 
-.search-result span {
-    display: block;
-    color: var(--muted);
-    font-size: 11px;
-    margin-top: 3px;
-}
-
-/* ==========================================
-    VACÍO / CARGANDO
-========================================== */
-
-.empty {
-    text-align: center;
-    color: var(--muted);
-    padding: 30px 15px;
-    background: white;
-    border: 1px dashed var(--border);
-    border-radius: 16px;
-}
-
-.loading {
-    color: var(--muted);
-}
-
-/* ==========================================
-    NAVEGACIÓN INFERIOR
-========================================== */
-
+/* NAVEGACIÓN INFERIOR */
 .bottom-nav {
     position: fixed;
     z-index: 4000;
@@ -1024,10 +831,7 @@ fieldset {
     font-weight: 800;
 }
 
-/* ==========================================
-    FILTROS DEL PLAN
-========================================== */
-
+/* FILTROS */
 .plan-filters {
     display: flex;
     gap: 8px;
@@ -1035,10 +839,6 @@ fieldset {
     padding: 4px 0 12px;
     margin-bottom: 8px;
     scrollbar-width: none;
-}
-
-.plan-filters::-webkit-scrollbar {
-    display: none;
 }
 
 .plan-filter {
@@ -1060,51 +860,7 @@ fieldset {
     border-color: #111827;
 }
 
-/* ==========================================
-   BOTONES TARJETA Y PINES DEL MAPA
-=========================================== */
-
-/* Posicionamiento relativo para la tarjeta y margen derecho para no pisar el texto */
-.plan-card {
-    position: relative;
-    padding-right: 90px;
-}
-
-/* Contenedor de botones flotantes a la derecha */
-.card-actions {
-    position: absolute;
-    top: 16px;
-    right: 16px;
-    display: flex;
-    gap: 6px;
-}
-
-/* Estilo moderno y limpio para los botones de las tarjetas */
-.card-actions .icon-button {
-    background: #f1f5f9;
-    border: none;
-    border-radius: 10px;
-    padding: 6px 10px;
-    font-size: 13px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #475569;
-}
-
-.card-actions .icon-button:hover {
-    background: #e2e8f0;
-    transform: translateY(-1px);
-}
-
-.card-actions .icon-button.danger:hover {
-    background: #fee2e2;
-    color: #ef4444;
-}
-
-/* Burbujas blancas con sombra para los iconos en el mapa */
+/* MARCADORES EN EL MAPA */
 .custom-map-marker .marker-pin {
     width: 36px;
     height: 36px;
@@ -1117,48 +873,14 @@ fieldset {
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
     border: 2px solid #ffffff;
 }
-/* ==========================================
-   PLANES COMPLETADOS
-=========================================== */
 
-/* Checkbox personalizado */
-.plan-checkbox-wrapper {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 8px;
-}
-
-.plan-checkbox {
-    width: 20px;
-    height: 20px;
-    cursor: pointer;
-    accent-color: #10b981; /* Verde éxito */
-}
-
-/* Estado de la tarjeta completada */
 .plan-card.is-completed {
     background-color: #f8fafc;
     border: 1px solid #e2e8f0;
     opacity: 0.65;
-    transition: all 0.3s ease;
 }
-
-.plan-card.is-completed h3 {
-    text-decoration: line-through;
-    color: #64748b;
-}
-
-.plan-card.is-completed .badge-category {
-    background: #e2e8f0;
-    color: #475569;
-}
-/* ==========================================
-    MÓVIL
-========================================== */
 
 @media (max-width: 480px) {
-
     .quick-grid {
         grid-template-columns: repeat(2, 1fr);
     }
@@ -1170,14 +892,4 @@ fieldset {
     .hero-location {
         align-items: flex-start;
     }
-
-    .screen-title {
-        align-items: flex-start;
-    }
-
-    .screen-title .primary-button {
-        padding: 9px 11px;
-        font-size: 12px;
-    }
-
 }
