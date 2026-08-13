@@ -1,5 +1,5 @@
 /* ==========================================================================
-   🗽 NY TRIP - 
+   🗽 NY TRIP - APP.JS (VERSIÓN DEFINITIVA CORREGIDA)
    ========================================================================== */
 
 const SUPABASE_URL = "https://rtbrnbyosrtxeayqmvwc.supabase.co";
@@ -92,27 +92,16 @@ document.addEventListener("DOMContentLoaded", async () => {
 });
 
 /* ==========================================================================
-   AUTENTICACIÓN Y LOGIN
+   AUTENTICACIÓN Y CONTROL VISUAL PANTALLAS
    ========================================================================== */
 function setupAuthListeners() {
     const loginForm = document.getElementById("login-form");
-    
     if (loginForm) {
-        // Asignamos el evento submit
         loginForm.onsubmit = async (e) => {
             if (e) e.preventDefault();
             await executeLogin();
             return false;
         };
-
-        // Si el usuario le da click directo al botón de submit
-        const submitBtn = loginForm.querySelector('button[type="submit"]') || loginForm.querySelector('button');
-        if (submitBtn) {
-            submitBtn.onclick = async (e) => {
-                e.preventDefault();
-                await executeLogin();
-            };
-        }
     }
 
     const logoutBtn = document.getElementById("logout-button");
@@ -125,25 +114,25 @@ function setupAuthListeners() {
     }
 }
 
-// Función global directa para ejecutar el Login
+// FUNCIÓN DE LOGIN PRINCIPAL
 window.executeLogin = async function() {
     const emailEl = document.getElementById("login-email");
     const passwordEl = document.getElementById("login-password");
     const errorDiv = document.getElementById("login-error");
-    const submitBtn = document.querySelector('#login-form button');
+    const submitBtn = document.getElementById("login-submit-btn");
 
     const email = emailEl ? emailEl.value.trim() : "";
     const password = passwordEl ? passwordEl.value.trim() : "";
 
     if (errorDiv) {
-        errorDiv.hidden = true;
+        errorDiv.style.display = "none";
         errorDiv.textContent = "";
     }
 
     if (!email || !password) {
         if (errorDiv) {
-            errorDiv.textContent = "Por favor, restriga tu email y contraseña.";
-            errorDiv.hidden = false;
+            errorDiv.textContent = "Ingresa tu email y contraseña.";
+            errorDiv.style.display = "block";
         }
         return;
     }
@@ -152,8 +141,8 @@ window.executeLogin = async function() {
 
     if (!supabaseApp) {
         if (errorDiv) {
-            errorDiv.textContent = "Error: El servidor de Supabase no responde. Revisa tu conexión.";
-            errorDiv.hidden = false;
+            errorDiv.textContent = "Error: El cliente de Supabase no cargó.";
+            errorDiv.style.display = "block";
         }
         return;
     }
@@ -174,7 +163,7 @@ window.executeLogin = async function() {
                     msg = "Email o contraseña incorrectos.";
                 }
                 errorDiv.textContent = msg;
-                errorDiv.hidden = false;
+                errorDiv.style.display = "block";
             }
         } else if (data && data.user) {
             handleLoginSuccess(data.user);
@@ -183,7 +172,7 @@ window.executeLogin = async function() {
         console.error("Error inesperado:", err);
         if (errorDiv) {
             errorDiv.textContent = "Error: " + err.message;
-            errorDiv.hidden = false;
+            errorDiv.style.display = "block";
         }
     } finally {
         if (submitBtn) {
@@ -219,18 +208,29 @@ async function checkSession() {
     }
 }
 
+// MOSTRAR Y OCULTAR PANTALLAS (FORZADO DIRECTO POR CSS DISPLAY)
 function showLoginScreen() {
     const loginScreen = document.getElementById("login-screen");
     const appScreen = document.getElementById("app");
-    if (loginScreen) loginScreen.hidden = false;
-    if (appScreen) appScreen.hidden = true;
+    
+    if (loginScreen) {
+        loginScreen.style.display = "flex";
+    }
+    if (appScreen) {
+        appScreen.style.display = "none";
+    }
 }
 
 function hideLoginScreen() {
     const loginScreen = document.getElementById("login-screen");
     const appScreen = document.getElementById("app");
-    if (loginScreen) loginScreen.hidden = true;
-    if (appScreen) appScreen.hidden = false;
+    
+    if (loginScreen) {
+        loginScreen.style.display = "none";
+    }
+    if (appScreen) {
+        appScreen.style.display = "block";
+    }
 }
 
 function handleLoginSuccess(user) {
@@ -386,9 +386,7 @@ async function geocodeAddress(query) {
             const coords = data.features[0].geometry.coordinates;
             return { lat: coords[1], lng: coords[0] };
         }
-    } catch (e) {
-        console.warn("No se pudo geocodificar:", query, e);
-    }
+    } catch (e) {}
     return { lat: 40.7128, lng: -74.0060 };
 }
 
@@ -403,7 +401,7 @@ function escapeHTML(str) {
 }
 
 /* ==========================================================================
-   CARGA Y SINCRONIZACIÓN
+   CARGA Y SINCRONIZACIÓN DE DATOS
    ========================================================================== */
 async function loadAllData() {
     updateStatus("● Sincronizando...");
@@ -444,7 +442,7 @@ function renderAll() {
 }
 
 /* ==========================================================================
-   NAVEGACIÓN
+   NAVEGACIÓN DE PANTALLAS
    ========================================================================== */
 function setupNavigation() {
     const buttons = document.querySelectorAll("[data-screen]");
@@ -473,7 +471,7 @@ function switchScreen(screenName) {
 }
 
 /* ==========================================================================
-   MODALES Y FORMULARIOS DE LA APP
+   GESTIÓN DE MODALES
    ========================================================================== */
 function setupModals() {
     document.getElementById("open-plan-form")?.onclick = () => openPlanModal();
@@ -627,14 +625,11 @@ function setupForms() {
 
     document.getElementById("expense-form")?.onsubmit = async (e) => {
         e.preventDefault();
-        const participants = Array.from(document.querySelectorAll("input[name='participant']:checked")).map(cb => cb.value);
-        
         const expData = {
             title: document.getElementById("expense-title").value,
             amount: parseFloat(document.getElementById("expense-amount").value),
             currency: document.getElementById("expense-currency").value,
             paid_by: document.getElementById("expense-paid-by").value,
-            participants: participants,
             date: document.getElementById("expense-date").value || new Date().toISOString().split("T")[0]
         };
 
@@ -646,7 +641,7 @@ function setupForms() {
 }
 
 /* ==========================================================================
-   RENDERIZADO GENERAL
+   RENDERIZADO DE COMPONENTES
    ========================================================================== */
 function renderPlans() {
     const listEl = document.getElementById("plan-list");
@@ -865,7 +860,7 @@ function renderExpenses() {
         summaryEl.innerHTML = `
             <div class="info-card">
                 <strong>Gasto Total Aprox:</strong> $${totalUSD.toFixed(2)} USD
-                <small>(${state.expenses.length} pagos realizados)</small>
+                <small>(${state.expenses.length} pagos registrados)</small>
             </div>
         `;
     }
@@ -877,7 +872,6 @@ function renderExpenses() {
                 <span class="badge-amount">${e.amount} ${e.currency}</span>
             </div>
             <p>Pagó: <strong>${escapeHTML(e.paid_by)}</strong></p>
-            <small>Para: ${e.participants ? e.participants.map(p => escapeHTML(p)).join(", ") : "Todos"}</small>
         </div>
     `).join("");
 }
