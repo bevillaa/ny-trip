@@ -115,24 +115,35 @@ function setupAuthListeners() {
 }
 
 // FUNCIÓN DE LOGIN PRINCIPAL
-window.executeLogin = async function() {
+window.executeLogin = async function(e) {
+    // Si viene de un evento de formulario (submit), detenemos la recarga de página
+    if (e && typeof e.preventDefault === 'function') {
+        e.preventDefault();
+    }
+
     const emailEl = document.getElementById("login-email");
     const passwordEl = document.getElementById("login-password");
     const errorDiv = document.getElementById("login-error");
-    const submitBtn = document.getElementById("login-submit-btn");
+    
+    // Intenta buscar el botón por ID, o en su defecto, el primer botón dentro del formulario de login
+    const submitBtn = document.getElementById("login-submit-btn") || 
+                      document.querySelector("#login-form button") || 
+                      document.querySelector("#login-screen button");
 
     const email = emailEl ? emailEl.value.trim() : "";
     const password = passwordEl ? passwordEl.value.trim() : "";
 
     if (errorDiv) {
         errorDiv.style.display = "none";
+        errorDiv.hidden = true;
         errorDiv.textContent = "";
     }
 
     if (!email || !password) {
         if (errorDiv) {
-            errorDiv.textContent = "Ingresa tu email y contraseña.";
+            errorDiv.textContent = "Por favor, ingresa tu email y contraseña.";
             errorDiv.style.display = "block";
+            errorDiv.hidden = false;
         }
         return;
     }
@@ -141,8 +152,9 @@ window.executeLogin = async function() {
 
     if (!supabaseApp) {
         if (errorDiv) {
-            errorDiv.textContent = "Error: El cliente de Supabase no cargó.";
+            errorDiv.textContent = "Error: El cliente de Supabase no cargó correctamente.";
             errorDiv.style.display = "block";
+            errorDiv.hidden = false;
         }
         return;
     }
@@ -150,6 +162,7 @@ window.executeLogin = async function() {
     try {
         if (submitBtn) {
             submitBtn.disabled = true;
+            submitBtn.dataset.originalText = submitBtn.textContent;
             submitBtn.textContent = "Entrando...";
         }
 
@@ -164,20 +177,22 @@ window.executeLogin = async function() {
                 }
                 errorDiv.textContent = msg;
                 errorDiv.style.display = "block";
+                errorDiv.hidden = false;
             }
         } else if (data && data.user) {
             handleLoginSuccess(data.user);
         }
     } catch (err) {
-        console.error("Error inesperado:", err);
+        console.error("Error inesperado en login:", err);
         if (errorDiv) {
-            errorDiv.textContent = "Error: " + err.message;
+            errorDiv.textContent = "Error inesperado: " + err.message;
             errorDiv.style.display = "block";
+            errorDiv.hidden = false;
         }
     } finally {
         if (submitBtn) {
             submitBtn.disabled = false;
-            submitBtn.textContent = "Iniciar Sesión";
+            submitBtn.textContent = submitBtn.dataset.originalText || "Iniciar Sesión";
         }
     }
 };
@@ -208,15 +223,19 @@ async function checkSession() {
     }
 }
 
-// MOSTRAR Y OCULTAR PANTALLAS (FORZADO DIRECTO POR CSS DISPLAY)
+// MOSTRAR Y OCULTAR PANTALLAS
 function showLoginScreen() {
     const loginScreen = document.getElementById("login-screen");
     const appScreen = document.getElementById("app");
     
     if (loginScreen) {
-        loginScreen.style.display = "flex";
+        loginScreen.classList.remove("hidden");
+        loginScreen.hidden = false;
+        loginScreen.style.display = ""; 
     }
     if (appScreen) {
+        appScreen.classList.add("hidden");
+        appScreen.hidden = true;
         appScreen.style.display = "none";
     }
 }
@@ -226,17 +245,14 @@ function hideLoginScreen() {
     const appScreen = document.getElementById("app");
     
     if (loginScreen) {
-        loginScreen.style.display = "none";
         loginScreen.classList.add("hidden");
         loginScreen.hidden = true;
+        loginScreen.style.display = "none";
     }
     if (appScreen) {
-        // Quitamos las capas de ocultación
         appScreen.classList.remove("hidden");
         appScreen.hidden = false;
-        
-        // Vaciamos el display inline para que tu CSS original tome el control total (flex, grid, block, etc.)
-        appScreen.style.display = ""; 
+        appScreen.style.display = ""; // Deja que tu CSS controle la maquetación bonita
     }
 }
 
@@ -247,7 +263,9 @@ function handleLoginSuccess(user) {
         userEmailEl.textContent = user.email || "Viajero";
     }
     hideLoginScreen();
-    loadAllData();
+    if (typeof loadAllData === 'function') {
+        loadAllData();
+    }
 }
 
 /* ==========================================================================
