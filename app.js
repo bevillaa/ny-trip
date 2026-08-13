@@ -6,6 +6,7 @@
 const SUPABASE_URL = "https://rtbrnbyosrtxeayqmvwc.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ0YnJuYnlvc3J0eGVheXFtdndjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY0NTUwODQsImV4cCI6MjEwMjAzMTA4NH0.W3mCe1yAehFd0bz_XNVJ83YR-dNz-8VZnnhgj-cQEss";
 
+// Inicialización de Supabase
 var supabaseApp = null;
 if (window.supabase) {
     supabaseApp = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -35,6 +36,7 @@ const state = {
     activePlanFilter: 'all'
 };
 
+// MAPEO UNIFICADO Y FLEXIBLE DE CATEGORÍAS
 const CATEGORIES = {
     food: { name: "Restaurantes", icon: "🍽️" },
     restaurant: { name: "Restaurantes", icon: "🍽️" },
@@ -65,76 +67,84 @@ function getCategoryIcon(category) {
 }
 
 /* ==========================================================================
-   INICIALIZACIÓN CORREGIDA
+   INICIALIZACIÓN
    ========================================================================== */
 document.addEventListener("DOMContentLoaded", () => {
-    // 1. Configurar eventos de formularios e interfaz
-    setupLoginForm();
+    // 1. Vincular eventos de Login ANTES de cualquier llamada asíncrona
+    setupAuthListeners();
+    
+    // 2. Iniciar componentes visuales e interfaz
     setupNavigation();
     setupModals();
     setupForms();
     setupFilters();
-
-    // 2. Iniciar relojes y clima
+    setupLocationSearch();
     startClocksAndCountdown();
+
+    // 3. Comprobar sesión activa de Supabase
+    checkInitialSession();
+
+    // 4. Clima y Divisas
     updateWeather();
     updateCurrency();
-
-    // 3. Comprobar sesión de Supabase
-    checkInitialSession();
 });
 
-// Listener del Login preparado desde el primer momento
-function setupLoginForm() {
+/* ==========================================================================
+   AUTENTICACIÓN Y LISTENERS (LOGIN Y LOGOUT)
+   ========================================================================== */
+function setupAuthListeners() {
     const loginForm = document.getElementById("login-form");
-    if (!loginForm) return;
-
-    loginForm.addEventListener("submit", async (e) => {
-        e.preventDefault();
-        
-        const email = document.getElementById("login-email")?.value.trim();
-        const password = document.getElementById("login-password")?.value.trim();
-        const errorDiv = document.getElementById("login-error");
-        const submitBtn = document.getElementById("login-button");
-
-        if (errorDiv) {
-            errorDiv.hidden = true;
-            errorDiv.textContent = "";
-        }
-
-        if (!supabaseApp) {
-            if (errorDiv) {
-                errorDiv.textContent = "Error: No hay conexión con Supabase.";
-                errorDiv.hidden = false;
-            }
-            return;
-        }
-
-        try {
-            if (submitBtn) submitBtn.disabled = true;
+    if (loginForm) {
+        loginForm.addEventListener("submit", async (e) => {
+            e.preventDefault();
             
-            const { data, error } = await supabaseApp.auth.signInWithPassword({ email, password });
+            const emailEl = document.getElementById("login-email");
+            const passwordEl = document.getElementById("login-password");
+            const errorDiv = document.getElementById("login-error");
+            const submitBtn = document.getElementById("login-button");
 
-            if (error) {
+            const email = emailEl ? emailEl.value.trim() : "";
+            const password = passwordEl ? passwordEl.value.trim() : "";
+
+            if (errorDiv) {
+                errorDiv.hidden = true;
+                errorDiv.textContent = "";
+            }
+
+            if (!supabaseApp) {
                 if (errorDiv) {
-                    let msg = error.message;
-                    if (msg.includes("Invalid login credentials")) msg = "Email o contraseña incorrectos.";
-                    errorDiv.textContent = msg;
+                    errorDiv.textContent = "Error de conexión con Supabase.";
                     errorDiv.hidden = false;
                 }
-            } else if (data && data.user) {
-                handleLoginSuccess(data.user);
+                return;
             }
-        } catch (err) {
-            console.error("Error en login:", err);
-            if (errorDiv) {
-                errorDiv.textContent = "Error inesperado al iniciar sesión.";
-                errorDiv.hidden = false;
+
+            try {
+                if (submitBtn) submitBtn.disabled = true;
+
+                const { data, error } = await supabaseApp.auth.signInWithPassword({ email, password });
+
+                if (error) {
+                    if (errorDiv) {
+                        let msg = error.message;
+                        if (msg.includes("Invalid login credentials")) msg = "Usuario o contraseña incorrectos.";
+                        errorDiv.textContent = msg;
+                        errorDiv.hidden = false;
+                    }
+                } else if (data && data.user) {
+                    handleLoginSuccess(data.user);
+                }
+            } catch (err) {
+                console.error("Error en login:", err);
+                if (errorDiv) {
+                    errorDiv.textContent = "Ocurrió un error al procesar el inicio de sesión.";
+                    errorDiv.hidden = false;
+                }
+            } finally {
+                if (submitBtn) submitBtn.disabled = false;
             }
-        } finally {
-            if (submitBtn) submitBtn.disabled = false;
-        }
-    });
+        });
+    }
 
     const logoutBtn = document.getElementById("logout-button");
     if (logoutBtn) {
@@ -148,21 +158,19 @@ function setupLoginForm() {
 
 async function checkInitialSession() {
     if (!supabaseApp) {
-        updateConnectionStatus(false);
+        console.error("No se pudo inicializar el cliente de Supabase.");
         showLoginScreen();
         return;
     }
 
-    // Escuchar cambios de estado (login/logout)
     supabaseApp.auth.onAuthStateChange((event, session) => {
         if (session && session.user) {
             handleLoginSuccess(session.user);
-        } else {
+        } else if (event === 'SIGNED_OUT') {
             showLoginScreen();
         }
     });
 
-    // Validar sesión guardada al refrescar
     const { data: { session } } = await supabaseApp.auth.getSession();
     if (session && session.user) {
         handleLoginSuccess(session.user);
@@ -171,25 +179,6 @@ async function checkInitialSession() {
     }
 }
 
-/* ==========================================================================
-   ESTADO DE CONEXIÓN
-   ========================================================================== */
-function updateConnectionStatus(isConnected) {
-    const el = document.getElementById("connection-status");
-    if (!el) return;
-
-    if (isConnected) {
-        el.textContent = "● Conectado";
-        el.className = "connection-status ok";
-    } else {
-        el.textContent = "● Sin conexión";
-        el.className = "connection-status error";
-    }
-}
-
-/* ==========================================================================
-   AUTENTICACIÓN
-   ========================================================================== */
 function showLoginScreen() {
     const loginScreen = document.getElementById("login-screen");
     const appScreen = document.getElementById("app");
@@ -225,17 +214,17 @@ function startClocksAndCountdown() {
 function updateClocksAndCountdown() {
     const now = new Date();
 
-    const spainTimeStr = now.toLocaleTimeString('es-ES', { timeZone: 'Europe/Madrid', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+    const malagaTimeStr = now.toLocaleTimeString('es-ES', { timeZone: 'Europe/Madrid', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
     const nyTimeStr = now.toLocaleTimeString('es-ES', { timeZone: 'America/New_York', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
 
     const clocksEl = document.getElementById("header-clocks");
     if (clocksEl) {
         clocksEl.innerHTML = `
-            <div style="display: flex; align-items: center; gap: 6px; font-weight: 700;">
-                <span>🗽 NY:</span> <strong>${nyTimeStr}</strong>
+            <div style="display: flex; align-items: center; justify-content: flex-end; gap: 6px; font-weight: 600;">
+                <span>🗽 NY</span> <strong>${nyTimeStr}</strong>
             </div>
-            <div style="display: flex; align-items: center; gap: 6px; font-weight: 600; opacity: 0.85;">
-                <span>💃 España:</span> <strong>${spainTimeStr}</strong>
+            <div style="display: flex; align-items: center; justify-content: flex-end; gap: 6px; opacity: 0.85; font-weight: 500;">
+                <span>💃 Málaga</span> <strong>${malagaTimeStr}</strong>
             </div>
         `;
     }
@@ -258,13 +247,127 @@ function updateClocksAndCountdown() {
 }
 
 /* ==========================================================================
+   BÚSQUEDA Y GEOCODIFICACIÓN (PHOTON)
+   ========================================================================== */
+function setupLocationSearch() {
+    initPhotonAutocomplete("plan-location", "plan-location-results");
+    initPhotonAutocomplete("reservation-location", "reservation-location-results");
+}
+
+function initPhotonAutocomplete(inputId, resultsContainerId) {
+    const input = document.getElementById(inputId);
+    if (!input) return;
+
+    let container = document.getElementById(resultsContainerId);
+    if (!container) {
+        container = document.createElement("div");
+        container.id = resultsContainerId;
+        container.className = "search-results-dropdown";
+        input.parentNode.style.position = "relative";
+        input.parentNode.appendChild(container);
+    }
+
+    let timeout = null;
+
+    input.addEventListener("input", () => {
+        clearTimeout(timeout);
+        delete input.dataset.lat;
+        delete input.dataset.lng;
+
+        const query = input.value.trim();
+        if (query.length < 2) {
+            container.innerHTML = "";
+            return;
+        }
+
+        timeout = setTimeout(async () => {
+            try {
+                const url = `https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&lat=40.7128&lon=-73.9352&limit=5`;
+                const res = await fetch(url);
+                const data = await res.json();
+
+                container.innerHTML = "";
+
+                if (!data.features || data.features.length === 0) {
+                    container.innerHTML = `<div style="padding: 10px; color: var(--muted); font-size: 13px;">Sin resultados encontrados</div>`;
+                    return;
+                }
+
+                data.features.forEach(feature => {
+                    const props = feature.properties;
+                    const coords = feature.geometry.coordinates; // [lon, lat]
+                    const name = props.name || query;
+                    const city = props.city || props.state || "New York";
+                    const fullAddress = `${props.street ? props.street + ', ' : ''}${city}`;
+
+                    const item = document.createElement("div");
+                    item.className = "search-result-item";
+                    item.innerHTML = `
+                        <strong style="display: block; font-size: 14px;">📍 ${escapeHTML(name)}</strong>
+                        <span style="font-size: 11px; color: var(--muted); display: block;">${escapeHTML(fullAddress)}</span>
+                    `;
+
+                    item.addEventListener("click", () => {
+                        selectSearchLocation(name, inputId, resultsContainerId, coords[1], coords[0]);
+                    });
+
+                    container.appendChild(item);
+                });
+            } catch (err) {
+                console.error("Error en autocompletado Photon:", err);
+            }
+        }, 250);
+    });
+
+    document.addEventListener("click", (e) => {
+        if (e.target !== input && !container.contains(e.target)) {
+            container.innerHTML = "";
+        }
+    });
+}
+
+function selectSearchLocation(name, inputId, resultsContainerId, lat, lon) {
+    const input = document.getElementById(inputId);
+    if (input) {
+        input.value = name;
+        input.dataset.lat = lat;
+        input.dataset.lng = lon;
+    }
+    const container = document.getElementById(resultsContainerId);
+    if (container) container.innerHTML = "";
+}
+
+async function geocodeAddress(query) {
+    try {
+        const url = `https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&lat=40.7128&lon=-73.9352&limit=1`;
+        const res = await fetch(url);
+        const data = await res.json();
+        if (data && data.features && data.features.length > 0) {
+            const coords = data.features[0].geometry.coordinates;
+            return { lat: coords[1], lng: coords[0] };
+        }
+    } catch (e) {
+        console.warn("No se pudo geocodificar:", query, e);
+    }
+    return { lat: 40.7128, lng: -74.0060 };
+}
+
+function escapeHTML(str) {
+    if (!str) return "";
+    return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
+/* ==========================================================================
    CARGA Y SINCRONIZACIÓN DE DATOS
    ========================================================================== */
 async function loadAllData() {
-    if (!supabaseApp) {
-        updateConnectionStatus(false);
-        return;
-    }
+    updateStatus("● Sincronizando...");
+    if (!supabaseApp) return;
 
     try {
         const [plansRes, resRes, expRes] = await Promise.all([
@@ -273,21 +376,23 @@ async function loadAllData() {
             supabaseApp.from("expenses").select("*")
         ]);
 
-        if (plansRes.error || resRes.error || expRes.error) {
-            updateConnectionStatus(false);
-        } else {
-            updateConnectionStatus(true);
-        }
-
+        if (plansRes.error) console.error("Error cargando planes:", plansRes.error);
         if (plansRes.data) state.plans = plansRes.data;
+
         if (resRes.data) state.reservations = resRes.data;
         if (expRes.data) state.expenses = expRes.data;
 
+        updateStatus("● Conectado");
         renderAll();
     } catch (err) {
         console.error("Error al cargar datos:", err);
-        updateConnectionStatus(false);
+        updateStatus("⚠️ Error de Red");
     }
+}
+
+function updateStatus(text) {
+    const el = document.getElementById("connection-status");
+    if (el) el.textContent = text;
 }
 
 function renderAll() {
@@ -301,90 +406,7 @@ function renderAll() {
 }
 
 /* ==========================================================================
-   MODAL DE INFORMACIÓN DETALLADA POR INTEGRANTE DEL EQUIPO
-   ========================================================================== */
-window.openMemberDetails = function(name) {
-    const modal = document.getElementById("member-modal");
-    const titleEl = document.getElementById("member-modal-title");
-    const bodyEl = document.getElementById("member-modal-body");
-
-    if (!modal || !bodyEl) return;
-
-    const memberIcons = {
-        'Sara': '😇',
-        'Laura': '😈',
-        'Belén': '🤪'
-    };
-
-    const icon = memberIcons[name] || '👤';
-    titleEl.textContent = `${icon} Resumen de ${name}`;
-
-    const paidByMember = state.expenses.filter(e => e.paid_by && e.paid_by.toLowerCase() === name.toLowerCase());
-    const participatedIn = state.expenses.filter(e => e.participants && e.participants.some(p => p.toLowerCase() === name.toLowerCase()));
-
-    let totalPaidEUR = 0;
-    let totalPaidUSD = 0;
-
-    paidByMember.forEach(e => {
-        if (e.currency === 'USD') totalPaidUSD += Number(e.amount);
-        else totalPaidEUR += Number(e.amount);
-    });
-
-    let html = `
-        <div style="background: #f8fafc; padding: 14px; border-radius: 14px; border: 1px solid var(--border); margin-bottom: 16px;">
-            <strong style="display: block; font-size: 14px; margin-bottom: 4px;">💳 Total Pagado por ${name}:</strong>
-            <div style="font-size: 18px; font-weight: 800; color: var(--accent);">
-                ${totalPaidEUR.toFixed(2)} € / $${totalPaidUSD.toFixed(2)} USD
-            </div>
-            <small style="color: var(--muted);">${paidByMember.length} pago(s) registrados</small>
-        </div>
-
-        <h3 style="font-size: 15px; margin: 12px 0 8px 0;">🧾 Gastos Abonados</h3>
-    `;
-
-    if (paidByMember.length === 0) {
-        html += `<p style="color: var(--muted); font-size: 13px;">No ha pagado ningún gasto aún.</p>`;
-    } else {
-        html += `<div class="list" style="margin-bottom: 16px;">`;
-        paidByMember.forEach(e => {
-            html += `
-                <div style="background: white; border: 1px solid var(--border); padding: 10px 12px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center;">
-                    <div>
-                        <strong style="display: block; font-size: 13px;">${escapeHTML(e.title)}</strong>
-                        <small style="color: var(--muted); font-size: 11px;">${e.date || 'Sin fecha'} — Para: ${e.participants ? e.participants.join(", ") : "Todos"}</small>
-                    </div>
-                    <span style="font-weight: 700; font-size: 13px;">${e.amount} ${e.currency}</span>
-                </div>
-            `;
-        });
-        html += `</div>`;
-    }
-
-    html += `<h3 style="font-size: 15px; margin: 12px 0 8px 0;">📌 Participa en (${participatedIn.length}) Gastos</h3>`;
-    if (participatedIn.length === 0) {
-        html += `<p style="color: var(--muted); font-size: 13px;">No participa en ningún gasto activo.</p>`;
-    } else {
-        html += `<div class="list">`;
-        participatedIn.forEach(e => {
-            html += `
-                <div style="background: white; border: 1px solid var(--border); padding: 10px 12px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center;">
-                    <div>
-                        <strong style="display: block; font-size: 13px;">${escapeHTML(e.title)}</strong>
-                        <small style="color: var(--muted); font-size: 11px;">Pagado por: <strong>${escapeHTML(e.paid_by)}</strong></small>
-                    </div>
-                    <span style="font-weight: 700; font-size: 13px; color: var(--muted);">${e.amount} ${e.currency}</span>
-                </div>
-            `;
-        });
-        html += `</div>`;
-    }
-
-    bodyEl.innerHTML = html;
-    openModal("member-modal");
-};
-
-/* ==========================================================================
-   NAVEGACIÓN Y MODALES
+   NAVEGACIÓN DE PANTALLAS
    ========================================================================== */
 function setupNavigation() {
     const buttons = document.querySelectorAll("[data-screen]");
@@ -412,6 +434,9 @@ function switchScreen(screenName) {
     }
 }
 
+/* ==========================================================================
+   GESTIÓN DE MODALES
+   ========================================================================== */
 function setupModals() {
     document.getElementById("open-plan-form")?.addEventListener("click", () => openPlanModal());
     document.getElementById("open-reservation-form")?.addEventListener("click", () => openModal("reservation-modal"));
@@ -433,6 +458,9 @@ function closeModal(id) {
 function openPlanModal(planToEdit = null) {
     const form = document.getElementById("plan-form");
     if (form) form.reset();
+
+    const resultsContainer = document.getElementById("plan-location-results");
+    if (resultsContainer) resultsContainer.innerHTML = "";
 
     const locInput = document.getElementById("plan-location");
 
@@ -462,14 +490,17 @@ function openPlanModal(planToEdit = null) {
 }
 
 /* ==========================================================================
-   FORMULARIO Y FUNCIONALIDADES SECUNDARIAS
+   FORMULARIOS
    ========================================================================== */
 function setupForms() {
     document.getElementById("plan-form")?.addEventListener("submit", async (e) => {
         e.preventDefault();
         
         const submitBtn = e.target.querySelector('button[type="submit"]');
-        if (submitBtn) submitBtn.disabled = true;
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.textContent = "Guardando...";
+        }
 
         try {
             const id = document.getElementById("plan-id").value;
@@ -477,6 +508,11 @@ function setupForms() {
             const dateVal = document.getElementById("plan-date").value;
             const locInput = document.getElementById("plan-location");
             const locationText = locInput ? locInput.value.trim() : "";
+
+            if (!titleVal) {
+                alert("Por favor introduce un título para el plan.");
+                return;
+            }
 
             let lat = locInput && locInput.dataset.lat ? parseFloat(locInput.dataset.lat) : null;
             let lng = locInput && locInput.dataset.lng ? parseFloat(locInput.dataset.lng) : null;
@@ -489,9 +525,21 @@ function setupForms() {
                 }
             }
 
+            const CATEGORY_TO_DB = {
+                food: "Restaurantes",
+                sweet: "Dulces",
+                activity: "Spots",
+                shopping: "Tiendas",
+                sightseeing: "Turisteo",
+                other: "Otros"
+            };
+
+            const rawCategory = document.getElementById("plan-category").value || "other";
+            const dbCategory = CATEGORY_TO_DB[rawCategory] || rawCategory;
+
             const planData = {
                 title: titleVal,
-                category: document.getElementById("plan-category").value || "other",
+                category: dbCategory,
                 description: document.getElementById("plan-description").value || null,
                 date: dateVal ? dateVal : null,
                 time: document.getElementById("plan-time").value || null,
@@ -501,21 +549,30 @@ function setupForms() {
                 created_by: state.currentUser ? (state.currentUser.email || state.currentUser.id) : "invitado"
             };
 
-            if (!supabaseApp) throw new Error("Sin conexión a Supabase");
+            if (!supabaseApp) throw new Error("No hay conexión con Supabase.");
 
+            let result;
             if (id) {
-                await supabaseApp.from("plans").update(planData).eq("id", id);
+                result = await supabaseApp.from("plans").update(planData).eq("id", id);
             } else {
-                await supabaseApp.from("plans").insert([planData]);
+                result = await supabaseApp.from("plans").insert([planData]);
+            }
+
+            if (result.error) {
+                throw new Error(result.error.message);
             }
 
             closeModal("plan-modal");
             await loadAllData();
 
         } catch (err) {
+            console.error("Error al guardar plan:", err);
             alert("⚠️ No se pudo guardar el plan: " + err.message);
         } finally {
-            if (submitBtn) submitBtn.disabled = false;
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.textContent = "Guardar Plan";
+            }
         }
     });
 
@@ -531,6 +588,7 @@ function setupForms() {
         };
 
         if (supabaseApp) await supabaseApp.from("reservations").insert([resData]);
+
         closeModal("reservation-modal");
         loadAllData();
     });
@@ -549,11 +607,15 @@ function setupForms() {
         };
 
         if (supabaseApp) await supabaseApp.from("expenses").insert([expData]);
+
         closeModal("expense-modal");
         loadAllData();
     });
 }
 
+/* ==========================================================================
+   RENDERIZADO DE VISTAS DE PLANES CON CHECK COMPLETADO Y FILTROS
+   ========================================================================== */
 function renderPlans() {
     const listEl = document.getElementById("plan-list");
     if (!listEl) return;
@@ -563,21 +625,51 @@ function renderPlans() {
     if (state.activePlanFilter !== 'all') {
         filtered = filtered.filter(p => {
             if (!p.category) return state.activePlanFilter === 'other';
+            
             const cat = p.category.toString().trim().toLowerCase();
             const filter = state.activePlanFilter.toLowerCase();
+
+            if (filter === 'food') return cat === 'food' || cat === 'restaurant' || cat === 'restaurantes';
+            if (filter === 'sweet') return cat === 'sweet' || cat === 'dulce' || cat === 'dulces';
+            if (filter === 'activity') return cat === 'activity' || cat === 'spot' || cat === 'spots';
+            if (filter === 'shopping') return cat === 'shopping' || cat === 'tiendas';
+            if (filter === 'sightseeing') return cat === 'sightseeing' || cat === 'turisteo' || cat === 'nightlife';
+            if (filter === 'other') return cat === 'other' || cat === 'otros';
+
             return cat === filter;
         });
     }
 
     if (!filtered || filtered.length === 0) {
-        listEl.innerHTML = `<div style="padding: 20px; text-align: center; color: var(--muted);">No hay planes en esta categoría.</div>`;
+        listEl.innerHTML = `<div class="empty-state" style="padding: 20px; text-align: center; color: var(--muted);">No hay planes registrados en esta categoría.</div>`;
         return;
     }
+
+    filtered.sort((a, b) => {
+        const aDone = a.completed ? 1 : 0;
+        const bDone = b.completed ? 1 : 0;
+
+        if (aDone !== bDone) {
+            return aDone - bDone;
+        }
+
+        if (!a.date) return 1;
+        if (!b.date) return -1;
+        return new Date(a.date) - new Date(b.date);
+    });
 
     listEl.innerHTML = filtered.map(plan => {
         const catKey = plan.category ? plan.category.toString().trim().toLowerCase() : 'other';
         const cat = CATEGORIES[catKey] || CATEGORIES.other;
         const isDone = !!plan.completed;
+
+        let dateText = "Por definir";
+        if (plan.date) {
+            const dateObj = new Date(plan.date + "T00:00:00");
+            dateText = dateObj.toLocaleDateString("es-ES", { day: "numeric", month: "short" });
+        }
+
+        const timeText = plan.time ? ` ⏰ ${plan.time}` : "";
 
         return `
             <div class="card plan-card ${isDone ? 'is-completed' : ''}">
@@ -586,17 +678,52 @@ function renderPlans() {
                     <button class="icon-button danger" onclick="deletePlan('${plan.id}')" title="Borrar">🗑️</button>
                 </div>
 
-                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
-                    <span class="badge-category">${cat.icon} ${cat.name}</span>
+                <div class="plan-checkbox-wrapper" style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                    <input 
+                        type="checkbox" 
+                        class="plan-checkbox" 
+                        id="check-${plan.id}" 
+                        ${isDone ? 'checked' : ''} 
+                        onchange="togglePlanCompleted('${plan.id}', this.checked)"
+                        style="width: 18px; height: 18px; cursor: pointer; accent-color: #10b981;"
+                    >
+                    <label for="check-${plan.id}" style="font-size: 13px; font-weight: 600; cursor: pointer; color: var(--muted);">
+                        ${isDone ? '✅ Realizado' : 'Check ✔️'}
+                    </label>
                 </div>
 
-                <h3 style="margin: 4px 0 8px 0; font-size: 17px;">${escapeHTML(plan.title)}</h3>
-                ${plan.location_name ? `<div style="font-size: 13px; color: var(--muted);">📍 ${escapeHTML(plan.location_name)}</div>` : ''}
-                ${plan.description ? `<p style="font-size: 13px; margin-top: 6px;">${escapeHTML(plan.description)}</p>` : ''}
+                <div class="card-header" style="margin-bottom: 6px;">
+                    <span class="badge-category">${cat.icon} ${cat.name} ${dateText}${timeText}</span>
+                </div>
+
+                <h3 style="margin: 4px 0 8px 0; font-size: 17px; ${isDone ? 'text-decoration: line-through; opacity: 0.7;' : ''}">${escapeHTML(plan.title)}</h3>
+                ${plan.location_name ? `<div style="font-size: 13px; color: var(--muted); margin-top: 4px;">📍 ${escapeHTML(plan.location_name)}</div>` : ''}
+                ${plan.description ? `<p style="font-size: 13px; margin-top: 6px; opacity: 0.8;">${escapeHTML(plan.description)}</p>` : ''}
             </div>
         `;
     }).join("");
 }
+
+window.togglePlanCompleted = async function(id, isChecked) {
+    const plan = state.plans.find(p => p.id == id);
+    if (plan) {
+        plan.completed = isChecked;
+        renderPlans();
+    }
+
+    if (supabaseApp) {
+        const { error } = await supabaseApp
+            .from("plans")
+            .update({ completed: isChecked })
+            .eq("id", id);
+
+        if (error) {
+            console.error("Error actualizando estado completado:", error);
+            if (plan) plan.completed = !isChecked;
+            renderPlans();
+        }
+    }
+};
 
 window.editPlan = function(id) {
     const plan = state.plans.find(p => p.id == id);
@@ -605,7 +732,10 @@ window.editPlan = function(id) {
 
 window.deletePlan = async function(id) {
     if (!confirm("¿Seguro que deseas borrar este plan?")) return;
-    if (supabaseApp) await supabaseApp.from("plans").delete().eq("id", id);
+
+    if (supabaseApp) {
+        await supabaseApp.from("plans").delete().eq("id", id);
+    }
     loadAllData();
 };
 
@@ -625,26 +755,37 @@ function renderNextActivity() {
     const nextEl = document.getElementById("next-activity");
     if (!nextEl) return;
 
-    if (state.plans.length > 0) {
-        const next = state.plans[0];
+    const today = new Date().toISOString().split("T")[0];
+    const upcoming = state.plans
+        .filter(p => !p.completed && p.date && p.date >= today)
+        .sort((a, b) => new Date(a.date) - new Date(b.date));
+
+    if (upcoming.length > 0) {
+        const next = upcoming[0];
+        const dateObj = new Date(next.date + "T00:00:00");
+        const dateText = dateObj.toLocaleDateString("es-ES", { weekday: 'short', day: 'numeric', month: 'short' });
+
         nextEl.innerHTML = `
             <span>📅</span>
             <div>
                 <strong>${escapeHTML(next.title)}</strong>
-                <p>${next.location_name ? escapeHTML(next.location_name) : 'Nueva York'}</p>
+                <p>${dateText} ${next.time ? 'a las ' + next.time : ''} — ${next.location_name ? escapeHTML(next.location_name) : 'Nueva York'}</p>
             </div>
         `;
     } else {
         nextEl.innerHTML = `
             <span>🗽</span>
             <div>
-                <strong>¡Sin actividades próximas!</strong>
-                <p>Añade vuestro primer plan para verlo aquí.</p>
+                <strong>¡Sin planes próximos!</strong>
+                <p>Añade actividades para sincronizarlas con el mapa.</p>
             </div>
         `;
     }
 }
 
+/* ==========================================================================
+   TIEMPO Y DIVISAS
+   ========================================================================== */
 async function updateWeather() {
     try {
         const res = await fetch("https://api.open-meteo.com/v1/forecast?latitude=40.7143&longitude=-74.006&current_weather=true");
@@ -678,7 +819,7 @@ function renderReservations() {
     if (!listEl) return;
 
     if (state.reservations.length === 0) {
-        listEl.innerHTML = `<div style="padding: 20px; text-align: center; color: var(--muted);">No hay reservas registradas.</div>`;
+        listEl.innerHTML = `<div class="empty-state">No hay reservas registradas.</div>`;
         return;
     }
 
@@ -697,7 +838,7 @@ function renderExpenses() {
     if (!listEl) return;
 
     if (state.expenses.length === 0) {
-        listEl.innerHTML = `<div style="padding: 20px; text-align: center; color: var(--muted);">No hay gastos registrados.</div>`;
+        listEl.innerHTML = `<div class="empty-state">No hay gastos registrados.</div>`;
         if (summaryEl) summaryEl.innerHTML = "";
         return;
     }
@@ -718,11 +859,12 @@ function renderExpenses() {
 
     listEl.innerHTML = state.expenses.map(e => `
         <div class="card">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div class="card-header">
                 <strong>${escapeHTML(e.title)}</strong>
-                <span style="font-weight: 800;">${e.amount} ${e.currency}</span>
+                <span class="badge-amount">${e.amount} ${e.currency}</span>
             </div>
-            <p style="margin: 4px 0 0; font-size: 12px; color: var(--muted);">Pagó: <strong>${escapeHTML(e.paid_by)}</strong></p>
+            <p>Pagó: <strong>${escapeHTML(e.paid_by)}</strong></p>
+            <small>Para: ${e.participants ? e.participants.map(p => escapeHTML(p)).join(", ") : "Todos"}</small>
         </div>
     `).join("");
 }
@@ -747,7 +889,7 @@ function renderHotel() {
 
     const h = state.hotel;
     container.innerHTML = `
-        <div class="card">
+        <div class="card hotel-card">
             <h3>🏨 ${escapeHTML(h.name)}</h3>
             <p>📍 ${escapeHTML(h.address)}</p>
             <small>📅 Entrada: ${escapeHTML(h.checkIn)} | Salida: ${escapeHTML(h.checkOut)}</small>
@@ -755,8 +897,12 @@ function renderHotel() {
     `;
 }
 
+/* ==========================================================================
+   MAPA LEAFLET
+   ========================================================================== */
 function initOrRefreshMap() {
     if (typeof L === 'undefined') return;
+
     const mapContainer = document.getElementById("map");
     if (!mapContainer) return;
 
@@ -781,6 +927,7 @@ function renderMap() {
 
     if (state.hotel && state.hotel.lat && state.hotel.lng) {
         bounds.push([state.hotel.lat, state.hotel.lng]);
+        
         const hotelIcon = L.divIcon({
             className: 'custom-map-marker',
             html: `<div class="marker-pin">🏨</div>`,
@@ -791,25 +938,40 @@ function renderMap() {
 
         const hotelMarker = L.marker([state.hotel.lat, state.hotel.lng], { icon: hotelIcon })
             .addTo(state.map)
-            .bindPopup(`<b>🏨 ${escapeHTML(state.hotel.name)}</b>`);
+            .bindPopup(`<b>🏨 ${escapeHTML(state.hotel.name)}</b><br>${escapeHTML(state.hotel.address)}`);
         
         state.markers.push(hotelMarker);
     }
 
+    state.plans.forEach(plan => {
+        const lat = parseFloat(plan.latitude);
+        const lng = parseFloat(plan.longitude);
+
+        if (!isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0) {
+            const emoji = getCategoryIcon(plan.category ? plan.category.toLowerCase() : 'other');
+
+            const customIcon = L.divIcon({
+                className: 'custom-map-marker',
+                html: `<div class="marker-pin">${emoji}</div>`,
+                iconSize: [36, 36],
+                iconAnchor: [18, 18],
+                popupAnchor: [0, -18]
+            });
+
+            const marker = L.marker([lat, lng], { icon: customIcon })
+                .addTo(state.map)
+                .bindPopup(`
+                    <b>${emoji} ${escapeHTML(plan.title)}</b><br>
+                    ${plan.location_name ? '📍 ' + escapeHTML(plan.location_name) : ''}<br>
+                    ${plan.description ? '<small>' + escapeHTML(plan.description) + '</small>' : ''}
+                `);
+
+            state.markers.push(marker);
+            bounds.push([lat, lng]);
+        }
+    });
+
     if (bounds.length > 0) {
         state.map.fitBounds(bounds, { padding: [40, 40] });
     }
-}
-
-function setupLocationSearch() {}
-async function geocodeAddress(query) { return { lat: 40.7128, lng: -74.0060 }; }
-
-function escapeHTML(str) {
-    if (!str) return "";
-    return String(str)
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
 }
