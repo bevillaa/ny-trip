@@ -1,399 +1,934 @@
-/* ==========================================================================
-   🗽 NY TRIP
-   ========================================================================== */
-
-/* 1. RESET Y VARIABLES GLOBALES */
-:root {
-    --bg-dark: #0f172a;
-    --card-bg: #1e293b;
-    --card-border: #334155;
-    --text-main: #f8fafc;
-    --text-muted: #94a3b8;
-    --primary: #3b82f6;
-    --primary-hover: #2563eb;
-    --accent: #10b981;
-    --danger: #ef4444;
-    --danger-hover: #dc2626;
-    --radius: 12px;
-}
+/* ==========================================
+   🗽 NY TRIP — DISEÑO COMPLETO
+========================================== */
 
 * {
     box-sizing: border-box;
+}
+
+:root {
+    --bg: #f4f6fa;
+    --card: #ffffff;
+    --text: #111827;
+    --muted: #6b7280;
+    --border: #e5e7eb;
+    --primary: #111827;
+    --accent: #2563eb;
+    --danger: #dc2626;
+    --success: #15803d;
+}
+
+html,
+body {
     margin: 0;
     padding: 0;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    min-height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family:
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        Roboto,
+        Arial,
+        sans-serif;
 }
 
 body {
-    background-color: var(--bg-dark);
-    color: var(--text-main);
-    display: flex;
-    justify-content: center;
-    min-height: 100vh;
-    overflow-x: hidden;
+    padding-bottom: 82px;
 }
 
-/* Regla crítica para ocultar elementos */
-.hidden, [hidden] {
-    display: none !important;
+button,
+input,
+textarea,
+select {
+    font: inherit;
 }
 
-/* 2. PANTALLA DE LOGIN (GARANTIZADA) */
-.login-screen {
-    position: fixed !important;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    background-color: var(--bg-dark);
-    z-index: 99999;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
+button {
+    cursor: pointer;
 }
 
-.login-card {
-    background: var(--card-bg);
-    border: 1px solid var(--card-border);
-    border-radius: 16px;
-    padding: 30px;
-    width: 100%;
-    max-width: 380px;
-    text-align: center;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+a {
+    color: var(--accent);
+    text-decoration: none;
 }
 
-.login-logo {
-    font-size: 48px;
-    margin-bottom: 10px;
-}
-
-.login-card h1 {
-    font-size: 24px;
-    margin-bottom: 4px;
-}
-
-.login-subtitle {
-    color: var(--text-muted);
-    font-size: 14px;
-    margin-bottom: 24px;
-}
-
-.login-card label {
-    display: block;
-    text-align: left;
-    font-size: 13px;
-    color: var(--text-muted);
-    margin-bottom: 16px;
-}
-
-.login-card input {
-    width: 100%;
-    padding: 12px;
-    margin-top: 6px;
-    border-radius: 8px;
-    border: 1px solid var(--card-border);
-    background-color: var(--bg-dark);
-    color: var(--text-main);
-    font-size: 15px;
-    outline: none;
-}
-
-.login-card input:focus {
-    border-color: var(--primary);
-}
-
-.login-error {
-    background: rgba(239, 68, 68, 0.1);
-    border: 1px solid var(--danger);
-    color: var(--danger);
-    padding: 10px;
-    border-radius: 8px;
-    font-size: 13px;
-    margin-top: 15px;
-}
-
-/* 3. ESTRUCTURA APP PRINCIPAL */
 #app {
     width: 100%;
-    max-width: 480px;
-    min-height: 100vh;
-    background-color: var(--bg-dark);
-    padding-bottom: 80px;
-    position: relative;
+    max-width: 760px;
+    margin: 0 auto;
 }
 
+/* ==========================================
+   CABECERA
+========================================== */
+
 .app-header {
-    padding: 20px;
-    background-color: var(--card-bg);
-    border-bottom: 1px solid var(--card-border);
+    background: #111827;
+    color: white;
+    padding:
+        calc(18px + env(safe-area-inset-top))
+        20px
+        20px;
+
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    position: sticky;
-    top: 0;
-    z-index: 100;
+    justify-content: space-between;
+    gap: 15px;
 }
 
 .app-header h1 {
-    font-size: 20px;
+    margin: 0;
+    font-size: 25px;
 }
 
 .app-header p {
-    font-size: 12px;
-    color: var(--text-muted);
+    margin: 5px 0 0;
+    opacity: .72;
+    font-size: 13px;
 }
 
 .connection-status {
     font-size: 11px;
-    padding: 4px 8px;
-    border-radius: 12px;
-    background: rgba(16, 185, 129, 0.1);
-    color: var(--accent);
-    border: 1px solid var(--accent);
+    white-space: nowrap;
+    opacity: .8;
 }
 
-/* PANTALLAS Y NAVEGACIÓN */
+.connection-status.ok {
+    color: #86efac;
+}
+
+.connection-status.error {
+    color: #fca5a5;
+}
+
+/* ==========================================
+   PANTALLAS
+========================================== */
+
 main {
-    padding: 16px;
+    min-height: calc(100vh - 80px);
 }
 
 .screen {
     display: none;
+    padding: 18px 16px 30px;
 }
 
 .screen.active {
     display: block;
 }
 
-.screen-title {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 16px;
-}
-
-.screen-title h2 {
-    font-size: 18px;
-}
-
-.screen-title p {
-    font-size: 12px;
-    color: var(--text-muted);
-}
-
-/* NAVEGACIÓN INFERIOR */
-.bottom-nav {
-    position: fixed;
-    bottom: 0;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 100%;
-    max-width: 480px;
-    background-color: var(--card-bg);
-    border-top: 1px solid var(--card-border);
-    display: flex;
-    justify-content: space-around;
-    padding: 10px 0;
-    z-index: 1000;
-}
-
-.nav-button {
-    background: none;
-    border: none;
-    color: var(--text-muted);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
-    font-size: 18px;
-    cursor: pointer;
-    width: 20%;
-}
-
-.nav-button small {
-    font-size: 10px;
-}
-
-.nav-button.active {
-    color: var(--primary);
-}
-
-/* CARDS Y COMPONENTES */
-.card, .hero-card, .weather-card, .currency-card, .next-card {
-    background: var(--card-bg);
-    border: 1px solid var(--card-border);
-    border-radius: var(--radius);
-    padding: 16px;
-    margin-bottom: 12px;
-    position: relative;
-}
+/* ==========================================
+   HERO
+========================================== */
 
 .hero-card {
-    background: linear-gradient(135deg, #1e293b, #0f172a);
-    border-color: var(--primary);
+    background:
+        linear-gradient(
+            135deg,
+            #111827,
+            #273449
+        );
+
+    color: white;
+
+    border-radius: 22px;
+
+    padding: 22px;
+
+    display: flex;
+    justify-content: space-between;
+    gap: 15px;
+
+    box-shadow:
+        0 10px 25px rgba(0,0,0,.12);
 }
+
+.small-label {
+    display: block;
+    font-size: 11px;
+    opacity: .7;
+    letter-spacing: .08em;
+    margin-bottom: 6px;
+}
+
+.hero-card strong {
+    display: block;
+    font-size: 22px;
+}
+
+.hero-card p {
+    margin: 8px 0 0;
+    font-size: 12px;
+    opacity: .7;
+}
+
+.hero-location {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 4px;
+    font-size: 13px;
+}
+
+/* ==========================================
+   WEATHER & CURRENCY
+========================================== */
+
+.weather-card,
+.currency-card {
+    margin-top: 12px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 16px;
+}
+
+.weather-main {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+}
+
+.weather-main > span {
+    font-size: 35px;
+}
+
+.weather-main strong {
+    display: block;
+    font-size: 25px;
+}
+
+.weather-main span {
+    color: var(--muted);
+    font-size: 12px;
+}
+
+.weather-extra {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 12px;
+    color: var(--muted);
+    font-size: 12px;
+}
+
+.currency-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.currency-card strong {
+    display: block;
+}
+
+.currency-card > span {
+    font-size: 18px;
+    font-weight: 700;
+}
+
+/* ==========================================
+   SECCIONES
+========================================== */
+
+.section-heading {
+    margin: 25px 2px 10px;
+}
+
+.section-heading.compact {
+    margin-top: 20px;
+}
+
+.section-heading h2 {
+    margin: 0;
+    font-size: 15px;
+}
+
+/* ==========================================
+   TARJETAS
+========================================== */
+
+.next-card,
+.info-card,
+.activity-card,
+.reservation-card,
+.expense-card,
+.flight-card,
+.debt-card,
+.balance-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 17px;
+    padding: 16px;
+}
+
+.next-card {
+    display: flex;
+    gap: 14px;
+    align-items: center;
+}
+
+.next-card > span {
+    font-size: 30px;
+}
+
+.next-card strong {
+    display: block;
+}
+
+.next-card p,
+.info-card p,
+.activity-card p,
+.reservation-card p,
+.expense-card p,
+.flight-card p {
+    color: var(--muted);
+    margin: 5px 0 0;
+    font-size: 13px;
+}
+
+/* ==========================================
+   ACCIONES
+========================================== */
 
 .quick-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 8px;
-    margin-bottom: 16px;
+    gap: 9px;
+    margin-top: 12px;
 }
 
 .quick-button {
-    background: var(--card-bg);
-    border: 1px solid var(--card-border);
-    border-radius: var(--radius);
-    padding: 12px 8px;
-    color: var(--text-main);
+    border: 1px solid var(--border);
+    background: white;
+    border-radius: 16px;
+    padding: 14px 5px;
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 6px;
-    cursor: pointer;
+    color: var(--text);
 }
 
 .quick-button span {
-    font-size: 20px;
+    font-size: 25px;
 }
 
 .quick-button strong {
     font-size: 11px;
 }
 
-/* BOTONES */
-.primary-button, .secondary-button, .danger-button {
-    padding: 10px 16px;
-    border-radius: 8px;
-    border: none;
-    font-weight: 600;
-    font-size: 14px;
-    cursor: pointer;
+/* ==========================================
+   VIAJERAS
+========================================== */
+
+.travelers-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
 }
 
-.primary-button { background-color: var(--primary); color: white; }
-.primary-button:hover { background-color: var(--primary-hover); }
-.secondary-button { background-color: var(--card-border); color: white; }
-.danger-button { background-color: var(--danger); color: white; }
-.full { width: 100%; }
+.traveler-card {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 17px 8px;
+    text-align: center;
+}
 
-.card-actions {
-    position: absolute;
-    top: 12px;
-    right: 12px;
+.traveler-card span {
+    display: block;
+    font-size: 30px;
+    margin-bottom: 6px;
+}
+
+/* ==========================================
+   INFO
+========================================== */
+
+.info-card {
     display: flex;
-    gap: 4px;
+    gap: 13px;
 }
 
-.icon-button {
-    background: none;
-    border: none;
-    cursor: pointer;
-    font-size: 14px;
+.info-icon {
+    font-size: 30px;
 }
 
-/* FILTROS */
-.plan-filters {
+/* ==========================================
+   TITULO PANTALLA
+========================================== */
+
+.screen-title {
     display: flex;
-    gap: 8px;
-    overflow-x: auto;
-    padding-bottom: 8px;
-    margin-bottom: 12px;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 18px;
 }
 
-.plan-filter {
-    background: var(--card-bg);
-    border: 1px solid var(--card-border);
-    color: var(--text-muted);
-    padding: 6px 12px;
-    border-radius: 20px;
-    font-size: 12px;
-    white-space: nowrap;
-    cursor: pointer;
-}
-
-.plan-filter.active {
-    background: var(--primary);
-    color: white;
-    border-color: var(--primary);
-}
-
-/* MODALES */
-.modal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    background: rgba(0, 0, 0, 0.7);
+.screen-title > div:first-child {
     display: flex;
     align-items: center;
+    gap: 12px;
+}
+
+.screen-title > div:first-child > span {
+    font-size: 28px;
+}
+
+.screen-title h2 {
+    margin: 0;
+    font-size: 21px;
+}
+
+.screen-title p {
+    margin: 3px 0 0;
+    color: var(--muted);
+    font-size: 12px;
+}
+
+/* ==========================================
+   BOTONES
+========================================== */
+
+.primary-button,
+.secondary-button {
+    border: 0;
+    border-radius: 12px;
+    padding: 11px 15px;
+    font-weight: 700;
+}
+
+.primary-button {
+    background: var(--primary);
+    color: white;
+}
+
+.secondary-button {
+    background: #eef2ff;
+    color: #3730a3;
+}
+
+.primary-button.full {
+    width: 100%;
+    margin-top: 10px;
+}
+
+.danger-button {
+    border: 0;
+    background: #fee2e2;
+    color: var(--danger);
+    border-radius: 10px;
+    padding: 8px 11px;
+}
+
+/* ==========================================
+   LISTAS
+========================================== */
+
+.list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.activity-card,
+.reservation-card,
+.expense-card,
+.flight-card {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.card-main {
+    min-width: 0;
+    flex: 1;
+}
+
+.card-actions {
+    display: flex;
+    align-items: flex-start;
+}
+
+.date-badge {
+    flex: 0 0 60px;
+    background: #f3f4f6;
+    border-radius: 12px;
+    text-align: center;
+    padding: 8px 4px;
+}
+
+.date-badge strong {
+    display: block;
+    font-size: 17px;
+}
+
+.date-badge span {
+    font-size: 10px;
+    color: var(--muted);
+}
+
+.type-badge {
+    display: inline-block;
+    padding: 4px 7px;
+    background: #f3f4f6;
+    border-radius: 7px;
+    font-size: 10px;
+    margin-bottom: 6px;
+}
+
+/* ==========================================
+   GASTOS
+========================================== */
+
+.expense-summary {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+}
+
+.balance-card {
+    padding: 13px 8px;
+    text-align: center;
+}
+
+.balance-card span {
+    display: block;
+    color: var(--muted);
+    font-size: 11px;
+}
+
+.balance-card strong {
+    display: block;
+    margin-top: 5px;
+    font-size: 16px;
+}
+
+.positive {
+    color: var(--success);
+}
+
+.negative {
+    color: var(--danger);
+}
+
+.debts {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.debt-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.debt-card strong {
+    font-size: 14px;
+}
+
+.debt-amount {
+    font-weight: 800;
+}
+
+/* ==========================================
+   VUELOS
+========================================== */
+
+.flight-route {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    margin: 9px 0;
+}
+
+.flight-airport {
+    font-weight: 800;
+    font-size: 20px;
+}
+
+.flight-arrow {
+    color: var(--muted);
+}
+
+/* ==========================================
+   MÁS
+========================================== */
+
+.more-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.more-card {
+    border: 1px solid var(--border);
+    background: white;
+    border-radius: 17px;
+    padding: 20px 14px;
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.more-card:first-child {
+    font-size: 27px;
+}
+
+.more-card strong {
+    font-size: 15px;
+}
+
+.more-card span {
+    color: var(--muted);
+    font-size: 11px;
+}
+
+/* ==========================================
+   MAPA
+========================================== */
+
+.map-screen {
+    padding-left: 0;
+    padding-right: 0;
+}
+
+.map-screen .screen-title {
+    padding: 0 16px;
+}
+
+#map {
+    width: 100%;
+    height: 60vh;
+    min-height: 420px;
+}
+
+.map-list {
+    padding: 12px 16px 20px;
+}
+
+.map-item {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 13px;
+    padding: 12px;
+    margin-bottom: 8px;
+}
+
+.map-item strong {
+    display: block;
+}
+
+.map-item span {
+    display: block;
+    color: var(--muted);
+    font-size: 11px;
+    margin-top: 3px;
+}
+
+/* ==========================================
+   MODALES
+========================================== */
+
+.modal {
+    position: fixed;
+    inset: 0;
+    z-index: 5000;
+    background: rgba(0,0,0,.55);
+    display: flex;
+    align-items: flex-end;
     justify-content: center;
-    z-index: 10000;
-    padding: 20px;
+}
+
+.modal.hidden {
+    display: none;
 }
 
 .modal-content {
-    background: var(--card-bg);
-    border: 1px solid var(--card-border);
-    border-radius: var(--radius);
-    padding: 20px;
     width: 100%;
-    max-width: 400px;
+    max-width: 760px;
+    max-height: 92vh;
+    overflow-y: auto;
+    background: white;
+    border-radius: 22px 22px 0 0;
+    padding: 20px 17px 30px;
 }
 
 .modal-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 16px;
+    margin-bottom: 15px;
+}
+
+.modal-header h2 {
+    margin: 0;
+    font-size: 20px;
 }
 
 .close-modal {
-    background: none;
-    border: none;
-    color: var(--text-muted);
-    font-size: 20px;
-    cursor: pointer;
+    border: 0;
+    background: #f3f4f6;
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    font-size: 23px;
 }
 
-.modal label {
-    display: block;
+/* ==========================================
+   FORMULARIOS
+========================================== */
+
+form {
+    display: flex;
+    flex-direction: column;
+    gap: 13px;
+}
+
+label,
+fieldset legend {
     font-size: 12px;
-    color: var(--text-muted);
-    margin-bottom: 12px;
+    font-weight: 700;
 }
 
-.modal input, .modal select, .modal textarea {
+input,
+textarea,
+select {
+    display: block;
     width: 100%;
-    padding: 8px;
-    margin-top: 4px;
-    border-radius: 6px;
-    border: 1px solid var(--card-border);
-    background: var(--bg-dark);
-    color: var(--text-main);
+    margin-top: 6px;
+    border: 1px solid #d1d5db;
+    border-radius: 11px;
+    padding: 12px;
+    background: white;
+    color: var(--text);
+}
+
+textarea {
+    min-height: 80px;
+    resize: vertical;
 }
 
 .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+fieldset {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px;
+}
+
+.check-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+    font-weight: 500;
+}
+
+.check-label input {
+    width: auto;
+    margin: 0;
+}
+
+/* Sugerencias de Autocompletado Gratis (Nominatim/OSM) */
+#nominatim-suggestions {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: #ffffff;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 6000;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.12);
+    margin-top: 4px;
+}
+
+.suggestion-item {
+    padding: 11px 14px;
+    cursor: pointer;
+    font-size: 13px;
+    border-bottom: 1px solid #f3f4f6;
+    color: var(--text);
+    transition: background-color 0.15s ease;
+}
+
+.suggestion-item:last-child {
+    border-bottom: none;
+}
+
+.suggestion-item:hover,
+.suggestion-item:active {
+    background-color: #f3f4f6;
+}
+
+.search-results {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.search-result {
+    border: 1px solid var(--border);
+    background: #f9fafb;
+    border-radius: 10px;
+    padding: 10px;
+    text-align: left;
+}
+
+.search-result strong {
+    display: block;
+}
+
+.search-result span {
+    display: block;
+    color: var(--muted);
+    font-size: 11px;
+    margin-top: 3px;
+}
+
+/* ==========================================
+   VACÍO / CARGANDO
+========================================== */
+
+.empty {
+    text-align: center;
+    color: var(--muted);
+    padding: 30px 15px;
+    background: white;
+    border: 1px dashed var(--border);
+    border-radius: 16px;
+}
+
+.loading {
+    color: var(--muted);
+}
+
+/* ==========================================
+   NAVEGACIÓN INFERIOR
+========================================== */
+
+.bottom-nav {
+    position: fixed;
+    z-index: 4000;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: 760px;
+    background: rgba(255,255,255,.97);
+    border-top: 1px solid var(--border);
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    padding:
+        7px
+        7px
+        calc(7px + env(safe-area-inset-bottom));
+    backdrop-filter: blur(12px);
+}
+
+.nav-button {
+    border: 0;
+    background: transparent;
+    color: var(--muted);
+    padding: 6px 2px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+}
+
+.nav-button span {
+    font-size: 21px;
+}
+
+.nav-button small {
+    font-size: 9px;
+}
+
+.nav-button.active {
+    color: var(--accent);
+    font-weight: 800;
+}
+
+/* ==========================================
+   FILTROS DEL PLAN
+========================================== */
+
+.plan-filters {
     display: flex;
     gap: 8px;
+    overflow-x: auto;
+    padding: 4px 0 12px;
+    margin-bottom: 8px;
+    scrollbar-width: none;
 }
 
-/* MAPA LEAFLET */
-#map {
-    width: 100%;
-    border-radius: var(--radius);
-    border: 1px solid var(--card-border);
+.plan-filters::-webkit-scrollbar {
+    display: none;
 }
 
-.custom-map-marker {
-    background: transparent;
-    border: none;
+.plan-filter {
+    flex: 0 0 auto;
+    border: 1px solid #d1d5db;
+    background: #ffffff;
+    color: #374151;
+    border-radius: 999px;
+    padding: 9px 13px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
 }
 
-.marker-pin {
-    font-size: 24px;
-    text-align: center;
+.plan-filter.active {
+    background: #111827;
+    color: #ffffff;
+    border-color: #111827;
+}
+
+.plan-filter:active {
+    transform: scale(0.97);
+}
+
+/* ==========================================
+   MÓVIL
+========================================== */
+
+@media (max-width: 480px) {
+
+    .quick-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .hero-card {
+        flex-direction: column;
+    }
+
+    .hero-location {
+        align-items: flex-start;
+    }
+
+    .screen-title {
+        align-items: flex-start;
+    }
+
+    .screen-title .primary-button {
+        padding: 9px 11px;
+        font-size: 12px;
+    }
+
 }
